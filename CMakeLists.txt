@@ -23,15 +23,15 @@ endif()
 ##################
 ##### target #####
 ##################
-# file(GLOB DOPPEL_CORE_CPP "include/Doppel/*.cpp")
+file(GLOB DOPPELGANGER_CPP "src/*.cpp")
 # file(GLOB DOPPEL_UTIL_CPP "include/Doppel/util/*.cpp")
 set(CPP_FILES
     main.cpp
-    # ${DOPPEL_CORE_CPP}
+    ${DOPPELGANGER_CPP}
     # ${DOPPEL_UTIL_CPP}
 )
 
-file(GLOB_RECURSE RESOURCES_FILES "${CMAKE_CURRENT_SOURCE_DIR}/Resources/*")
+file(GLOB_RECURSE RESOURCES_FILES "${CMAKE_CURRENT_SOURCE_DIR}/resources/*")
 set(RES_FILES
     ${RESOURCES_FILES}
 )
@@ -107,7 +107,7 @@ target_link_libraries(${PROJECT} PRIVATE ${LINK_LIBS})
 set(INCLUDE_DIR
     ${EIGEN3_INCLUDE_DIR}
     ${Boost_INCLUDE_DIRS}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/submodule/libigl/include
 )
 
@@ -165,20 +165,20 @@ endif ()
 #####################
 ##### Resources #####
 #####################
-# if(WIN32)
-#     #####
-#     # Resources
-#     add_custom_command(TARGET ${PROJECT} POST_BUILD COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PROJECT}>/Resources")
-#     add_custom_command(TARGET ${PROJECT} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/Resources" "$<TARGET_FILE_DIR:${PROJECT}>/Resources")
-# elseif (APPLE)
-#     #####
-#     # Resources
-#     foreach(RES_FILE ${RESOURCES_FILES})
-#         file(RELATIVE_PATH RES_PATH "${CMAKE_CURRENT_SOURCE_DIR}/Resources" ${RES_FILE})
-#         get_filename_component(RES_DIR_PATH ${RES_PATH} DIRECTORY)
-#         set_property(SOURCE ${RES_FILE} PROPERTY MACOSX_PACKAGE_LOCATION "Resources/${RES_DIR_PATH}")
-#     endforeach(RES_FILE)
-# endif ()
+if(WIN32)
+    #####
+    # Resources
+    add_custom_command(TARGET ${PROJECT} POST_BUILD COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PROJECT}>/resources")
+    add_custom_command(TARGET ${PROJECT} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/resources" "$<TARGET_FILE_DIR:${PROJECT}>/resources")
+elseif (APPLE)
+    #####
+    # Resources
+    foreach(RES_FILE ${RESOURCES_FILES})
+        file(RELATIVE_PATH RES_PATH "${CMAKE_CURRENT_SOURCE_DIR}/resources" ${RES_FILE})
+        get_filename_component(RES_DIR_PATH ${RES_PATH} DIRECTORY)
+        set_property(SOURCE ${RES_FILE} PROPERTY MACOSX_PACKAGE_LOCATION "resources/${RES_DIR_PATH}")
+    endforeach(RES_FILE)
+endif ()
 ###########################
 ##### Resources (end) #####
 ###########################
