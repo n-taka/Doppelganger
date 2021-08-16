@@ -1,0 +1,40 @@
+{
+    "plugins": [
+        {
+            "name": "example",
+            "source": "https://example.com",
+            "version": "1.0.0",
+            "active": true
+        },
+        {
+            "name": "example",
+            "source": "https://example.com",
+            "version": "1.0.0",
+            "active": true
+        },
+        {
+            "name": "example",
+            "source": "https://example.com",
+            "version": "1.0.0",
+            "active": true
+        },
+        {
+            "name": "example",
+            "source": "https://example.com",
+            "version": "1.0.0",
+            "active": true
+        },
+        {
+            "name": "example",
+            "source": "https://example.com",
+            "version": "1.0.0",
+            "active": true
+        },
+        {
+            "name": "example",
+            "source": "https://example.com",
+            "version": "1.0.0",
+            "active": true
+        }
+    ]
+}
