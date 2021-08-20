@@ -4,6 +4,7 @@
 #include "triangleMesh.h"
 
 #include <string>
+#include <memory>
 #include <unordered_map>
 #include <unordered_set>
 #include <mutex>
@@ -75,7 +76,7 @@ namespace Doppelganger
 
 		////
 		// mesh data
-		std::unordered_map<std::string, Doppelganger::triangleMesh> meshes;
+		std::unordered_map<std::string, std::shared_ptr<Doppelganger::triangleMesh>> meshes;
 		std::shared_ptr<std::mutex> mutexMeshes;
 
 		////

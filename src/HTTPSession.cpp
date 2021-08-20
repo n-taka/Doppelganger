@@ -205,18 +205,16 @@ namespace
 						{
 							completePath.append(reqPathVec.at(pIdx));
 						}
-						std::cout << "requested file: " << completePath.string() << std::endl;
-						// todo
-#if 0
-						// note: second condition is for boost::filesystem
-						if (!completePath.has_filename() || completePath.filename().string() == ".")
-						{
-							// moved permanently (301)
-							std::string location = core->config.at("completeURL").get<std::string>();
-							location += "/Resources/html/index.html";
 
-							return send(movedPermanently(res, location));
-						}
+						// // note: second condition is for boost::filesystem
+						// if (!completePath.has_filename() || completePath.filename().string() == ".")
+						// {
+						// 	// moved permanently (301)
+						// 	std::string location = core->config.at("completeURL").get<std::string>();
+						// 	location += "/Resources/html/index.html";
+
+						// 	return send(movedPermanently(res, location));
+						// }
 
 						// Attempt to open the file
 						boost::beast::error_code ec;
@@ -226,17 +224,16 @@ namespace
 						// Handle the case where the file doesn't exist
 						if (ec == boost::system::errc::no_such_file_or_directory)
 						{
-							return send(not_found(req.target()));
+							return send(notFound(std::move(req), req.target()));
 						}
-
 						// Handle an unknown error
 						if (ec)
 						{
-							return send(server_error(ec.message()));
+							return send(serverError(std::move(req), ec.message()));
 						}
 
 						// Cache the size since we need it after the move
-						auto const size = body.size();
+						const auto size = body.size();
 
 						// Respond to HEAD request
 						if (req.method() == boost::beast::http::verb::head)
@@ -263,22 +260,31 @@ namespace
 						}
 						else
 						{
-							return send(bad_request("Illegal request"));
+							return send(badRequest(std::move(req), "Illegal request"));
 						}
-#endif
 					}
 					else if (reqPathVec.at(2).substr(0, 5) == "mesh-")
 					{
 						if (reqPathVec.size() >= 4)
 						{
 							// meshAPI
+							const std::shared_ptr<Doppelganger::triangleMesh> &mesh = room->meshes.at(reqPathVec.at(2));
 							const std::string &meshAPIName = reqPathVec.at(3);
-							// todo
+							try
+							{
+								const Doppelganger::Core::MeshAPI_t &meshAPIFunc = boost::any_cast<Doppelganger::Core::MeshAPI_t &>(core->API.at(meshAPIName));
+								// todo
+								// meshAPIFunc(mesh, )
+							}
+							catch (...)
+							{
+								return send(badRequest(std::move(req), "Invalid mesh API is specified."));
+							}
 						}
 						else
 						{
 							// invalid (mesh is specified, but no API is specified)
-							send(badRequest(std::move(req), "No mesh API is specified."));
+							return send(badRequest(std::move(req), "No mesh API is specified."));
 						}
 					}
 					else
@@ -310,24 +316,7 @@ namespace
 		}
 
 #if 0
-
-		if (req.target().find("api") == boost::beast::string_view::npos)
 		{
-
-		}
-		else
-		{
-			// api call
-			std::vector<std::string> reqPathVec;
-			for (const auto &p : reqPath)
-			{
-				reqPathVec.push_back(p.string());
-			}
-			if (reqPathVec.size() < 3 || reqPathVec.at(1) != "api")
-			{
-				return send(bad_request("Illegal API request"));
-			}
-
 			const Room::RESTAPIMAP_t &RESTAPI = boost::any_cast<Room::RESTAPIMAP_t &>(room->publicAPI.at("REST"));
 
 			if (RESTAPI.find(req.method_string().to_string()) != RESTAPI.end())
@@ -585,7 +574,6 @@ namespace Doppelganger
 										   self->onRead(ec, bytes);
 									   });
 	}
-
 }
 
 #endif

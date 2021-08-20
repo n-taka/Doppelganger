@@ -8,15 +8,17 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 #else
-#include "boost/filesystem.hpp"
+#include <boost/filesystem.hpp>
 namespace fs = boost::filesystem;
 #endif
 #include <boost/asio.hpp>
+#include <boost/any.hpp>
 #include <nlohmann/json.hpp>
 
 namespace Doppelganger
 {
 	class Room;
+	class triangleMesh;
 
 	class Core : public std::enable_shared_from_this<Core>
 	{
@@ -35,28 +37,26 @@ namespace Doppelganger
 		};
 		systemParameters systemParams;
 
-		// 		////
-		// 		// API
-		// 		// typedef for REST API
-		// 		typedef std::function<void(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &, nlohmann::json &)> RESTAPI_t;
-		// 		typedef std::unordered_map<std::string, std::unordered_map<std::string, RESTAPI_t> > RESTAPIMAP_t;
-		// #if defined(_WIN32) || defined(_WIN64)
-		// 		typedef void(__stdcall *RESTAPIPtr_t)(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &, nlohmann::json &);
-		// #else
-		// 		typedef void (*RESTAPIPtr_t)(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &, nlohmann::json &);
-		// #endif
-		// 		// typedef for WS API
-		// 		typedef std::function<void(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &)> WSAPI_t;
-		// 		typedef std::unordered_map<std::string, WSAPI_t> WSAPIMAP_t;
-		// #if defined(_WIN32) || defined(_WIN64)
-		// 		typedef void(__stdcall *WSAPIPtr_t)(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &);
-		// #else
-		// 		typedef void (*WSAPIPtr_t)(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &);
-		// #endif
+		////
+		// API
+		// typedef for Room API
+		typedef std::function<void(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &, nlohmann::json &)> RoomAPI_t;
+#if defined(_WIN32) || defined(_WIN64)
+		typedef void(__stdcall *RoomAPIPtr_t)(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &, nlohmann::json &);
+#else
+		typedef void (*RoomAPIPtr_t)(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &, nlohmann::json &);
+#endif
+		// typedef for Mesh API
+		typedef std::function<void(const std::shared_ptr<Doppelganger::triangleMesh> &, const nlohmann::json &, nlohmann::json &)> MeshAPI_t;
+#if defined(_WIN32) || defined(_WIN64)
+		typedef void(__stdcall *MeshAPIPtr_t)(const std::shared_ptr<Doppelganger::triangleMesh> &, const nlohmann::json &, nlohmann::json &);
+#else
+		typedef void (*MeshAPIPtr_t)(const std::shared_ptr<Doppelganger::triangleMesh> &, const nlohmann::json &, nlohmann::json &);
+#endif
 
-		// 		std::unordered_map<std::string, boost::any> API;
 		nlohmann::json config;
 		std::unordered_map<std::string, std::shared_ptr<Doppelganger::Room>> rooms;
+		std::unordered_map<std::string, boost::any> API;
 
 	private:
 		// for graceful shutdown
