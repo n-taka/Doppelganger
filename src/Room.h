@@ -25,15 +25,17 @@ namespace Doppelganger
 	class Room
 	{
 	public:
-		Room();
+		Room(const std::string &UUID_);
 		~Room() {}
 
 	public:
+		std::string UUID;
+
 		////
 		// parameters for server setup
 		struct serverParameters
 		{
-			std::unordered_map<std::string, std::shared_ptr<WebsocketSession> > websocketSessions;
+			std::unordered_map<std::string, std::shared_ptr<WebsocketSession>> websocketSessions;
 			std::shared_ptr<std::mutex> mutexServerParams;
 		};
 		serverParameters serverParams;
@@ -64,7 +66,7 @@ namespace Doppelganger
 			Eigen::Matrix<double, 3, 1> cameraTarget, cameraPos, cameraUp;
 			double cameraZoom;
 			// mouse cursors
-			std::unordered_map<std::string, std::vector<double> > cursors;
+			std::unordered_map<std::string, std::vector<double>> cursors;
 			// loading state
 			std::unordered_set<std::string> taskUUIDInProgress;
 			std::shared_ptr<std::mutex> mutexInterfaceParams;

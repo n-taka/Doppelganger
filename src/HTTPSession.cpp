@@ -155,7 +155,8 @@ namespace
 	}
 
 	template <class Body, class Allocator, class Send>
-	void handleRequest(const std::shared_ptr<Doppelganger::Room> &room,
+	void handleRequest(const std::shared_ptr<Doppelganger::Core> &core,
+					   const std::shared_ptr<Doppelganger::Room> &room,
 					   boost::beast::http::request<Body, boost::beast::http::basic_fields<Allocator>> &&req,
 					   Send &&send)
 	{
@@ -175,74 +176,144 @@ namespace
 			return send(badRequest(std::move(req), "Illegal request-target"));
 		}
 
-#if 0
+		// resource
+		// http://example.com/<path>/<to>/<resource>
+		// room API
+		// http://example.com/<roomUUID>/<APIName>
+		// mesh API
+		// http://example.com/<roomUUID>/<meshUUID>/<APIName>
 		fs::path reqPath(req.target().to_string());
 		reqPath.make_preferred();
-		fs::path completePath(room->systemParams.baseDir);
-		completePath.make_preferred();
-		completePath.concat(reqPath.string());
-
-		if (req.target().find("api") == boost::beast::string_view::npos)
+		std::vector<std::string> reqPathVec;
+		for (const auto &p : reqPath)
 		{
-			// GET/HEAD file
+			reqPathVec.push_back(p.string());
+		}
 
-			// note: second condition is for boost::filesystem
-			if (!completePath.has_filename() || completePath.filename().string() == ".")
+		if (reqPathVec.size() >= 2)
+		{
+			if (reqPathVec.at(1).substr(0, 5) == "room-")
 			{
-				// moved permanently (301)
-				std::string location = core->config.at("completeURL").get<std::string>();
-				location += "/Resources/html/index.html";
+				if (reqPathVec.size() >= 3)
+				{
+					if (reqPathVec.at(2) == "resources")
+					{
+						// resource
+						fs::path completePath(core->systemParams.baseDir);
+						completePath.make_preferred();
+						for (int pIdx = 2; pIdx < reqPathVec.size(); ++pIdx)
+						{
+							completePath.append(reqPathVec.at(pIdx));
+						}
+						std::cout << "requested file: " << completePath.string() << std::endl;
+						// todo
+#if 0
+						// note: second condition is for boost::filesystem
+						if (!completePath.has_filename() || completePath.filename().string() == ".")
+						{
+							// moved permanently (301)
+							std::string location = core->config.at("completeURL").get<std::string>();
+							location += "/Resources/html/index.html";
 
-				return send(movedPermanently(res, location));
-			}
+							return send(movedPermanently(res, location));
+						}
 
-			// Attempt to open the file
-			boost::beast::error_code ec;
-			boost::beast::http::file_body::value_type body;
-			body.open(completePath.string().c_str(), boost::beast::file_mode::scan, ec);
+						// Attempt to open the file
+						boost::beast::error_code ec;
+						boost::beast::http::file_body::value_type body;
+						body.open(completePath.string().c_str(), boost::beast::file_mode::scan, ec);
 
-			// Handle the case where the file doesn't exist
-			if (ec == boost::system::errc::no_such_file_or_directory)
-			{
-				return send(not_found(req.target()));
-			}
+						// Handle the case where the file doesn't exist
+						if (ec == boost::system::errc::no_such_file_or_directory)
+						{
+							return send(not_found(req.target()));
+						}
 
-			// Handle an unknown error
-			if (ec)
-			{
-				return send(server_error(ec.message()));
-			}
+						// Handle an unknown error
+						if (ec)
+						{
+							return send(server_error(ec.message()));
+						}
 
-			// Cache the size since we need it after the move
-			auto const size = body.size();
+						// Cache the size since we need it after the move
+						auto const size = body.size();
 
-			// Respond to HEAD request
-			if (req.method() == boost::beast::http::verb::head)
-			{
-				boost::beast::http::response<boost::beast::http::empty_body> res{boost::beast::http::status::ok, req.version()};
-				res.set(boost::beast::http::field::server, BOOST_BEAST_VERSION_STRING);
-				res.set(boost::beast::http::field::content_type, mime_type(completePath));
-				res.content_length(size);
-				res.keep_alive(req.keep_alive());
-				return send(std::move(res));
-			}
-			else if (req.method() == boost::beast::http::verb::get)
-			{
-				// Respond to GET request
-				boost::beast::http::response<boost::beast::http::file_body> res{
-					std::piecewise_construct,
-					std::make_tuple(std::move(body)),
-					std::make_tuple(boost::beast::http::status::ok, req.version())};
-				res.set(boost::beast::http::field::server, BOOST_BEAST_VERSION_STRING);
-				res.set(boost::beast::http::field::content_type, mime_type(completePath));
-				res.content_length(size);
-				res.keep_alive(req.keep_alive());
-				return send(std::move(res));
+						// Respond to HEAD request
+						if (req.method() == boost::beast::http::verb::head)
+						{
+							boost::beast::http::response<boost::beast::http::empty_body> res{boost::beast::http::status::ok, req.version()};
+							res.set(boost::beast::http::field::server, BOOST_BEAST_VERSION_STRING);
+							res.set(boost::beast::http::field::content_type, mime_type(completePath));
+							res.content_length(size);
+							res.keep_alive(req.keep_alive());
+							return send(std::move(res));
+						}
+						else if (req.method() == boost::beast::http::verb::get)
+						{
+							// Respond to GET request
+							boost::beast::http::response<boost::beast::http::file_body> res{
+								std::piecewise_construct,
+								std::make_tuple(std::move(body)),
+								std::make_tuple(boost::beast::http::status::ok, req.version())};
+							res.set(boost::beast::http::field::server, BOOST_BEAST_VERSION_STRING);
+							res.set(boost::beast::http::field::content_type, mime_type(completePath));
+							res.content_length(size);
+							res.keep_alive(req.keep_alive());
+							return send(std::move(res));
+						}
+						else
+						{
+							return send(bad_request("Illegal request"));
+						}
+#endif
+					}
+					else if (reqPathVec.at(2).substr(0, 5) == "mesh-")
+					{
+						if (reqPathVec.size() >= 4)
+						{
+							// meshAPI
+							const std::string &meshAPIName = reqPathVec.at(3);
+							// todo
+						}
+						else
+						{
+							// invalid (mesh is specified, but no API is specified)
+							send(badRequest(std::move(req), "No mesh API is specified."));
+						}
+					}
+					else
+					{
+						// roomAPI
+						const std::string &roomAPIName = reqPathVec.at(2);
+						// todo
+					}
+				}
+				else
+				{
+					// return 301 (moved permanently)
+					std::string location = core->config.at("completeURL").get<std::string>();
+					location += "/";
+					location += room->UUID;
+					location += "/resources/html/index.html";
+					send(movedPermanently(std::move(req), location));
+				}
 			}
 			else
 			{
-				return send(bad_request("Illegal request"));
+				// return 301 (moved permanently)
+				std::string location = core->config.at("completeURL").get<std::string>();
+				location += "/";
+				location += room->UUID;
+				location += "/resources/html/index.html";
+				send(movedPermanently(std::move(req), location));
 			}
+		}
+
+#if 0
+
+		if (req.target().find("api") == boost::beast::string_view::npos)
+		{
+
 		}
 		else
 		{
@@ -429,9 +500,15 @@ namespace Doppelganger
 #endif
 		};
 
-		if(roomUUID == "favicon.ico")
 		{
-			// do nothing!!
+			std::stringstream s;
+			s << "Request received: \"" << req.target().to_string() << "\"";
+			Logger::getInstance().log(s.str(), "SYSTEM");
+		}
+
+		if (roomUUID == "favicon.ico")
+		{
+			// do nothing
 			// TODO 2021.08.17 prepare favion.ico
 		}
 		else if (roomUUID.size() <= 0 || core->rooms.find(roomUUID) == core->rooms.end())
@@ -439,16 +516,27 @@ namespace Doppelganger
 			// create new room
 			if (roomUUID.size() <= 0)
 			{
-				roomUUID = boost::lexical_cast<std::string>(boost::uuids::random_generator()());
+				roomUUID = "";
+				roomUUID += "room-";
+				roomUUID += boost::lexical_cast<std::string>(boost::uuids::random_generator()());
+				{
+					std::stringstream s;
+					s << "New room \"" << roomUUID << "\" is created.";
+					Logger::getInstance().log(s.str(), "SYSTEM");
+				}
 			}
-			const std::shared_ptr<Room> room = std::make_shared<Room>();
+			else
+			{
+				// add prefix
+				roomUUID = "room-" + roomUUID;
+			}
+			const std::shared_ptr<Room> room = std::make_shared<Room>(roomUUID);
 			core->rooms[roomUUID] = std::move(room);
 
 			// return 301 (moved permanently)
 			std::string location = core->config.at("completeURL").get<std::string>();
 			location += "/";
 			location += roomUUID;
-			location += "/Resources/html/index.html";
 
 			return send(movedPermanently(std::move(req), location));
 		}
@@ -465,7 +553,7 @@ namespace Doppelganger
 			else
 			{
 				// Send the response
-				return handleRequest(room, std::move(req), send);
+				return handleRequest(core, room, std::move(req), send);
 			}
 		}
 	}

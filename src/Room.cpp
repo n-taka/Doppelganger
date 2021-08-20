@@ -20,7 +20,7 @@
 
 namespace Doppelganger
 {
-	Room::Room()
+	Room::Room(const std::string &UUID_) : UUID(UUID_)
 	{
 		//////
 		// initialize server parameter
