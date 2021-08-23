@@ -12,12 +12,6 @@
 // #include "util/writeMeshToJson.h"
 // #include "util/writeMeshToMemory.h"
 
-#if defined(_WIN32) || defined(_WIN64)
-#include <windows.h>
-#else
-#include <CoreFoundation/CoreFoundation.h>
-#endif
-
 namespace Doppelganger
 {
 	Room::Room(const std::string &UUID_,
@@ -88,6 +82,6 @@ namespace Doppelganger
 			fs::create_directories(outputDir);
 		}
 	}
-} // namespace Doppel
+} // namespace
 
 #endif

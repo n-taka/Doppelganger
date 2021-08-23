@@ -75,6 +75,12 @@ namespace Doppelganger
 			config["pluginDir"] = pluginDir.string();
 		}
 		////
+		// install plugin
+		if (config.contains("installedPlugin") && config.at("installedPlugin").size() != 0)
+		{
+			// todo 2021.08.24
+		}
+		////
 		// browser
 		if (!config.contains("browser"))
 		{

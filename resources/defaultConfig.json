@@ -3,7 +3,6 @@
     "host": "127.0.0.1",
     "port": 0,
     "logsDir": "",
-    "logDir": "",
     "logLevel": [
         "SYSTEM",
         "APICALL",
@@ -17,16 +16,28 @@
         "FILE"
     ],
     "outputsDir": "",
-    "outputDir": "",
     "browser": {
         "type": "chrome",
         "path": "",
         "openAs": "app",
         "openOnBoot": true
     },
-    "FreeCADPath": "",
+    "pluginDir": "",
     "pluginRepositories": [
         "https://examples0.com",
         "https://examples1.com"
-    ]
+    ],
+    "installedPlugin": [
+        {
+            "name": "pluginA",
+            "version": "1.0.0",
+            "mandatory": true
+        },
+        {
+            "name": "pluginB",
+            "version": "2.3.0",
+            "mandatory": false
+        }
+    ],
+    "FreeCADPath": ""
 }

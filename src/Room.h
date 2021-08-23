@@ -88,6 +88,6 @@ namespace Doppelganger
 		// custom data
 		std::unordered_map<std::string, boost::any> customData;
 	};
-} // namespace Doppel
+} // namespace
 
 #endif

@@ -7,6 +7,7 @@
 #include "Logger.h"
 #include "Room.h"
 #include "WebsocketSession.h"
+#include "Plugin.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <filesystem>
@@ -272,7 +273,7 @@ namespace
 							const std::string &meshAPIName = reqPathVec.at(3);
 							try
 							{
-								const Doppelganger::Core::MeshAPI_t &meshAPIFunc = boost::any_cast<Doppelganger::Core::MeshAPI_t &>(core->API.at(meshAPIName));
+								const Doppelganger::Plugin::MeshAPI_t &meshAPIFunc = boost::any_cast<Doppelganger::Plugin::MeshAPI_t &>(core->plugin.at(meshAPIName)->func);
 								// todo
 								// meshAPIFunc(mesh, )
 							}

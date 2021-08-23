@@ -20,6 +20,7 @@ namespace Doppelganger
 {
 	class Room;
 	class triangleMesh;
+	class Plugin;
 
 	class Core : public std::enable_shared_from_this<Core>
 	{
@@ -41,27 +42,10 @@ namespace Doppelganger
 		};
 		systemParameters systemParams;
 
-		////
-		// API
-		// typedef for Room API
-		typedef std::function<void(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &, nlohmann::json &)> RoomAPI_t;
-#if defined(_WIN32) || defined(_WIN64)
-		typedef void(__stdcall *RoomAPIPtr_t)(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &, nlohmann::json &);
-#else
-		typedef void (*RoomAPIPtr_t)(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &, nlohmann::json &);
-#endif
-		// typedef for Mesh API
-		typedef std::function<void(const std::shared_ptr<Doppelganger::triangleMesh> &, const nlohmann::json &, nlohmann::json &)> MeshAPI_t;
-#if defined(_WIN32) || defined(_WIN64)
-		typedef void(__stdcall *MeshAPIPtr_t)(const std::shared_ptr<Doppelganger::triangleMesh> &, const nlohmann::json &, nlohmann::json &);
-#else
-		typedef void (*MeshAPIPtr_t)(const std::shared_ptr<Doppelganger::triangleMesh> &, const nlohmann::json &, nlohmann::json &);
-#endif
-
 		nlohmann::json config;
 		Logger logger;
 		std::unordered_map<std::string, std::shared_ptr<Doppelganger::Room>> rooms;
-		std::unordered_map<std::string, boost::any> API;
+		std::unordered_map<std::string, std::shared_ptr<Doppelganger::Plugin>> plugin;
 
 	private:
 		// for graceful shutdown
