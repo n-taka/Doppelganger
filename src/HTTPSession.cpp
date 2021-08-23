@@ -199,7 +199,7 @@ namespace
 					if (reqPathVec.at(2) == "resources")
 					{
 						// resource
-						fs::path completePath(core->systemParams.baseDir);
+						fs::path completePath(core->systemParams.resourceDir);
 						completePath.make_preferred();
 						for (int pIdx = 2; pIdx < reqPathVec.size(); ++pIdx)
 						{
@@ -211,7 +211,7 @@ namespace
 						// {
 						// 	// moved permanently (301)
 						// 	std::string location = core->config.at("completeURL").get<std::string>();
-						// 	location += "/Resources/html/index.html";
+						// 	location += "/html/index.html";
 
 						// 	return send(movedPermanently(res, location));
 						// }
@@ -300,7 +300,7 @@ namespace
 					std::string location = core->config.at("completeURL").get<std::string>();
 					location += "/";
 					location += room->UUID;
-					location += "/resources/html/index.html";
+					location += "/html/index.html";
 					send(movedPermanently(std::move(req), location));
 				}
 			}
@@ -310,7 +310,7 @@ namespace
 				std::string location = core->config.at("completeURL").get<std::string>();
 				location += "/";
 				location += room->UUID;
-				location += "/resources/html/index.html";
+				location += "/html/index.html";
 				send(movedPermanently(std::move(req), location));
 			}
 		}

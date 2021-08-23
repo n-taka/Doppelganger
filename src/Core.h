@@ -32,7 +32,10 @@ namespace Doppelganger
 		// parameters for Doppel
 		struct systemParameters
 		{
-			fs::path baseDir;
+			// read only (static resources)
+			fs::path resourceDir;
+			// read write (logs, outputs, plugins)
+			fs::path workingDir;
 			std::mutex mutexSystemParams;
 		};
 		systemParameters systemParams;
@@ -66,7 +69,7 @@ namespace Doppelganger
 
 		void parseConfig(
 			const fs::path &pathConfig,
-			const fs::path &baseDir,
+			const fs::path &workingDir,
 			nlohmann::json &config);
 
 		void fail(

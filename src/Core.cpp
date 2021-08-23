@@ -19,7 +19,7 @@ namespace Doppelganger
 
 	void Core::parseConfig(
 		const fs::path &pathConfig,
-		const fs::path &baseDir,
+		const fs::path &workingDir,
 		nlohmann::json &config)
 	{
 		// parse json
@@ -51,15 +51,12 @@ namespace Doppelganger
 		{
 			if (!config.contains("logsDir") || config.at("logsDir").get<std::string>().size() == 0)
 			{
-				fs::path logsDir = baseDir;
-				logsDir /= "resources";
-				logsDir /= "log";
-				logsDir.make_preferred();
+				fs::path logsDir = workingDir;
+				logsDir.append("log");
 				config["logsDir"] = logsDir.string();
 			}
 			fs::path logDir(config.at("logsDir").get<std::string>());
-			logDir /= Logger::getCurrentTimestampAsString(false);
-			logDir.make_preferred();
+			logDir.append(Logger::getCurrentTimestampAsString(false));
 			config["logDir"] = logDir.string();
 		}
 		////
@@ -68,15 +65,12 @@ namespace Doppelganger
 		{
 			if (!config.contains("outputsDir") || config.at("outputsDir").get<std::string>().size() == 0)
 			{
-				fs::path outputsDir = baseDir;
-				outputsDir /= "resources";
-				outputsDir /= "output";
-				outputsDir.make_preferred();
+				fs::path outputsDir = workingDir;
+				outputsDir.append("output");
 				config["outputsDir"] = outputsDir.string();
 			}
 			fs::path outputDir(config.at("outputsDir").get<std::string>());
-			outputDir /= Logger::getCurrentTimestampAsString(false);
-			outputDir.make_preferred();
+			outputDir.append(Logger::getCurrentTimestampAsString(false));
 			config["outputDir"] = outputDir.string();
 		}
 		////
@@ -215,7 +209,7 @@ namespace Doppelganger
 		//////
 		// initialize system parameters
 
-		// setup baseDir for resources
+		// setup for resources
 		{
 #if defined(_WIN32) || defined(_WIN64)
 			char buffer[MAX_PATH];
@@ -223,10 +217,11 @@ namespace Doppelganger
 			GetModuleFileName(NULL, buffer, sizeof(buffer));
 			fs::path p(buffer);
 			p = p.parent_path();
-			systemParams.baseDir = p;
+			systemParams.resourceDir = p;
+			systemParams.resourceDir.make_preferred();
+			systemParams.resourceDir.append("resources");
+			systemParams.workingDir = systemParams.resourceDir;
 #elif defined(__APPLE__)
-			// TODO 2021.08.17
-			// get directory that app can read/write
 			CFURLRef appUrlRef;
 			appUrlRef = CFBundleCopyResourceURL(CFBundleGetMainBundle(), CFSTR("index"), CFSTR(".html"), CFSTR("html"));
 			CFStringRef filePathRef = CFURLCopyPath(appUrlRef);
@@ -235,18 +230,28 @@ namespace Doppelganger
 			p = p.parent_path();
 			p = p.parent_path();
 			p = p.parent_path();
-			systemParams.baseDir = p;
+			systemParams.resourceDir = p;
+			systemParams.resourceDir.make_preferred();
+			systemParams.resourceDir.append("resources");
+			// TODO 2021.08.17
+			// get directory that app can read/write
+			// systemParams.workingDir = systemParams.resourceDir;
 #endif
-			systemParams.baseDir.make_preferred();
 		}
 
 		// load config.json
 		{
-			fs::path configPath(systemParams.baseDir);
-			configPath /= "resources";
-			configPath /= "config.json";
+			fs::path configPath(systemParams.workingDir);
+			configPath.append("config.json");
+			if (!fs::exists(configPath))
+			{
+				fs::path defaultConfigPath(systemParams.resourceDir);
+				defaultConfigPath.append("defaultConfig.json");
+				fs::copy_file(defaultConfigPath, configPath);
+				std::cout << "no config file found. we use default config file" << std::endl;
+			}
 			// config
-			parseConfig(configPath, systemParams.baseDir, config);
+			parseConfig(configPath, systemParams.workingDir, config);
 		}
 
 		// initialize logger
