@@ -46,32 +46,33 @@ namespace Doppelganger
 			config["port"] = 0;
 		}
 		////
-		// logDir
-		if (!config.contains("logDir") || config.at("logDir").get<std::string>().size() == 0)
+		// log (we use one directory per room)
+		if (!config.contains("logsDir") || config.at("logsDir").get<std::string>().size() == 0)
 		{
-			if (!config.contains("logsDir") || config.at("logsDir").get<std::string>().size() == 0)
-			{
-				fs::path logsDir = workingDir;
-				logsDir.append("log");
-				config["logsDir"] = logsDir.string();
-			}
-			fs::path logDir(config.at("logsDir").get<std::string>());
-			logDir.append(Logger::getCurrentTimestampAsString(false));
-			config["logDir"] = logDir.string();
+			fs::path logsDir = workingDir;
+			logsDir.append("log");
+			fs::create_directories(logsDir);
+			config["logsDir"] = logsDir.string();
 		}
 		////
-		// outputDir
-		if (!config.contains("outputDir") || config.at("outputDir").get<std::string>().size() == 0)
+		// output (we use one directory per room)
+		if (!config.contains("outputsDir") || config.at("outputsDir").get<std::string>().size() == 0)
 		{
-			if (!config.contains("outputsDir") || config.at("outputsDir").get<std::string>().size() == 0)
-			{
-				fs::path outputsDir = workingDir;
-				outputsDir.append("output");
-				config["outputsDir"] = outputsDir.string();
-			}
-			fs::path outputDir(config.at("outputsDir").get<std::string>());
-			outputDir.append(Logger::getCurrentTimestampAsString(false));
-			config["outputDir"] = outputDir.string();
+			fs::path outputsDir = workingDir;
+			outputsDir.append("output");
+			fs::create_directories(outputsDir);
+			config["outputsDir"] = outputsDir.string();
+		}
+		////
+		// plugin (we use one directory (multiple rooms share the directory))
+		//     it is more useful the previous setting is kept even if user reboot the system.
+		//     last settings are stored in (cached) config.json
+		if (!config.contains("pluginDir") || config.at("pluginDir").get<std::string>().size() == 0)
+		{
+			fs::path pluginDir = workingDir;
+			pluginDir.append("plugin");
+			fs::create_directories(pluginDir);
+			config["pluginDir"] = pluginDir.string();
 		}
 		////
 		// browser
@@ -194,9 +195,6 @@ namespace Doppelganger
 			FreeCADPath.make_preferred();
 			config["FreeCADPath"] = FreeCADPath.string();
 		}
-		////
-		// plugin repo.
-		// * no default value
 #if 0
 		if (!config.contains("pluginRepositories") || config.at("pluginRepositories").size() == 0)
 		{
@@ -256,29 +254,8 @@ namespace Doppelganger
 
 		// initialize logger
 		{
-			fs::path logDir(config.at("logDir").get<std::string>());
-			std::unordered_map<std::string, bool> logLevel;
-			for (const auto &level : config.at("logLevel"))
-			{
-				logLevel[level.get<std::string>()] = true;
-			}
-			std::unordered_map<std::string, bool> logType;
-			for (const auto &type : config.at("logType"))
-			{
-				logType[type.get<std::string>()] = true;
-			}
-			Logger::getInstance().initialize(logDir, logLevel, logType);
+			logger.initialize("Core", config);
 		}
-
-		// initialize plugin
-		// {
-		// 	fs::path dirName(pantry->systemParams.baseDir);
-		// 	dirName /= "resources";
-		// 	dirName /= "plugin";
-		// 	PluginLoader loader(dirName);
-		// 	std::vector<std::string> plugins;
-		// 	loader.loadPlugins(pantry);
-		// }
 
 		// 	//////
 		// 	// initialize internal API TODO 2021.08.17
@@ -380,7 +357,7 @@ namespace Doppelganger
 
 			std::stringstream s;
 			s << "Listening for requests at : " << config.at("completeURL").get<std::string>();
-			Logger::getInstance().log(s.str(), "SYSTEM");
+			logger.log(s.str(), "SYSTEM");
 		}
 
 #if 0
@@ -444,7 +421,7 @@ namespace Doppelganger
 
 		std::stringstream s;
 		s << what << ": " << ec.message();
-		Logger::getInstance().log(s.str(), "ERROR");
+		logger.log(s.str(), "ERROR");
 	}
 
 	void Core::onAccept(

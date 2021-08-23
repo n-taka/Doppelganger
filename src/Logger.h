@@ -4,6 +4,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <nlohmann/json.hpp>
 #if defined(_WIN32) || defined(_WIN64)
 #include <filesystem>
 namespace fs = std::filesystem;
@@ -20,12 +21,9 @@ namespace Doppelganger
 		Logger(){};
 		~Logger(){};
 
-		static Logger &getInstance();
-
 		void initialize(
-			const fs::path &logDir_,
-			const std::unordered_map<std::string, bool> &logLevel_,
-			const std::unordered_map<std::string, bool> &logType_);
+			const std::string& UUID_,
+			const nlohmann::json &config);
 
 		void log(
 			const std::string &content,
@@ -39,6 +37,7 @@ namespace Doppelganger
 		std::unordered_set<std::string> suppressedAPICall;
 
 	private:
+		std::string UUID;
 		// set of strings -> boolean
 		// {"SYSTEM", "APICALL", "WSCALL", "ERROR", "MISC", "DEBUG"} -> boolean
 		std::unordered_map<std::string, bool> logLevel;

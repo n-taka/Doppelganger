@@ -196,7 +196,7 @@ namespace
 			{
 				if (reqPathVec.size() >= 3)
 				{
-					if (reqPathVec.at(2) == "resources")
+					if (reqPathVec.at(2) == "css" || reqPathVec.at(2) == "html" || reqPathVec.at(2) == "icon" || reqPathVec.at(2) == "js")
 					{
 						// resource
 						fs::path completePath(core->systemParams.resourceDir);
@@ -358,10 +358,10 @@ namespace
 						logContent << "(N/A)";
 					}
 
-					if (Logger::getInstance().suppressedAPICall.find(reqPathVec.at(2)) == Doppelganger::Logger::getInstance().suppressedAPICall.end())
-					{
-						Logger::getInstance().log(logContent.str(), "APICALL");
-					}
+					// if (Logger::getInstance().suppressedAPICall.find(reqPathVec.at(2)) == Doppelganger::Logger::getInstance().suppressedAPICall.end())
+					// {
+					// 	Logger::getInstance().log(logContent.str(), "APICALL");
+					// }
 
 					// add requested path to parameter
 					parameters["path"] = nlohmann::json::array();
@@ -440,7 +440,7 @@ namespace Doppelganger
 
 		std::stringstream s;
 		s << what << ": " << ec.message();
-		Logger::getInstance().log(s.str(), "ERROR");
+		core->logger.log(s.str(), "ERROR");
 	}
 
 	void HTTPSession::onRead(boost::system::error_code ec, std::size_t)
@@ -492,7 +492,7 @@ namespace Doppelganger
 		{
 			std::stringstream s;
 			s << "Request received: \"" << req.target().to_string() << "\"";
-			Logger::getInstance().log(s.str(), "SYSTEM");
+			core->logger.log(s.str(), "SYSTEM");
 		}
 
 		if (roomUUID == "favicon.ico")
@@ -508,18 +508,13 @@ namespace Doppelganger
 				roomUUID = "";
 				roomUUID += "room-";
 				roomUUID += boost::lexical_cast<std::string>(boost::uuids::random_generator()());
-				{
-					std::stringstream s;
-					s << "New room \"" << roomUUID << "\" is created.";
-					Logger::getInstance().log(s.str(), "SYSTEM");
-				}
 			}
 			else
 			{
 				// add prefix
 				roomUUID = "room-" + roomUUID;
 			}
-			const std::shared_ptr<Room> room = std::make_shared<Room>(roomUUID);
+			const std::shared_ptr<Room> room = std::make_shared<Room>(roomUUID, core->config);
 			core->rooms[roomUUID] = std::move(room);
 
 			// return 301 (moved permanently)

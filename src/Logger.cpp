@@ -9,28 +9,38 @@
 
 namespace Doppelganger
 {
-	Logger &Logger::getInstance()
-	{
-		static Logger obj;
-		return obj;
-	}
-
 	void Logger::initialize(
-		const fs::path &logDir_,
-		const std::unordered_map<std::string, bool> &logLevel_,
-		const std::unordered_map<std::string, bool> &logType_)
+		const std::string &UUID_,
+		const nlohmann::json &config)
 	{
-		logLevel = logLevel_;
-		logType = logType_;
+		UUID = UUID_;
+		logLevel.clear();
+		logType.clear();
+
+		const std::string logsDir = config.at("logsDir").get<std::string>();
+		std::stringstream tmp;
+		tmp << getCurrentTimestampAsString(false);
+		tmp << "-";
+		tmp << UUID;
+		logDir = logsDir;
+		logDir.append(tmp.str());
+		logDir.make_preferred();
+		fs::create_directories(logDir);
+
+		for (const auto &level : config.at("logLevel"))
+		{
+			logLevel[level.get<std::string>()] = true;
+		}
+		for (const auto &type : config.at("logType"))
+		{
+			logType[type.get<std::string>()] = true;
+		}
 
 		// prepare log directory and log.txt
 		if (logType["FILE"])
 		{
-			logDir = logDir_;
-			fs::create_directories(logDir);
-
 			logFile = logDir;
-			logFile /= "log.txt";
+			logFile.append("log.txt");
 		}
 	}
 
@@ -59,6 +69,12 @@ namespace Doppelganger
 
 			// content
 			logText << content;
+			logText << " ";
+
+			// which room?
+			logText << "(";
+			logText << UUID;
+			logText << ")";
 
 			// new line
 			logText << std::endl;

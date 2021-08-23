@@ -20,7 +20,9 @@
 
 namespace Doppelganger
 {
-	Room::Room(const std::string &UUID_) : UUID(UUID_)
+	Room::Room(const std::string &UUID_,
+			   const nlohmann::json &config)
+		: UUID(UUID_)
 	{
 		//////
 		// initialize server parameter
@@ -55,6 +57,35 @@ namespace Doppelganger
 		////
 		{
 			mutexMeshes = std::make_shared<std::mutex>();
+		}
+
+		////
+		// initialize logger for this room
+		////
+		{
+			logger.initialize(UUID, config);
+			{
+				std::stringstream s;
+				s << "New room \"" << UUID << "\" is created.";
+				logger.log(s.str(), "SYSTEM");
+			}
+		}
+
+		////
+		// initialize outputDir for this room
+		////
+		{
+			const std::string roomCreatedTimeStamp = Logger::getCurrentTimestampAsString(false);
+			std::stringstream tmp;
+			tmp << roomCreatedTimeStamp;
+			tmp << "-";
+			tmp << UUID;
+			const std::string timestampAndUUID = tmp.str();
+
+			outputDir = config.at("outputsDir").get<std::string>();
+			outputDir.append(timestampAndUUID);
+			outputDir.make_preferred();
+			fs::create_directories(outputDir);
 		}
 	}
 } // namespace Doppel

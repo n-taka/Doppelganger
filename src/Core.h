@@ -14,6 +14,7 @@ namespace fs = boost::filesystem;
 #include <boost/asio.hpp>
 #include <boost/any.hpp>
 #include <nlohmann/json.hpp>
+#include "Logger.h"
 
 namespace Doppelganger
 {
@@ -58,6 +59,7 @@ namespace Doppelganger
 #endif
 
 		nlohmann::json config;
+		Logger logger;
 		std::unordered_map<std::string, std::shared_ptr<Doppelganger::Room>> rooms;
 		std::unordered_map<std::string, boost::any> API;
 

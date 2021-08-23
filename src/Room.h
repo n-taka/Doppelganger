@@ -18,6 +18,7 @@ namespace fs = std::filesystem;
 #include "boost/filesystem.hpp"
 namespace fs = boost::filesystem;
 #endif
+#include "Logger.h"
 
 namespace Doppelganger
 {
@@ -26,11 +27,15 @@ namespace Doppelganger
 	class Room
 	{
 	public:
-		Room(const std::string &UUID_);
+		Room(
+			const std::string &UUID_,
+			const nlohmann::json &config);
 		~Room() {}
 
 	public:
 		std::string UUID;
+		Logger logger;
+		fs::path outputDir;
 
 		////
 		// parameters for server setup

@@ -33,7 +33,7 @@ namespace Doppelganger
 
 		std::stringstream s;
 		s << what << ": " << ec.message();
-		Logger::getInstance().log(s.str(), "ERROR");
+		// Logger::getInstance().log(s.str(), "ERROR");
 	}
 
 	void WebsocketSession::onAccept(boost::system::error_code ec)
