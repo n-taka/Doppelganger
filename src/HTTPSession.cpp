@@ -178,13 +178,13 @@ namespace
 		}
 
 		// resource
-		// http://example.com/<path>/<to>/<resource>
-		// room API
+		// http://example.com/<roomUUID>/<path>/<to>/<resource>
+		// API
 		// http://example.com/<roomUUID>/<APIName>
-		// mesh API
-		// http://example.com/<roomUUID>/<meshUUID>/<APIName>
 		fs::path reqPath(req.target().to_string());
 		reqPath.make_preferred();
+		// reqPathVec
+		// {"/", "<roomUUID>", "<APIName>", ... }
 		std::vector<std::string> reqPathVec;
 		for (const auto &p : reqPath)
 		{
@@ -264,66 +264,12 @@ namespace
 							return send(badRequest(std::move(req), "Illegal request"));
 						}
 					}
-					else if (reqPathVec.at(2).substr(0, 5) == "mesh-")
-					{
-						if (reqPathVec.size() >= 4)
-						{
-							// meshAPI
-							const std::shared_ptr<Doppelganger::triangleMesh> &mesh = room->meshes.at(reqPathVec.at(2));
-							const std::string &meshAPIName = reqPathVec.at(3);
-							try
-							{
-								const Doppelganger::Plugin::MeshAPI_t &meshAPIFunc = boost::any_cast<Doppelganger::Plugin::MeshAPI_t &>(core->plugin.at(meshAPIName)->func);
-								// todo
-								// meshAPIFunc(mesh, )
-							}
-							catch (...)
-							{
-								return send(badRequest(std::move(req), "Invalid mesh API is specified."));
-							}
-						}
-						else
-						{
-							// invalid (mesh is specified, but no API is specified)
-							return send(badRequest(std::move(req), "No mesh API is specified."));
-						}
-					}
 					else
 					{
-						// roomAPI
-						const std::string &roomAPIName = reqPathVec.at(2);
-						// todo
-					}
-				}
-				else
-				{
-					// return 301 (moved permanently)
-					std::string location = core->config.at("completeURL").get<std::string>();
-					location += "/";
-					location += room->UUID;
-					location += "/html/index.html";
-					send(movedPermanently(std::move(req), location));
-				}
-			}
-			else
-			{
-				// return 301 (moved permanently)
-				std::string location = core->config.at("completeURL").get<std::string>();
-				location += "/";
-				location += room->UUID;
-				location += "/html/index.html";
-				send(movedPermanently(std::move(req), location));
-			}
-		}
-
+						// API
+						try
+						{
 #if 0
-		{
-			const Room::RESTAPIMAP_t &RESTAPI = boost::any_cast<Room::RESTAPIMAP_t &>(room->publicAPI.at("REST"));
-
-			if (RESTAPI.find(req.method_string().to_string()) != RESTAPI.end())
-			{
-				if (RESTAPI.at(req.method_string().to_string()).find(reqPathVec.at(2)) != RESTAPI.at(req.method_string().to_string()).end())
-				{
 					int currentTaskId = -1;
 					{
 						std::lock_guard<std::mutex> lock(room->interfaceParams.mutexInterfaceParams);
@@ -335,81 +281,75 @@ namespace
 						json["isBusy"] = (room->interfaceParams.taskIdInProgress.size() > 0);
 						room->broadcastWS(json.dump());
 					}
+#endif
+							const std::string &APIName = reqPathVec.at(2);
+							const Doppelganger::Plugin::API_t &APIFunc = core->plugin.at(APIName)->func;
 
-					std::stringstream logContent;
-					logContent << req.method_string();
-					logContent << " ";
-					logContent << req.target().to_string();
-					logContent << " ";
+							nlohmann::json parameters;
+							parameters = nlohmann::json::parse(req.body());
+							std::stringstream logContent;
+							logContent << req.method_string();
+							logContent << " ";
+							logContent << req.target().to_string();
+							logContent << " ";
+							logContent << "(";
+							logContent << parameters.at("sessionUUID");
+							logContent << ")";
 
-					nlohmann::json parameters;
-					try
-					{
-						// if there is some parameter, we parse them.
-						parameters = nlohmann::json::parse(req.body());
-						logContent << "(#";
-						logContent << parameters.at("sessionId");
-						logContent << ")";
-					}
-					catch (...)
-					{
-						// on the other hand, if there are no parameters (e.g. GET request)
-						// we explicitly use empty parameter
-						parameters = nlohmann::json::object();
-						logContent << "(N/A)";
-					}
+							nlohmann::json response = nlohmann::json::object();
 
-					// if (Logger::getInstance().suppressedAPICall.find(reqPathVec.at(2)) == Doppelganger::Logger::getInstance().suppressedAPICall.end())
-					// {
-					// 	Logger::getInstance().log(logContent.str(), "APICALL");
-					// }
+							APIFunc(room, parameters, response);
+							room->logger.log(logContent.str(), "APICALL");
 
-					// add requested path to parameter
-					parameters["path"] = nlohmann::json::array();
-					for (int pi = 1; pi < reqPathVec.size(); ++pi)
-					{
-						parameters.at("path").push_back(reqPathVec.at(pi));
-					}
+							const std::string responseStr = response.dump();
+							boost::beast::http::string_body::value_type payloadBody = responseStr;
+							boost::beast::http::response<boost::beast::http::string_body> res{
+								std::piecewise_construct,
+								std::make_tuple(std::move(payloadBody)),
+								std::make_tuple(boost::beast::http::status::ok, req.version())};
+							res.set(boost::beast::http::field::server, BOOST_BEAST_VERSION_STRING);
+							res.set(boost::beast::http::field::content_type, "application/json");
+							res.content_length(responseStr.size());
+							res.keep_alive(req.keep_alive());
+							return send(std::move(res));
+#if 0
+							{
+								std::lock_guard<std::mutex> lock(room->interfaceParams.mutexInterfaceParams);
+								room->interfaceParams.taskIdInProgress.erase(currentTaskId);
 
-					nlohmann::json response = nlohmann::json::object();
-					RESTAPI.at(req.method_string().to_string()).at(reqPathVec.at(2))(room, parameters, response);
-					{
-						std::lock_guard<std::mutex> lock(room->interfaceParams.mutexInterfaceParams);
-						room->interfaceParams.taskIdInProgress.erase(currentTaskId);
-
-						nlohmann::json json;
-						json["task"] = "syncLoadingState";
-						json["isBusy"] = (room->interfaceParams.taskIdInProgress.size() > 0);
-						room->broadcastWS(json.dump());
-					}
-
-					{
-						std::string responseStr = response.dump();
-						boost::beast::http::string_body::value_type payloadBody = responseStr;
-						boost::beast::http::response<boost::beast::http::string_body> res{
-							std::piecewise_construct,
-							std::make_tuple(std::move(payloadBody)),
-							std::make_tuple(boost::beast::http::status::ok, req.version())};
-						res.set(boost::beast::http::field::server, BOOST_BEAST_VERSION_STRING);
-						res.set(boost::beast::http::field::content_type, "application/json");
-						res.content_length(responseStr.size());
-						res.keep_alive(req.keep_alive());
-						return send(std::move(res));
+								nlohmann::json json;
+								json["task"] = "syncLoadingState";
+								json["isBusy"] = (room->interfaceParams.taskIdInProgress.size() > 0);
+								room->broadcastWS(json.dump());
+							}
+#endif
+						}
+						catch (...)
+						{
+							return send(badRequest(std::move(req), "Invalid API call."));
+						}
 					}
 				}
 				else
 				{
-					return send(not_found(req.target()));
+					// return 301 (moved permanently)
+					std::string location = core->config.at("completeURL").get<std::string>();
+					location += "/";
+					location += room->UUID;
+					location += "/html/index.html";
+					return send(movedPermanently(std::move(req), location));
 				}
 			}
 			else
 			{
-				return send(not_found(req.target()));
+				// return 301 (moved permanently)
+				std::string location = core->config.at("completeURL").get<std::string>();
+				location += "/";
+				location += room->UUID;
+				location += "/html/index.html";
+				return send(movedPermanently(std::move(req), location));
 			}
 		}
-#else
-		return send(notFound(std::move(req), req.target()));
-#endif
 	}
 }
 

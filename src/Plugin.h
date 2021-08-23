@@ -2,7 +2,6 @@
 #define PLUGIN_H
 
 #include <memory>
-#include <boost/any.hpp>
 #include <nlohmann/json.hpp>
 
 // #if defined(_WIN32) || defined(_WIN64)
@@ -25,23 +24,20 @@ namespace Doppelganger
 		~Plugin() {}
 
 		////
-		// typedef for Room API
-		typedef std::function<void(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &, nlohmann::json &)> RoomAPI_t;
-#if defined(_WIN32) || defined(_WIN64)
-		typedef void(__stdcall *RoomAPIPtr_t)(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &, nlohmann::json &);
-#else
-		typedef void (*RoomAPIPtr_t)(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &, nlohmann::json &);
-#endif
-		// typedef for Mesh API
-		typedef std::function<void(const std::shared_ptr<Doppelganger::triangleMesh> &, const nlohmann::json &, nlohmann::json &)> MeshAPI_t;
-#if defined(_WIN32) || defined(_WIN64)
-		typedef void(__stdcall *MeshAPIPtr_t)(const std::shared_ptr<Doppelganger::triangleMesh> &, const nlohmann::json &, nlohmann::json &);
-#else
-		typedef void (*MeshAPIPtr_t)(const std::shared_ptr<Doppelganger::triangleMesh> &, const nlohmann::json &, nlohmann::json &);
-#endif
+		// typedef for API
+		//   all API have this signature, and other parameters (e.g. meshUUID) are supplied within the parameter json.
+		typedef std::function<void(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &, nlohmann::json &)> API_t;
+		
+		API_t func;
 
-	public:
-		boost::any func;
+	private:
+		////
+		// typedef for loading API from dll/lib
+#if defined(_WIN32) || defined(_WIN64)
+		typedef void(__stdcall *APIPtr_t)(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &, nlohmann::json &);
+#else
+		typedef void (*APIPtr_t)(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &, nlohmann::json &);
+#endif
 	};
 } // namespace
 
