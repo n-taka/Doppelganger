@@ -2,6 +2,7 @@
 #define ROOM_CPP
 
 #include "Room.h"
+#include "Core.h"
 
 // #include "util/loadTexture.h"
 // #include "util/projectMeshAttributes.h"
@@ -15,8 +16,8 @@
 namespace Doppelganger
 {
 	Room::Room(const std::string &UUID_,
-			   const nlohmann::json &config)
-		: UUID(UUID_)
+			   const std::shared_ptr<Core> &core_)
+		: UUID(UUID_), core(core_)
 	{
 		//////
 		// initialize server parameter
@@ -57,7 +58,7 @@ namespace Doppelganger
 		// initialize logger for this room
 		////
 		{
-			logger.initialize(UUID, config);
+			logger.initialize(UUID, core->config);
 			{
 				std::stringstream s;
 				s << "New room \"" << UUID << "\" is created.";
@@ -76,7 +77,7 @@ namespace Doppelganger
 			tmp << UUID;
 			const std::string timestampAndUUID = tmp.str();
 
-			outputDir = config.at("outputsDir").get<std::string>();
+			outputDir = core->config.at("outputsDir").get<std::string>();
 			outputDir.append(timestampAndUUID);
 			outputDir.make_preferred();
 			fs::create_directories(outputDir);

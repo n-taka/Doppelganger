@@ -80,89 +80,9 @@ namespace Doppelganger
 		{
 			// todo 2021.08.24
 		}
-		////
-		// browser
-		if (!config.contains("browser"))
-		{
-			config["browser"] = nlohmann::json::object();
-		}
-		if (!config.at("browser").contains("path") || config.at("browser").at("path").get<std::string>().size() == 0)
-		{
-			if (!config.at("browser").contains("openAs") || config.at("browser").at("openAs").get<std::string>().size() == 0)
-			{
-				config.at("browser")["openAs"] = "app";
-			}
 
-			if (!config.at("browser").contains("type") || config.at("browser").at("type").get<std::string>().size() == 0)
-			{
-				config.at("browser")["type"] = "chrome";
-			}
-			if (config.at("browser").at("type").get<std::string>() == "chrome")
-			{
-#if defined(_WIN32) || defined(_WIN64)
-				std::vector<fs::path> chromePaths({fs::path("C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"),
-												   fs::path("C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe")});
-#elif defined(__APPLE__)
-				std::vector<fs::path> chromePaths({fs::path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")});
-#endif
-				for (auto &p : chromePaths)
-				{
-					p.make_preferred();
-					if (fs::exists(p))
-					{
-						config.at("browser")["path"] = p.string();
-						break;
-					}
-				}
-			}
-			else if (config.at("browser").at("type").get<std::string>() == "edge")
-			{
-				// only for windows
-				fs::path edgePath("C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe");
-				edgePath.make_preferred();
-				config.at("browser")["path"] = edgePath.string();
-				;
-			}
-			else if (config.at("browser").at("type").get<std::string>() == "safari")
-			{
-				// todo
-				config.at("browser")["path"] = "";
+		// browserInfo
 
-				if (config.at("browser").at("openAs").get<std::string>() == "app")
-				{
-					// firefox doesn't support app mode
-					config.at("browser")["openAs"] = "window";
-				}
-			}
-			else if (config.at("browser").at("type").get<std::string>() == "firefox")
-			{
-#if defined(_WIN32) || defined(_WIN64)
-				std::vector<fs::path> firefoxPaths({fs::path("C:\\Program Files\\Mozilla Firefox\\firefox.exe"),
-													fs::path("C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe")});
-#elif defined(__APPLE__)
-				std::vector<fs::path> firefoxPaths({fs::path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")});
-#endif
-				for (auto &p : firefoxPaths)
-				{
-					p.make_preferred();
-					if (fs::exists(p))
-					{
-						config.at("browser")["path"] = p.string();
-						break;
-					}
-				}
-
-				if (config.at("browser").at("openAs").get<std::string>() == "app")
-				{
-					// firefox doesn't support app mode
-					config.at("browser")["openAs"] = "window";
-				}
-			}
-		}
-		if (!config.at("browser").contains("openOnBoot"))
-		{
-			config.at("browser")["openOnBoot"] = true;
-		}
 		////
 		// FreeCAD
 		if (!config.contains("FreeCADPath") || config.at("FreeCADPath").get<std::string>().size() == 0)

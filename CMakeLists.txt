@@ -105,10 +105,11 @@ if(APPLE)
     set(MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME})
     set(MACOSX_BUNDLE_SHORT_VERSION_STRING ${Version})
     set(MACOSX_BUNDLE_BUNDLE_VERSION ${Version})
-    set(MACOSX_BUNDLE_COPYRIGHT "Copyright 2020--2021.")
+    # set(MACOSX_BUNDLE_COPYRIGHT "Copyright 2020--2021.")
 endif()
 ###############################
 ##### app bundle settings #####
 ###############################
 
 add_subdirectory(src)
+add_subdirectory(plugin)

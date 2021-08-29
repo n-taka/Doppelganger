@@ -22,6 +22,7 @@ namespace fs = boost::filesystem;
 
 namespace Doppelganger
 {
+	class Core;
 	class WebsocketSession;
 
 	class Room
@@ -29,13 +30,14 @@ namespace Doppelganger
 	public:
 		Room(
 			const std::string &UUID_,
-			const nlohmann::json &config);
+			const std::shared_ptr<Core> &core_);
 		~Room() {}
 
 	public:
 		std::string UUID;
 		Logger logger;
 		fs::path outputDir;
+		const std::shared_ptr<Core> core;
 
 		////
 		// parameters for server setup

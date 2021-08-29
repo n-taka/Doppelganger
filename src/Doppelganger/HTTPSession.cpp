@@ -455,7 +455,7 @@ namespace Doppelganger
 				// add prefix
 				roomUUID = "room-" + roomUUID;
 			}
-			const std::shared_ptr<Room> room = std::make_shared<Room>(roomUUID, core->config);
+			const std::shared_ptr<Room> room = std::make_shared<Room>(roomUUID, core);
 			core->rooms[roomUUID] = std::move(room);
 
 			// return 301 (moved permanently)

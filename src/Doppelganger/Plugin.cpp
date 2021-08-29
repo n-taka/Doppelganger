@@ -92,11 +92,11 @@ namespace Doppelganger
 		std::ifstream ifs(modulePath);
 		moduleJS = std::string(std::istreambuf_iterator<char>(ifs), std::istreambuf_iterator<char>());
 
-		API_t infoFunc;
-		loadDll(dllPath, "info", infoFunc);
+		API_t metadataFunc;
+		loadDll(dllPath, "metadata", metadataFunc);
 		nlohmann::json parameters, response;
 		// dummy parameters...
-		infoFunc(nullptr, parameters, response);
+		metadataFunc(nullptr, parameters, response);
 		author = response.at("author").get<std::string>();
 		version = response.at("version").get<std::string>();
 	}
