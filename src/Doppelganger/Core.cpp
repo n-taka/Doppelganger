@@ -128,11 +128,6 @@ namespace Doppelganger
 			FreeCADPath.make_preferred();
 			config["FreeCADPath"] = FreeCADPath.string();
 		}
-#if 0
-		if (!config.contains("pluginRepositories") || config.at("pluginRepositories").size() == 0)
-		{
-		}
-#endif
 	}
 
 	void Core::setup()
@@ -254,54 +249,6 @@ namespace Doppelganger
 			s << "Listening for requests at : " << config.at("completeURL").get<std::string>();
 			logger.log(s.str(), "SYSTEM");
 		}
-
-#if 0
-		// open browser
-		{
-			if (config.at("browser").contains("openOnBoot") && config.at("browser").at("openOnBoot").get<bool>())
-			{
-				// todo here
-
-				// the code below is redundant (see GET serverInfo)
-				// installation check (Chrome)
-				// 				std::stringstream cmd;
-				// #if defined(_WIN32) || defined(_WIN64)
-				// 				// we need to use "start "" blah blah..." to run in background
-				// 				cmd << "start \"\" ";
-				// 				if (pantry->systemParams.ChromeInstalled)
-				// 				{
-				// 					cmd << pantry->systemParams.ChromePath;
-				// 					// cmd << " ";
-				// 					// cmd << "--incognito";
-				// 					cmd << " ";
-				// 					cmd << "--app=";
-				// 				}
-				// 				cmd << pantry->serverParams.completeURL;
-				// #elif defined(__APPLE__)
-				// 				if (pantry->systemParams.ChromeInstalled)
-				// 				{
-				// 					cmd << pantry->systemParams.ChromePath;
-				// 					// cmd << " ";
-				// 					// cmd << "--incognito";
-				// 					// cmd << " ";
-				// 					// cmd << "--user-data-dir=";
-				// 					// cmd << pantry->logParams.logDir.string();
-				// 					// cmd << "/UserData";
-				// 					cmd << " ";
-				// 					cmd << "--app=";
-				// 				}
-				// 				else
-				// 				{
-				// 					cmd << "open ";
-				// 				}
-				// 				cmd << pantry->serverParams.completeURL;
-				// 				cmd << " &";
-				// #endif
-				// 				std::cout << cmd.str() << std::endl;
-				// 				system(cmd.str().c_str());
-			}
-		}
-#endif
 	}
 
 	void Core::fail(

@@ -4,15 +4,6 @@
 #include "Room.h"
 #include "Core.h"
 
-// #include "util/loadTexture.h"
-// #include "util/projectMeshAttributes.h"
-// #include "util/readWriteMeshFromToFile.h"
-// #include "util/saveTexture.h"
-// #include "util/updateMeshesFromJson.h"
-// #include "util/writeBase64ToFile.h"
-// #include "util/writeMeshToJson.h"
-// #include "util/writeMeshToMemory.h"
-
 namespace Doppelganger
 {
 	Room::Room(const std::string &UUID_,
