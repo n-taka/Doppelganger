@@ -40,6 +40,10 @@ find_package(nlohmann_json CONFIG REQUIRED)
 # eigen3
 find_package(Eigen3 3.3 REQUIRED)
 
+###
+# minizip
+find_package(minizip CONFIG REQUIRED)
+
 # ###
 # # tbb
 # find_package(TBB CONFIG REQUIRED)
@@ -53,6 +57,7 @@ set(LINK_LIBS
     nlohmann_json
     nlohmann_json::nlohmann_json
     Eigen3::Eigen
+    minizip::minizip
     # TBB::tbb
     # embree
 )

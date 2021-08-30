@@ -14,17 +14,20 @@ namespace fs = boost::filesystem;
 
 namespace Doppelganger
 {
+	class Core;
 	class Room;
 
 	class Plugin
 	{
 	public:
-		Plugin(const fs::path &pluginsDir_);
+		Plugin(const std::shared_ptr<Core> &core_);
 		~Plugin() {}
 		fs::path pluginsDir;
+		const std::shared_ptr<Core> core;
 
-		void loadPlugin(const std::string &pluginUrl);
+		void loadPlugin(const std::string &name, const std::string &pluginUrl);
 		void loadPlugin(const fs::path &pluginDir);
+		static void unzip(const fs::path &zipPath, const fs::path &destPath);
 		// following variables are iniaitlized by calling loadPlugin
 		std::string name;
 		std::string author;

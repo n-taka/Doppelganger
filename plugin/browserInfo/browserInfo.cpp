@@ -4,6 +4,7 @@
 #include "../plugin.h"
 
 #include <string>
+#include <sstream>
 #if defined(_WIN32) || defined(_WIN64)
 #include <filesystem>
 namespace fs = std::filesystem;
@@ -15,7 +16,7 @@ namespace fs = boost::filesystem;
 extern "C" DLLEXPORT void metadata(const std::shared_ptr<Doppelganger::Room> &room, const nlohmann::json &parameters, nlohmann::json &response)
 {
 	response["author"] = "Kazutaka Nakashima";
-	response["version"] = 1.0;
+	response["version"] = "1.0.0";
 }
 
 extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room> &room, const nlohmann::json &parameters, nlohmann::json &response)
@@ -27,7 +28,7 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 	//    response["openOnBoot"] = true|false
 	//    response["browser"] = "chrome"|"firefox"|"edge"|"safari"|"default"|"N/A"
 	//    response["browserPath"] = path/to/executables
-	//    response["openAs"] = "app"|"window"|"tab"|"none"
+	//    response["openAs"] = "app"|"window"|"tab"|"default"
 	//    response["cmd"] = "command to be executed. use response["cmd"]+URL"
 
 	response = nlohmann::json::object();
@@ -36,8 +37,8 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 	response["openOnBoot"] = true;
 	response["browser"] = std::string("default");
 	response["browserPath"] = std::string("");
-	response["openAs"] = std::string("none");
-	response["cmd"] = std::string("start ");
+	response["openAs"] = std::string("default");
+	response["cmd"] = std::string("");
 
 	////
 	// by default, we open browser on boot.
@@ -120,6 +121,12 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 	else if (response.at("browser").get<std::string>() == "default")
 	{
 		// do nothing
+#if defined(_WIN32) || defined(_WIN64)
+		response.at("browserPath") = std::string("start \"\"");
+#elif defined(__APPLE__)
+		// todo update
+		response.at("browserPath") = std::string("open");
+#endif
 	}
 	else
 	{
@@ -136,13 +143,13 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 	// update response["openAs"]
 	if (response.at("browser").get<std::string>() == "chrome")
 	{
-		// chrome supports "app"|"window"|"tab"|"none"
-		//   precisely speaking, "tab" and "none" are the same
+		// chrome supports "app"|"window"|"tab"|"default"
+		//   precisely speaking, "tab" and "default" are the same
 	}
 	else if (response.at("browser").get<std::string>() == "firefox")
 	{
-		// chrome supports "window"|"tab"|"none"
-		//   precisely speaking, "tab" and "none" are the same
+		// chrome supports "window"|"tab"|"default"
+		//   precisely speaking, "tab" and "default" are the same
 		if (response.at("openAs").get<std::string>() == "firefox")
 		{
 			response.at("openAs") = std::string("window");
@@ -150,29 +157,52 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 	}
 	else if (response.at("browser").get<std::string>() == "edge")
 	{
-		// edge supports "app"|"window"|"tab"|"none"
-		//   precisely speaking, "tab" and "none" are the same
+		// edge supports "app"|"window"|"tab"|"default"
+		//   precisely speaking, "tab" and "default" are the same
 	}
 	else if (response.at("browser").get<std::string>() == "safari")
 	{
 		// todo check which mode is supported by safari ...
-		// safari supports "app"|"window"|"tab"|"none"
-		//   precisely speaking, "tab" and "none" are the same
+		// safari supports "app"|"window"|"tab"|"default"
+		//   precisely speaking, "tab" and "default" are the same
 	}
 	else if (response.at("browser").get<std::string>() == "default")
 	{
 		// for default browser (start/open command), we cannot know which type is supported ...
-		response.at("openAs") = std::string("none");
+		response.at("openAs") = std::string("default");
 	}
 	else
 	{
 		// for N/A (specified by path), we cannot know which which type is supported ...
-		response.at("openAs") = std::string("none");
+		response.at("openAs") = std::string("default");
 	}
 
 	////
 	// prepare cmd
-	// todo
+	// todo: check command line switches for each browser
+	std::stringstream cmd;
+	// browser path
+	cmd << response.at("browserPath").get<std::string>();
+	cmd << " ";
+	if (response.at("openAs").get<std::string>() == "app")
+	{
+		cmd << "--app=";
+	}
+	else if (response.at("openAs").get<std::string>() == "window")
+	{
+		cmd << "--new-window";
+		cmd << " ";
+	}
+	else if (response.at("openAs").get<std::string>() == "tab")
+	{
+		// no command line switch
+	}
+	else // default
+	{
+		// no command line switch
+	}
+
+	response.at("cmd") = cmd.str();
 }
 
 #endif

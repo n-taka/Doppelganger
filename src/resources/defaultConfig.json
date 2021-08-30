@@ -30,13 +30,11 @@
     "installedPlugin": [
         {
             "name": "pluginA",
-            "version": "1.0.0",
-            "mandatory": true
+            "version": "1.0.0"
         },
         {
             "name": "pluginB",
-            "version": "2.3.0",
-            "mandatory": false
+            "version": "2.3.0"
         }
     ],
     "FreeCADPath": ""

@@ -13,8 +13,8 @@ namespace Doppelganger
 	{
 		boost::asio::ip::tcp::socket socket;
 		boost::beast::flat_buffer buffer;
-		const std::shared_ptr<Core> core;
 		boost::beast::http::request<boost::beast::http::string_body> req;
+		const std::shared_ptr<Core> core;
 
 		void fail(boost::system::error_code ec, char const *what);
 		void onRead(boost::system::error_code ec, std::size_t);

@@ -1,0 +1,20 @@
+{
+    "browserInfo" :
+    {
+        "1.0.0" : {
+            "URL" : "https://examples0.com/1.0.0"
+        },
+        "1.0.1" : {
+            "URL" : "https://examples0.com/1.0.1"
+        }
+    },
+    "example" :
+    {
+        "1.0.0" : {
+            "URL" : "https://examples0.com/1.0.0"
+        },
+        "1.0.1" : {
+            "URL" : "https://examples0.com/1.0.1"
+        }
+    }
+}

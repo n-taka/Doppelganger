@@ -5,7 +5,7 @@
 #include "Logger.h"
 #include "Room.h"
 #include "HTTPSession.h"
-// #include "PluginLoader.h"
+#include "Plugin.h"
 
 #include <fstream>
 #include <nlohmann/json.hpp>
@@ -65,7 +65,7 @@ namespace Doppelganger
 		}
 		////
 		// plugin (we use one directory (multiple rooms share the directory))
-		//     it is more useful the previous setting is kept even if user reboot the system.
+		//     it is more useful the previous setting is kept even if user reboot Doppelganger.
 		//     last settings are stored in (cached) config.json
 		if (!config.contains("pluginDir") || config.at("pluginDir").get<std::string>().size() == 0)
 		{
@@ -78,9 +78,16 @@ namespace Doppelganger
 		// install plugin
 		if (config.contains("installedPlugin") && config.at("installedPlugin").size() != 0)
 		{
+			for (const auto &plugin : config.at("installedPlugin"))
+			{
+				const std::string name = plugin.at("name").get<std::string>();
+				const std::string version = plugin.at("version").get<std::string>();
+				std::cout << name << " (" << version << ")" << std::endl;
+			}
 			// todo 2021.08.24
 		}
 
+		////
 		// browserInfo
 
 		////
@@ -182,44 +189,6 @@ namespace Doppelganger
 		{
 			logger.initialize("Core", config);
 		}
-
-		// 	//////
-		// 	// initialize internal API TODO 2021.08.17
-		// 	//////
-		// 	{
-		// 		std::function<void(const fs::path &, Doppel::triangleMesh &)> loadTexture = Doppel::util::loadTexture;
-		// 		internalAPI["loadTexture"] = loadTexture;
-
-		// 		std::function<void(const Doppel::triangleMesh &, Doppel::triangleMesh &)> projectMeshAttributes = Doppel::util::projectMeshAttributes;
-		// 		internalAPI["projectMeshAttributes"] = projectMeshAttributes;
-
-		// 		std::function<void(const fs::path &, const std::string &, const bool &, const bool &, const double &, const fs::path &, const fs::path &, std::vector<Doppel::triangleMesh> &)> readMeshFromFile = Doppel::util::readMeshFromFile;
-		// 		internalAPI["readMeshFromFile"] = readMeshFromFile;
-
-		// 		std::function<void(const fs::path &, const std::string &, const bool &, std::vector<Doppel::triangleMesh> &)> readMeshFromPolygonFile = Doppel::util::readMeshFromPolygonFile;
-		// 		internalAPI["readMeshFromPolygonFile"] = readMeshFromPolygonFile;
-
-		// 		std::function<void(const fs::path &, const Doppel::triangleMesh &, bool)> writeMeshToFile = Doppel::util::writeMeshToFile;
-		// 		internalAPI["writeMeshToFile"] = writeMeshToFile;
-
-		// 		std::function<void(const int &, const Doppel::triangleMesh &, const fs::path &)> saveTexture = Doppel::util::saveTexture;
-		// 		internalAPI["saveTexture"] = saveTexture;
-
-		// 		std::function<void(const int &, const Doppel::triangleMesh &, std::vector<unsigned char> &)> saveTextureToMemory = Doppel::util::saveTextureToMemory;
-		// 		internalAPI["saveTextureToMemory"] = saveTextureToMemory;
-
-		// 		std::function<void(const std::vector<int> &, const nlohmann::json &, const nlohmann::json &, std::unordered_map<int, Doppel::triangleMesh> &)> updateMeshesFromJson = Doppel::util::updateMeshesFromJson;
-		// 		internalAPI["updateMeshesFromJson"] = updateMeshesFromJson;
-
-		// 		std::function<fs::path(const nlohmann::json &)> writeBase64ToFile = Doppel::util::writeBase64ToFile;
-		// 		internalAPI["writeBase64ToFile"] = writeBase64ToFile;
-
-		// 		std::function<void(const int &, const std::unordered_map<int, Doppel::triangleMesh> &, nlohmann::json &, const bool)> writeMeshToJson = Doppel::util::writeMeshToJson;
-		// 		internalAPI["writeMeshToJson"] = writeMeshToJson;
-
-		// 		std::function<void(const std::unordered_map<std::string, boost::any> &, const triangleMesh &, const std::string &, std::vector<unsigned char> &, std::vector<unsigned char> &, std::vector<unsigned char> &)> writeMeshToMemory = Doppel::util::writeMeshToMemory;
-		// 		internalAPI["writeMeshToMemory"] = writeMeshToMemory;
-		// 	}
 
 		// initialize acceptor
 		{
