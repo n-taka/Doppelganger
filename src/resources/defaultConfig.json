@@ -23,10 +23,6 @@
         "openOnBoot": true
     },
     "pluginDir": "",
-    "pluginRepositories": [
-        "https://examples0.com",
-        "https://examples1.com"
-    ],
     "installedPlugin": [
         {
             "name": "pluginA",

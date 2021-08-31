@@ -89,6 +89,7 @@ namespace Doppelganger
 
 		////
 		// browserInfo
+		// todo
 
 		////
 		// FreeCAD
@@ -174,10 +175,23 @@ namespace Doppelganger
 				fs::path defaultConfigPath(systemParams.resourceDir);
 				defaultConfigPath.append("defaultConfig.json");
 				fs::copy_file(defaultConfigPath, configPath);
-				std::cout << "no config file found. we use default config file" << std::endl;
+				std::cout << "No config file found. We use default config file." << std::endl;
 			}
 			// config
 			parseConfig(configPath, systemParams.workingDir, config);
+		}
+
+		// load pluginList.json
+		{
+			fs::path configPath(systemParams.workingDir);
+			configPath.append("pluginList.json");
+			if (!fs::exists(configPath))
+			{
+				fs::path defaultConfigPath(systemParams.resourceDir);
+				defaultConfigPath.append("defaultPluginList.json");
+				fs::copy_file(defaultConfigPath, configPath);
+				std::cout << "No pluginList file found. We use default pluginList file." << std::endl;
+			}
 		}
 
 		// initialize logger

@@ -3,6 +3,7 @@
 
 #include "Plugin.h"
 #include "Core.h"
+#include <string>
 #include <fstream>
 #include <streambuf>
 #if defined(_WIN32) || defined(_WIN64)
@@ -13,8 +14,16 @@
 #include <dlfcn.h>
 #endif
 #include "minizip/unzip.h"
-#include "boost/beast/core.hpp"
-#include "boost/beast/http.hpp"
+
+#include <boost/beast/core.hpp>
+#include <boost/beast/http.hpp>
+#include <boost/beast/core/tcp_stream.hpp>
+#include <boost/beast/version.hpp>
+#include <boost/asio/connect.hpp>
+#include <boost/asio/ip/tcp.hpp>
+#include <cstdlib>
+#include <iostream>
+#include <string>
 
 namespace
 {
@@ -75,42 +84,66 @@ namespace Doppelganger
 		// https://www.boost.org/doc/libs/1_77_0/libs/beast/example/http/client/sync/http_client_sync.cpp
 		try
 		{
-			std::string host("");
-			// 		auto const host = argv[1];
-			// 		auto const port = argv[2];
-			// 		auto const target = argv[3];
-			// 		int version = argc == 5 && !std::strcmp("1.0", argv[4]) ? 10 : 11;
+			std::string url = std::move(pluginUrl);
 
-			// 		net::io_context ioc;
-			// 		tcp::resolver resolver(ioc);
-			// 		beast::tcp_stream stream(ioc);
+			std::string protocol;
+			int findPos = url.find("https://");
+			protocol = std::string((findPos == std::string::npos) ? "http://" : "https://");
+			url = url.substr(protocol.size());
 
-			// 		auto const results = resolver.resolve(host, port);
-			// 		stream.connect(results);
+			std::string host;
+			findPos = url.find("/");
+			host = url.substr(0, findPos);
+			url = url.substr(host.size());
 
-			// 		http::request<http::string_body> req{http::verb::get, target, version};
-			// 		req.set(http::field::host, host);
-			// 		req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+			std::string port;
+			findPos = host.find(":");
+			if (findPos == std::string::npos)
+			{
+				port = std::string((protocol == "http://") ? "80" : "443");
+			}
+			else
+			{
+				port = host.substr(findPos + 1);
+				host = host.substr(0, findPos);
+			}
 
-			// 		http::write(stream, req);
+			std::string target = std::move(url);
 
-			// 		beast::flat_buffer buffer;
-			// 		http::response<http::dynamic_body> res;
-			// 		http::read(stream, buffer, res);
+			const int version = 11;
 
-			// 		// Write the message to standard out
-			// 		std::cout << res << std::endl;
+			boost::asio::io_context ioc;
+			boost::asio::ip::tcp::resolver resolver(ioc);
+			boost::beast::tcp_stream stream(ioc);
 
-			// 		beast::error_code ec;
-			// 		stream.socket().shutdown(tcp::socket::shutdown_both, ec);
+			auto const results = resolver.resolve(host, port);
+			stream.connect(results);
 
-			// 		// not_connected happens sometimes
-			// 		// so don't bother reporting it.
-			// 		//
-			// 		if (ec && ec != beast::errc::not_connected)
-			// 		{
-			// 			throw beast::system_error{ec};
-			// 		}
+			boost::beast::http::request<boost::beast::http::string_body> req{boost::beast::http::verb::get, target, version};
+			req.set(boost::beast::http::field::host, host);
+			req.set(boost::beast::http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+
+			boost::beast::http::write(stream, req);
+
+			boost::beast::flat_buffer buffer;
+			boost::beast::http::response<boost::beast::http::dynamic_body> res;
+			boost::beast::http::read(stream, buffer, res);
+
+			// Write the message to standard out
+			std::cout << res << std::endl;
+
+			// todo: write to zip file (zipPath)
+
+			boost::beast::error_code ec;
+			stream.socket().shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
+
+			// not_connected happens sometimes
+			// so don't bother reporting it.
+			//
+			if (ec && ec != boost::beast::errc::not_connected)
+			{
+				throw boost::beast::system_error{ec};
+			}
 		}
 		catch (std::exception const &e)
 		{
@@ -124,6 +157,10 @@ namespace Doppelganger
 		pluginDir.append(name);
 		unzip(zipPath, pluginDir);
 		// load plugin from extracted directory
+		{
+		// debug...
+		exit(0);
+		}
 		loadPlugin(pluginDir);
 	}
 	void Plugin::loadPlugin(const fs::path &pluginDir)
