@@ -79,6 +79,8 @@ namespace Doppelganger
 		fs::path pluginDir(core->config.at("pluginDir").get<std::string>());
 		pluginDir.append(name);
 		Util::unzip(core, zipPath, pluginDir);
+		// erase temporary file
+		fs::remove_all(zipPath);
 
 		// load plugin from extracted directory
 		loadPlugin(pluginDir);
