@@ -108,6 +108,7 @@ namespace Doppelganger
 		author = response.at("author").get<std::string>();
 		version = response.at("version").get<std::string>();
 
+		// Plugin "<pluginName>" (<Version>, <Author>) is loaded.
 		{
 			std::stringstream ss;
 			ss << "Plugin \"";
