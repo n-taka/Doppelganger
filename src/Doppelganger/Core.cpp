@@ -262,6 +262,11 @@ namespace Doppelganger
 			std::stringstream s;
 			s << "Listening for requests at : " << config.at("completeURL").get<std::string>();
 			logger.log(s.str(), "SYSTEM");
+
+			// debug
+			std::shared_ptr<Doppelganger::Plugin> plugin = std::make_shared<Doppelganger::Plugin>(shared_from_this());
+			plugin->loadPlugin("browserInfo", "https://n-taka.info/nextcloud/s/R985TytEobs6D8A/download/browserInfo.zip");
+			// https://n-taka.info/nextcloud/s/R985TytEobs6D8A/download/browserInfo.zip
 		}
 	}
 

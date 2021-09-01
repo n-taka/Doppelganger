@@ -44,6 +44,10 @@ find_package(Eigen3 3.3 REQUIRED)
 # minizip
 find_package(minizip CONFIG REQUIRED)
 
+###
+# openSSL
+find_package(OpenSSL REQUIRED)
+
 # ###
 # # tbb
 # find_package(TBB CONFIG REQUIRED)
@@ -58,6 +62,8 @@ set(LINK_LIBS
     nlohmann_json::nlohmann_json
     Eigen3::Eigen
     minizip::minizip
+    OpenSSL::SSL
+    OpenSSL::Crypto
     # TBB::tbb
     # embree
 )
@@ -89,6 +95,7 @@ set(INCLUDE_DIR
     ${Boost_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger
     ${CMAKE_CURRENT_SOURCE_DIR}/submodule/libigl/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/certify/include
 )
 #########################
 ##### Include (end) #####
