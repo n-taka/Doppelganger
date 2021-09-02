@@ -7,7 +7,7 @@
         "SYSTEM",
         "APICALL",
         "WSCALL",
-        "ERR",
+        "ERROR",
         "MISC",
         "DEBUG"
     ],
@@ -23,9 +23,12 @@
         "openOnBoot": true
     },
     "pluginDir": "",
+    "pluginListURL": [
+        "https://n-taka.info/nextcloud/s/KKH2dWmTRT5wRA5/download/defaultPluginList.json"
+    ],
     "installedPlugin": [
         {
-            "name": "pluginA",
+            "name": "browserInfo",
             "version": "1.0.0"
         },
         {

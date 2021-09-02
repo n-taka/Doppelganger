@@ -6,8 +6,10 @@
 #include "Room.h"
 #include "HTTPSession.h"
 #include "Plugin.h"
+#include "Util.h"
 
 #include <fstream>
+#include <sstream>
 #include <nlohmann/json.hpp>
 
 namespace Doppelganger
@@ -23,8 +25,9 @@ namespace Doppelganger
 		nlohmann::json &config)
 	{
 		// parse json
-		std::ifstream ifs(pathConfig.string());
+		std::ifstream ifs(pathConfig);
 		config = nlohmann::json::parse(ifs);
+		ifs.close();
 
 		// set default values for missing configuration
 		////
@@ -74,23 +77,27 @@ namespace Doppelganger
 			fs::create_directories(pluginDir);
 			config["pluginDir"] = pluginDir.string();
 		}
-		////
-		// install plugin
-		if (config.contains("installedPlugin") && config.at("installedPlugin").size() != 0)
+		if (config.contains("pluginListURL"))
 		{
-			for (const auto &plugin : config.at("installedPlugin"))
+			nlohmann::json pluginListJson = nlohmann::json::object();
+			for (const auto &listUrl : config.at("pluginListURL"))
 			{
-				const std::string name = plugin.at("name").get<std::string>();
-				const std::string version = plugin.at("version").get<std::string>();
-				std::cout << name << " (" << version << ")" << std::endl;
+				fs::path listJsonPath(config.at("pluginDir").get<std::string>());
+				listJsonPath.make_preferred();
+				listJsonPath.append("tmp.json");
+				Util::download(shared_from_this(), listUrl.get<std::string>(), listJsonPath);
+				std::ifstream ifs(listJsonPath);
+				nlohmann::json listJson = nlohmann::json::parse(ifs);
+				ifs.close();
+				fs::remove_all(listJsonPath);
+				// the same code as range for
+				for (const auto &el : listJson.items())
+				{
+					pluginListJson[el.key()] = el.value();
+				}
 			}
-			// todo 2021.08.24
+			config["pluginList"] = pluginListJson;
 		}
-
-		////
-		// browserInfo
-		// todo
-
 		////
 		// FreeCAD
 		if (!config.contains("FreeCADPath") || config.at("FreeCADPath").get<std::string>().size() == 0)
@@ -181,22 +188,40 @@ namespace Doppelganger
 			parseConfig(configPath, systemParams.workingDir, config);
 		}
 
-		// load pluginList.json
-		{
-			fs::path configPath(systemParams.workingDir);
-			configPath.append("pluginList.json");
-			if (!fs::exists(configPath))
-			{
-				fs::path defaultConfigPath(systemParams.resourceDir);
-				defaultConfigPath.append("defaultPluginList.json");
-				fs::copy_file(defaultConfigPath, configPath);
-				std::cout << "No pluginList file found. We use default pluginList file." << std::endl;
-			}
-		}
-
 		// initialize logger
 		{
 			logger.initialize("Core", config);
+		}
+
+		// install plugin
+		if (config.contains("installedPlugin") && config.at("installedPlugin").size() != 0)
+		{
+			for (const auto &pluginToBeInstalled : config.at("installedPlugin"))
+			{
+				const std::string name = pluginToBeInstalled.at("name").get<std::string>();
+				const std::string version = pluginToBeInstalled.at("version").get<std::string>();
+				if (config.at("pluginList").contains(name))
+				{
+					if (config.at("pluginList").at(name).at("versions").contains(version))
+					{
+						const std::shared_ptr<Doppelganger::Plugin> plugin_ = std::make_shared<Doppelganger::Plugin>(shared_from_this());
+						plugin_->loadPlugin(name, config.at("pluginList").at(name).at("versions").at(version).get<std::string>());
+						// https://n-taka.info/nextcloud/s/R985TytEobs6D8A/download/browserInfo.zip
+						plugin[name] = plugin_;
+					}
+				}
+				else
+				{
+					std::stringstream ss;
+					ss << "Plugin \"";
+					ss << name;
+					ss << "\" (";
+					ss << version;
+					ss << ")";
+					ss << " is NOT found.";
+					logger.log(ss.str(), "ERROR");
+				}
+			}
 		}
 
 		// initialize acceptor
@@ -262,12 +287,9 @@ namespace Doppelganger
 			std::stringstream s;
 			s << "Listening for requests at : " << config.at("completeURL").get<std::string>();
 			logger.log(s.str(), "SYSTEM");
-
-			// debug
-			std::shared_ptr<Doppelganger::Plugin> plugin = std::make_shared<Doppelganger::Plugin>(shared_from_this());
-			plugin->loadPlugin("browserInfo", "https://n-taka.info/nextcloud/s/R985TytEobs6D8A/download/browserInfo.zip");
-			// https://n-taka.info/nextcloud/s/R985TytEobs6D8A/download/browserInfo.zip
 		}
+		// open browser (if needed)
+		// todo
 	}
 
 	void Core::fail(

@@ -1,20 +1,17 @@
 {
-    "browserInfo" :
-    {
-        "1.0.0" : {
-            "URL" : "https://examples0.com/1.0.0"
-        },
-        "1.0.1" : {
-            "URL" : "https://examples0.com/1.0.1"
+    "browserInfo": {
+        "description": "Automatically open browser on system boot.",
+        "optional": false,
+        "versions": {
+            "1.0.0": "https://n-taka.info/nextcloud/s/R985TytEobs6D8A/download/browserInfo.zip"
         }
     },
-    "example" :
-    {
-        "1.0.0" : {
-            "URL" : "https://examples0.com/1.0.0"
-        },
-        "1.0.1" : {
-            "URL" : "https://examples0.com/1.0.1"
+    "example": {
+        "description": "This is just an example.",
+        "optional": true,
+        "versions": {
+            "1.0.0": "https://examples0.com/1.0.0",
+            "1.0.1": "https://examples0.com/1.0.1"
         }
     }
 }
