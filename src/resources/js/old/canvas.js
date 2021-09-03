@@ -357,3 +357,21 @@ function syncCanvasParameters() {
         DoppelWS.sendMsg(msg);
     }
 }
+
+    // // event listener
+    // window.addEventListener('resize', function () {
+    //     // var aspect = canvas.width / canvas.height;
+    //     canvas.width = document.getElementById("WebGLDiv").offsetWidth;
+    //     canvas.height = document.getElementsByTagName("body")[0].offsetHeight;
+
+    //     canvas.camera.left = - canvas.width / 2;
+    //     canvas.camera.right = canvas.width / 2;
+    //     canvas.camera.top = canvas.height / 2;
+    //     canvas.camera.bottom = - canvas.height / 2;
+    //     // canvas.camera.aspect = canvas.width / canvas.height;
+    //     canvas.camera.updateProjectionMatrix();
+
+    //     canvas.renderer.setPixelRatio(window.devicePixelRatio);
+    //     canvas.renderer.setSize(canvas.width, canvas.height);
+    //     canvas.effectComposer.setSize(canvas.width, canvas.height);
+    // });

@@ -3,7 +3,7 @@
 // In addition, init() set proper handlers for buttons on navbar
 ////
 
-export var modal = {};
+export const modal = {};
 
 modal.generate = function () {
     var modalSet = document.getElementById('modalDiv');

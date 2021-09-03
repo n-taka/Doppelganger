@@ -34,14 +34,14 @@ body {
     left: 0px;
 }
 
-#taskState{
+.taskState{
     position: absolute;
     left: 0; top: 0;
     width: 100vw; height: 100vh;
     background: rgba(100, 100, 100, .8);
     z-index: 2147483647;
 }
-#taskState .taskStateText{
+.taskState .taskStateText{
     position: absolute;
     left: 0; top: 40vh;
     width: 100vw;

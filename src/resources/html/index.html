@@ -2,7 +2,7 @@
 <html style="height: 100%;">
 
 <head>
-    <title>Doppel - HTML5 GUI for geometry processing with C++ backend</title>
+    <title>Doppelganger - HTML5 GUI for geometry processing with C++ backend</title>
     <meta charset="utf-8" />
 
     <!--Import Google Icon Font-->
@@ -10,65 +10,24 @@
 
     <!-- Compiled and minified CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
-    <link type="text/css" rel="stylesheet" href="../css/Doppel.css" />
-    <link type="text/css" rel="stylesheet" href="../css/nouislider.css" />
+    <link type="text/css" rel="stylesheet" href="../css/Doppelganger.css" />
+    <!-- <link type="text/css" rel="stylesheet" href="../css/nouislider.css" /> -->
 </head>
 
 <body style="height: 100%;">
 
-    <div id="modalDiv">
-    </div>
-
-
-    <div style="height: 100%; width: 100%; display: flex; flex-direction: row;">
-        <div id="WebGLDiv" style="height: 100%; width: calc(100% - 450px); order: 0;">
-            <div id="WebGL-output" style="height: 100%; width: 100%;">
-            </div>
-            <div id="clippingSlider"></div>
-        </div>
-        <div id="SideNavDiv" style="height: 100%; width: 450px; order: 1; position: relative">
-            <!-- top nav bar-->
-            <nav class="nav teal lighten-2 z-depth-0" style="user-select: none;">
-                <div class="nav-wrapper">
-                    <ul class="right" id="topMenuUl">
-                        <!-- top menu -->
-                    </ul>
-                </div>
-            </nav>
-
-            <!-- bottom nav bar-->
-            <nav class="nav teal lighten-2 z-depth-0" style="position: absolute; bottom: 64px; user-select: none;">
-                <div class="nav-wrapper">
-                    <ul class="left" id="bottomSummaryLeftUl">
-                    </ul>
-                    <ul class="right" id="bottomSummaryRightUl">
-                    </ul>
-                </div>
-            </nav>
-
-            <nav class="nav teal lighten-2 z-depth-0" style="position: absolute; bottom: 0px; user-select: none;">
-                <div class="nav-wrapper">
-                    <ul class="left" id="bottomMenuUl">
-                    </ul>
-                </div>
-            </nav>
-
-            <!-- List of Imported mesh -->
-            <ul class="collection" id="meshCollection"
-                style="max-height: calc(100% - 192px); height: calc(100% - 192px); overflow-y: scroll; margin: 0%; border:0px;">
-                <!-- Mesh entry -->
-            </ul>
-        </div>
-    </div>
-
-    <div id="taskState">
-        <a class="taskStateText" style="pointer-events: none;"><i class="material-icons"
-                style="font-size: 128px;">timer</i></a>
-    </div>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-    <script src="../js/nouislider.min.js"></script>
-    <!-- <script src="../js/DoppelCore.js" type="module"></script> -->
+    <!-- <script src="../js/nouislider.min.js"></script> -->
+    <!-- Initialize UI by UI.init() -->
+    <script src="../js/UI.js" type="module"></script>
+    <!-- Initialize mouseKey by mouseKey.init() -->
+    <!-- <script src="../js/mouseKey.js" type="module"></script> -->
+    <!-- Initialize plugin by plugin.init() (todo) -->
+    <!-- <script src="../js/plugin.js" type="module"></script> -->
+    <!-- Initialize canvas by canvas.init() (todo) -->
+    <!-- <script src="../js/canvas.js" type="module"></script> -->
+    <!-- Initialize websocket by websocket.init() (todo) -->
+    <!-- <script src="../js/websocket.js" type="module"></script> -->
 </body>
 
 </html>
