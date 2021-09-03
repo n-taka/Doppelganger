@@ -16,17 +16,17 @@ UI.init = function () {
 
     // HTML elements
     {
+        // modal
         {
-            // modal
             UI.modalDiv = document.createElement('div');
             document.body.appendChild(UI.modalDiv);
         }
+        // canvas + sidebar
         {
-            // canvas + sidebar
             UI.rootDiv = document.createElement('div');
             UI.rootDiv.setAttribute('style', 'height: 100%; width: 100%; display: flex; flex-direction: row;');
+            // WebGL canvas
             {
-                // WebGL canvas
                 UI.webGLDiv = document.createElement('div');
                 UI.webGLDiv.setAttribute('style', 'height: 100%; width: calc(100% - 450px); order: 0;');
                 {
@@ -36,12 +36,12 @@ UI.init = function () {
                 }
                 UI.rootDiv.appendChild(UI.webGLDiv);
             }
+            // sidebar (sidenav)
             {
-                // sidebar (sidenav)
                 UI.sideNavDiv = document.createElement('div');
                 UI.sideNavDiv.setAttribute('style', 'height: 100%; width: 450px; order: 1; position: relative;');
+                // top navbar
                 {
-                    // top navbar
                     UI.topNavBar = document.createElement('nav');
                     UI.topNavBar.setAttribute('class', 'nav teal lighten-2 z-depth-0');
                     UI.topNavBar.setAttribute('style', 'user-select: none;');
@@ -58,8 +58,8 @@ UI.init = function () {
                     UI.sideNavDiv.appendChild(UI.topNavBar);
                 }
 
+                // summary navbar (bottom)
                 {
-                    // summary navbar (bottom)
                     UI.summaryNavBar = document.createElement('nav');
                     UI.summaryNavBar.setAttribute('class', 'nav teal lighten-2 z-depth-0');
                     UI.summaryNavBar.setAttribute('style', 'position: absolute; bottom: 64px; user-select: none;');
@@ -81,8 +81,8 @@ UI.init = function () {
                     UI.sideNavDiv.appendChild(UI.summaryNavBar);
                 }
 
+                // bottom navbar
                 {
-                    // bottom navbar
                     UI.bottomNavBar = document.createElement('nav');
                     UI.bottomNavBar.setAttribute('class', 'nav teal lighten-2 z-depth-0');
                     UI.bottomNavBar.setAttribute('style', 'position: absolute; bottom: 0px; user-select: none;');
@@ -99,8 +99,8 @@ UI.init = function () {
                     UI.sideNavDiv.appendChild(UI.bottomNavBar);
                 }
 
+                // list of imported mesh
                 {
-                    // list of imported mesh
                     UI.meshCollectionUl = document.createElement('ul');
                     UI.meshCollectionUl.setAttribute('class', 'collection');
                     UI.meshCollectionUl.setAttribute('style', 'max-height: calc(100% - 192px); height: calc(100% - 192px); overflow-y: scroll; margin: 0%; border:0px;');
@@ -110,8 +110,8 @@ UI.init = function () {
             }
             document.body.appendChild(UI.rootDiv);
         }
+        // loading icon
         {
-            // loading icon
             UI.loadingDiv = document.createElement('div');
             UI.loadingDiv.setAttribute('class', 'taskState');
             UI.loadingDiv.setAttribute('style', 'visibility: hidden;');
@@ -142,5 +142,6 @@ UI.init = function () {
     }
 };
 
+// call init() function
 UI.init();
 
