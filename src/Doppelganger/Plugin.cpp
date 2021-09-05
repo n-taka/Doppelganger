@@ -1,9 +1,10 @@
 #ifndef PLUGIN_CPP
 #define PLUGIN_CPP
 
-#include "Plugin.h"
-#include "Core.h"
-#include "Util.h"
+#include "Doppelganger/Plugin.h"
+#include "Doppelganger/Core.h"
+#include "Util/download.h"
+#include "Util/unzip.h"
 #include <string>
 #include <fstream>
 #include <streambuf>
@@ -67,26 +68,28 @@ namespace Doppelganger
 	{
 	}
 
-	void Plugin::loadPlugin(const std::string &name, const std::string &pluginUrl)
+	bool Plugin::loadPlugin(const std::string &name, const std::string &pluginUrl)
 	{
 		// path to downloaded zip file
 		fs::path zipPath(core->systemParams.workingDir);
 		zipPath.append("plugin");
 		zipPath.append("tmp.zip");
-		Util::download(core, pluginUrl, zipPath);
+		if (Util::download(core, pluginUrl, zipPath))
+		{
+			// path to extracted directory
+			fs::path pluginDir(core->config.at("plugin").at("dir").get<std::string>());
+			pluginDir.append(name);
+			Util::unzip(core, zipPath, pluginDir);
+			// erase temporary file
+			fs::remove_all(zipPath);
 
-		// path to extracted directory
-		fs::path pluginDir(core->config.at("pluginDir").get<std::string>());
-		pluginDir.append(name);
-		Util::unzip(core, zipPath, pluginDir);
-		// erase temporary file
-		fs::remove_all(zipPath);
-
-		// load plugin from extracted directory
-		loadPlugin(pluginDir);
+			// load plugin from extracted directory
+			return loadPlugin(pluginDir);
+		}
+		return false;
 	}
 
-	void Plugin::loadPlugin(const fs::path &pluginDir)
+	bool Plugin::loadPlugin(const fs::path &pluginDir)
 	{
 		name = pluginDir.stem().string();
 		std::string dllName(name);
@@ -98,10 +101,16 @@ namespace Doppelganger
 		// c++ functions
 		fs::path dllPath(pluginDir);
 		dllPath.append(dllName);
-		loadDll(dllPath, "pluginProcess", func);
+		if (!loadDll(dllPath, "pluginProcess", func))
+		{
+			return false;
+		}
 
 		API_t metadataFunc;
-		loadDll(dllPath, "metadata", metadataFunc);
+		if (!loadDll(dllPath, "metadata", metadataFunc))
+		{
+			return false;
+		}
 		nlohmann::json parameters, response;
 		// dummy parameters...
 		metadataFunc(nullptr, parameters, response);
@@ -132,6 +141,8 @@ namespace Doppelganger
 			std::ifstream ifs(modulePath);
 			moduleJS = std::string(std::istreambuf_iterator<char>(ifs), std::istreambuf_iterator<char>());
 		}
+
+		return true;
 	}
 } // namespace
 

@@ -14,7 +14,7 @@ namespace fs = boost::filesystem;
 #include <boost/asio.hpp>
 #include <boost/any.hpp>
 #include <nlohmann/json.hpp>
-#include "Logger.h"
+#include "Doppelganger/Logger.h"
 
 namespace Doppelganger
 {
@@ -42,7 +42,7 @@ namespace Doppelganger
 		};
 		systemParameters systemParams;
 
-		nlohmann::json config;
+		nlohmann::json configFileContent, config;
 		Logger logger;
 		std::unordered_map<std::string, std::shared_ptr<Doppelganger::Room>> rooms;
 		std::unordered_map<std::string, std::shared_ptr<Doppelganger::Plugin>> plugin;
@@ -52,11 +52,6 @@ namespace Doppelganger
 		boost::asio::io_context &ioc;
 		boost::asio::ip::tcp::acceptor acceptor;
 		boost::asio::ip::tcp::socket socket;
-
-		void parseConfig(
-			const fs::path &pathConfig,
-			const fs::path &workingDir,
-			nlohmann::json &config);
 
 		void fail(
 			boost::system::error_code ec,

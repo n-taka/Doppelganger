@@ -1,40 +1,43 @@
 {
-    "protocol": "http://",
-    "host": "127.0.0.1",
-    "port": 0,
-    "logsDir": "",
-    "logLevel": [
-        "SYSTEM",
-        "APICALL",
-        "WSCALL",
-        "ERROR",
-        "MISC",
-        "DEBUG"
-    ],
-    "logType": [
-        "STDOUT",
-        "FILE"
-    ],
-    "outputsDir": "",
+    "server": {
+        "protocol": "http://",
+        "host": "127.0.0.1",
+        "port": 0
+    },
+    "log": {
+        "dir": "",
+        "level": [
+            "SYSTEM",
+            "APICALL",
+            "WSCALL",
+            "ERROR",
+            "MISC",
+            "DEBUG"
+        ],
+        "type": [
+            "STDOUT",
+            "FILE"
+        ]
+    },
+    "plugin": {
+        "dir": "",
+        "listURL": [
+            "https://n-taka.info/nextcloud/s/KKH2dWmTRT5wRA5/download/defaultPluginList.json"
+        ],
+        "installed": [
+            {
+                "name": "pluginB",
+                "version": "2.3.0"
+            }
+        ]
+    },
+    "output": {
+        "dir": ""
+    },
     "browser": {
         "type": "chrome",
         "path": "",
         "openAs": "app",
         "openOnBoot": true
-    },
-    "pluginDir": "",
-    "pluginListURL": [
-        "https://n-taka.info/nextcloud/s/KKH2dWmTRT5wRA5/download/defaultPluginList.json"
-    ],
-    "installedPlugin": [
-        {
-            "name": "browserInfo",
-            "version": "1.0.0"
-        },
-        {
-            "name": "pluginB",
-            "version": "2.3.0"
-        }
-    ],
-    "FreeCADPath": ""
+    }
 }

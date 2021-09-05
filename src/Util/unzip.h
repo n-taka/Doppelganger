@@ -1,5 +1,5 @@
-#ifndef UTIL_H
-#define UTIL_H
+#ifndef UNZIP_H
+#define UNZIP_H
 
 #include <memory>
 #if defined(_WIN32) || defined(_WIN64)
@@ -13,10 +13,8 @@ namespace fs = boost::filesystem;
 namespace Doppelganger
 {
 	class Core;
-
 	namespace Util
 	{
-		void download(const std::shared_ptr<Core> &core, const std::string &targetUrl, const fs::path &destPath);
 		void unzip(const std::shared_ptr<Core> &core, const fs::path &zipPath, const fs::path &destPath);
 	};
 } // namespace

@@ -1,5 +1,5 @@
-#ifndef PLUGIN_H
-#define PLUGIN_H
+#ifndef PLUGINHEADER_H
+#define PLUGINHEADER_H
 
 #if defined(_WIN32) || defined(_WIN64)
 #define DLLEXPORT __declspec(dllexport)

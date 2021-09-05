@@ -1,10 +1,10 @@
 #ifndef WEBSOCKETSESSION_CPP
 #define WEBSOCKETSESSION_CPP
 
-#include "WebsocketSession.h"
+#include "Doppelganger/WebsocketSession.h"
 
-#include "Room.h"
-#include "Logger.h"
+#include "Doppelganger/Room.h"
+#include "Doppelganger/Logger.h"
 
 namespace Doppelganger
 {

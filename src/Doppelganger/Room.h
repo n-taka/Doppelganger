@@ -1,7 +1,7 @@
 #ifndef ROOM_H
 #define ROOM_H
 
-#include "triangleMesh.h"
+#include "Doppelganger/triangleMesh.h"
 
 #include <string>
 #include <memory>
@@ -18,7 +18,7 @@ namespace fs = std::filesystem;
 #include "boost/filesystem.hpp"
 namespace fs = boost::filesystem;
 #endif
-#include "Logger.h"
+#include "Doppelganger/Logger.h"
 
 namespace Doppelganger
 {

@@ -1,12 +1,12 @@
 #ifndef CORE_CPP
 #define CORE_CPP
 
-#include "Core.h"
-#include "Logger.h"
-#include "Room.h"
-#include "HTTPSession.h"
-#include "Plugin.h"
-#include "Util.h"
+#include "Doppelganger/Core.h"
+#include "Doppelganger/Logger.h"
+#include "Doppelganger/Room.h"
+#include "Doppelganger/HTTPSession.h"
+#include "Doppelganger/Plugin.h"
+#include "Util/download.h"
 
 #include <fstream>
 #include <sstream>
@@ -19,131 +19,10 @@ namespace Doppelganger
 	{
 	}
 
-	void Core::parseConfig(
-		const fs::path &pathConfig,
-		const fs::path &workingDir,
-		nlohmann::json &config)
-	{
-		// parse json
-		std::ifstream ifs(pathConfig);
-		config = nlohmann::json::parse(ifs);
-		ifs.close();
-
-		// set default values for missing configuration
-		////
-		// protocol
-		if (!config.contains("protocol") || config.at("protocol").get<std::string>().size() == 0)
-		{
-			config["protocol"] = "http://";
-		}
-		////
-		// host
-		if (!config.contains("host") || config.at("host").get<std::string>().size() == 0)
-		{
-			config["host"] = "127.0.0.1";
-		}
-		////
-		// port
-		if (!config.contains("port") || config.at("port").get<int>() < 1024)
-		{
-			config["port"] = 0;
-		}
-		////
-		// log (we use one directory per room)
-		if (!config.contains("logsDir") || config.at("logsDir").get<std::string>().size() == 0)
-		{
-			fs::path logsDir = workingDir;
-			logsDir.append("log");
-			fs::create_directories(logsDir);
-			config["logsDir"] = logsDir.string();
-		}
-		////
-		// output (we use one directory per room)
-		if (!config.contains("outputsDir") || config.at("outputsDir").get<std::string>().size() == 0)
-		{
-			fs::path outputsDir = workingDir;
-			outputsDir.append("output");
-			fs::create_directories(outputsDir);
-			config["outputsDir"] = outputsDir.string();
-		}
-		////
-		// plugin (we use one directory (multiple rooms share the directory))
-		//     it is more useful the previous setting is kept even if user reboot Doppelganger.
-		//     last settings are stored in (cached) config.json
-		if (!config.contains("pluginDir") || config.at("pluginDir").get<std::string>().size() == 0)
-		{
-			fs::path pluginDir = workingDir;
-			pluginDir.append("plugin");
-			fs::create_directories(pluginDir);
-			config["pluginDir"] = pluginDir.string();
-		}
-		if (config.contains("pluginListURL"))
-		{
-			nlohmann::json pluginListJson = nlohmann::json::object();
-			for (const auto &listUrl : config.at("pluginListURL"))
-			{
-				fs::path listJsonPath(config.at("pluginDir").get<std::string>());
-				listJsonPath.make_preferred();
-				listJsonPath.append("tmp.json");
-				Util::download(shared_from_this(), listUrl.get<std::string>(), listJsonPath);
-				std::ifstream ifs(listJsonPath);
-				nlohmann::json listJson = nlohmann::json::parse(ifs);
-				ifs.close();
-				fs::remove_all(listJsonPath);
-				// the same code as range for
-				for (const auto &el : listJson.items())
-				{
-					pluginListJson[el.key()] = el.value();
-				}
-			}
-			config["pluginList"] = pluginListJson;
-		}
-		////
-		// FreeCAD
-		if (!config.contains("FreeCADPath") || config.at("FreeCADPath").get<std::string>().size() == 0)
-		{
-#if defined(_WIN32) || defined(_WIN64)
-			std::vector<fs::path> ProgramFilesPaths(
-				{fs::path("C:\\Program Files"),
-				 fs::path("C:\\Program Files (x86)")});
-			const std::string FreeCAD("FreeCAD");
-			fs::path FreeCADPath("");
-			for (const auto &ProgramFiles : ProgramFilesPaths)
-			{
-				if (!FreeCADPath.empty())
-				{
-					break;
-				}
-				for (const auto &p : fs::directory_iterator(ProgramFiles))
-				{
-					if (!FreeCADPath.empty())
-					{
-						break;
-					}
-					const std::string &programName = p.path().filename().string();
-					if (FreeCAD == programName)
-					{
-						FreeCADPath = p;
-						FreeCADPath.append("bin");
-						FreeCADPath.append("FreeCADCmd.exe");
-					}
-				}
-			}
-#elif defined(__APPLE__)
-			// todo
-			fs::path FreeCADPath("/Applications/FreeCAD.app/Contents/Resources/bin/FreeCADCmd");
-#endif
-			FreeCADPath.make_preferred();
-			config["FreeCADPath"] = FreeCADPath.string();
-		}
-	}
-
 	void Core::setup()
 	{
-		//////
-		// initialize system parameters
-
-		// setup for resources
+		////
+		// setup for resourceDir/workingDir
 		{
 #if defined(_WIN32) || defined(_WIN64)
 			char buffer[MAX_PATH];
@@ -173,6 +52,7 @@ namespace Doppelganger
 #endif
 		}
 
+		////
 		// load config.json
 		{
 			fs::path configPath(systemParams.workingDir);
@@ -185,50 +65,164 @@ namespace Doppelganger
 				std::cout << "No config file found. We use default config file." << std::endl;
 			}
 			// config
-			parseConfig(configPath, systemParams.workingDir, config);
+			// parse config json
+			std::ifstream ifs(configPath);
+			configFileContent = nlohmann::json::parse(ifs);
+			ifs.close();
+			config = configFileContent;
 		}
 
-		// initialize logger
+		////
+		// log
+		if (config.contains("log"))
 		{
-			logger.initialize("Core", config);
-		}
-
-		// install plugin
-		if (config.contains("installedPlugin") && config.at("installedPlugin").size() != 0)
-		{
-			for (const auto &pluginToBeInstalled : config.at("installedPlugin"))
+			nlohmann::json &logJson = config.at("log");
+			if (!logJson.contains("dir") || logJson.at("dir").get<std::string>().size() == 0)
 			{
-				const std::string name = pluginToBeInstalled.at("name").get<std::string>();
-				const std::string version = pluginToBeInstalled.at("version").get<std::string>();
-				if (config.at("pluginList").contains(name))
+				fs::path logsDir = systemParams.workingDir;
+				logsDir.append("log");
+				fs::create_directories(logsDir);
+				logJson["dir"] = logsDir.string();
+			}
+			// initialize logger for Core
+			logger.initialize("Core", config.at("log"));
+		}
+
+		////
+		// output
+		if (config.contains("output"))
+		{
+			nlohmann::json &outputJson = config.at("output");
+			if (outputJson.contains("dir") || outputJson.at("dir").get<std::string>().size() == 0)
+			{
+				fs::path outputsDir = systemParams.workingDir;
+				outputsDir.append("output");
+				fs::create_directories(outputsDir);
+				outputJson["dir"] = outputsDir.string();
+			}
+		}
+
+		////
+		// plugin
+		if (config.contains("plugin"))
+		{
+			nlohmann::json &pluginJson = config.at("plugin");
+			// directory
+			if (!pluginJson.contains("dir") || pluginJson.at("dir").get<std::string>().size() == 0)
+			{
+				fs::path pluginDir = systemParams.workingDir;
+				pluginDir.append("plugin");
+				fs::create_directories(pluginDir);
+				pluginJson["dir"] = pluginDir.string();
+			}
+			// download and parse plugin list
+			if (pluginJson.contains("listURL"))
+			{
+				nlohmann::json pluginListJson = nlohmann::json::object();
+				for (const auto &listUrl : pluginJson.at("listURL"))
 				{
-					if (config.at("pluginList").at(name).at("versions").contains(version))
+					fs::path listJsonPath(pluginJson.at("dir").get<std::string>());
+					listJsonPath.make_preferred();
+					listJsonPath.append("tmp.json");
+					Util::download(shared_from_this(), listUrl.get<std::string>(), listJsonPath);
+					std::ifstream ifs(listJsonPath);
+					nlohmann::json listJson = nlohmann::json::parse(ifs);
+					ifs.close();
+					fs::remove_all(listJsonPath);
+					for (const auto &el : listJson.items())
 					{
-						const std::shared_ptr<Doppelganger::Plugin> plugin_ = std::make_shared<Doppelganger::Plugin>(shared_from_this());
-						plugin_->loadPlugin(name, config.at("pluginList").at(name).at("versions").at(version).get<std::string>());
-						// https://n-taka.info/nextcloud/s/R985TytEobs6D8A/download/browserInfo.zip
-						plugin[name] = plugin_;
+						pluginListJson[el.key()] = el.value();
 					}
 				}
-				else
+				pluginJson["list"] = pluginListJson;
+			}
+
+			// install plugins
+			if (pluginJson.contains("installed"))
+			{
+				for (const auto &pluginToBeInstalled : pluginJson.at("installed"))
 				{
-					std::stringstream ss;
-					ss << "Plugin \"";
-					ss << name;
-					ss << "\" (";
-					ss << version;
-					ss << ")";
-					ss << " is NOT found.";
-					logger.log(ss.str(), "ERROR");
+					const std::string &name = pluginToBeInstalled.at("name").get<std::string>();
+					const std::string &version = pluginToBeInstalled.at("version").get<std::string>();
+					if (pluginJson.at("list").contains(name))
+					{
+						if (pluginJson.at("list").at(name).at("versions").contains(version))
+						{
+							const std::shared_ptr<Doppelganger::Plugin> plugin_ = std::make_shared<Doppelganger::Plugin>(shared_from_this());
+							const bool loadSuccess = plugin_->loadPlugin(name, pluginJson.at("list").at(name).at("versions").at(version).get<std::string>());
+							if (loadSuccess)
+							{
+								plugin[name] = plugin_;
+								pluginJson.at("list").at(name)["installed"] = true;
+							}
+							else
+							{
+								std::stringstream ss;
+								ss << "Plugin \"";
+								ss << name;
+								ss << "\" (";
+								ss << version;
+								ss << ")";
+								ss << " is NOT loaded correctly.";
+								logger.log(ss.str(), "ERROR");
+							}
+						}
+					}
+					else
+					{
+						std::stringstream ss;
+						ss << "Plugin \"";
+						ss << name;
+						ss << "\" (";
+						ss << version;
+						ss << ")";
+						ss << " is NOT found.";
+						logger.log(ss.str(), "ERROR");
+					}
+				}
+			}
+
+			// install non-optional plugins
+			for (const auto &pluginToBeInstalled : pluginJson.at("list").items())
+			{
+				const std::string name = pluginToBeInstalled.key();
+				nlohmann::json &pluginInfo = pluginToBeInstalled.value();
+				const bool &optional = pluginInfo.at("optional").get<bool>();
+				if (!optional)
+				{
+					const bool installed = (pluginInfo.contains("installed") && pluginInfo.at("installed").get<bool>());
+					if (!installed)
+					{
+						const std::shared_ptr<Doppelganger::Plugin> plugin_ = std::make_shared<Doppelganger::Plugin>(shared_from_this());
+						const bool loadSuccess = plugin_->loadPlugin(name, pluginJson.at("list").at(name).at("versions").at("latest").get<std::string>());
+						if (loadSuccess)
+						{
+							plugin[name] = plugin_;
+							pluginJson.at("list").at(name)["installed"] = true;
+						}
+						else
+						{
+							std::stringstream ss;
+							ss << "Plugin \"";
+							ss << name;
+							ss << "\" (";
+							ss << "latest";
+							ss << ")";
+							ss << " is NOT loaded correctly.";
+							logger.log(ss.str(), "ERROR");
+						}
+					}
 				}
 			}
 		}
 
 		// initialize acceptor
+		if (config.contains("server"))
 		{
-			boost::system::error_code ec;
+			nlohmann::json &serverJson = config.at("server");
 
-			boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::make_address(config.at("host").get<std::string>()), config.at("port").get<int>());
+			boost::system::error_code ec;
+			boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::make_address(serverJson.at("host").get<std::string>()), serverJson.at("port").get<int>());
 
 			// Open the acceptor
 			acceptor.open(endpoint.protocol(), ec);
@@ -263,13 +257,13 @@ namespace Doppelganger
 				return;
 			}
 
-			config["port"] = acceptor.local_endpoint().port();
+			serverJson["port"] = acceptor.local_endpoint().port();
 			std::stringstream completeURL;
-			completeURL << config.at("protocol").get<std::string>();
-			completeURL << config.at("host").get<std::string>();
+			completeURL << serverJson.at("protocol").get<std::string>();
+			completeURL << serverJson.at("host").get<std::string>();
 			completeURL << ":";
-			completeURL << config.at("port").get<int>();
-			config["completeURL"] = completeURL.str();
+			completeURL << serverJson.at("port").get<int>();
+			serverJson["completeURL"] = completeURL.str();
 		}
 	}
 
@@ -285,11 +279,192 @@ namespace Doppelganger
 				});
 
 			std::stringstream s;
-			s << "Listening for requests at : " << config.at("completeURL").get<std::string>();
+			s << "Listening for requests at : " << config.at("server").at("completeURL").get<std::string>();
 			logger.log(s.str(), "SYSTEM");
 		}
-		// open browser (if needed)
-		// todo
+		////
+		// open browser
+		// "openOnBoot" = true|false
+		// "browser" = "chrome"|"firefox"|"edge"|"safari"|"default"|"N/A"
+		// "browserPath" = path/to/executables
+		// "openAs" = "app"|"window"|"tab"|"default"
+		// "cmd" = "command to be executed. use response["cmd"]+URL"
+		if (config.contains("browser"))
+		{
+			nlohmann::json &browserJson = config.at("browser");
+			// by default, we open browser
+			if (!browserJson.contains("openOnBoot") || browserJson.at("openOnBoot").get<bool>())
+			{
+				browserJson["openOnBoot"] = true;
+				// by default, we use default browser (open/start command)
+				std::string browserType = std::string("default");
+				if (browserJson.contains("type"))
+				{
+					const std::string type = browserJson.at("type").get<std::string>();
+					if (type == "chrome" || type == "firefox" || type == "edge" || type == "safari")
+					{
+						browserType = type;
+					}
+				}
+				browserJson["type"] = browserType;
+
+				// path
+				if (browserJson.contains("path") && browserJson.at("path").get<std::string>().size() > 0)
+				{
+					// if browser is specified by the path, we ignore "type"
+					browserJson.at("type") = std::string("N/A");
+					// possibly, we need to verify the path ...
+				}
+				// update browserJson["path"]
+				if (browserJson.at("type").get<std::string>() == "chrome")
+				{
+#if defined(_WIN32) || defined(_WIN64)
+					std::vector<fs::path> chromePaths({fs::path("C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"),
+													   fs::path("C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe")});
+#elif defined(__APPLE__)
+					std::vector<fs::path> chromePaths({fs::path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")});
+#endif
+					for (auto &p : chromePaths)
+					{
+						p.make_preferred();
+						if (fs::exists(p))
+						{
+							browserJson["path"] = p.string();
+							break;
+						}
+					}
+				}
+				else if (browserJson.at("type").get<std::string>() == "firefox")
+				{
+#if defined(_WIN32) || defined(_WIN64)
+					std::vector<fs::path> firefoxPaths({fs::path("C:\\Program Files\\Mozilla Firefox\\firefox.exe"),
+														fs::path("C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe")});
+#elif defined(__APPLE__)
+					// todo update
+					std::vector<fs::path> firefoxPaths({fs::path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")});
+#endif
+					for (auto &p : firefoxPaths)
+					{
+						p.make_preferred();
+						if (fs::exists(p))
+						{
+							browserJson["path"] = p.string();
+							break;
+						}
+					}
+				}
+				else if (browserJson.at("type").get<std::string>() == "edge")
+				{
+					// only for windows
+					fs::path edgePath("C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe");
+					edgePath.make_preferred();
+					browserJson["path"] = edgePath.string();
+				}
+				else if (browserJson.at("type").get<std::string>() == "safari")
+				{
+					// todo
+					browserJson["path"] = std::string("");
+				}
+				else if (browserJson.at("type").get<std::string>() == "default")
+				{
+					// do nothing
+#if defined(_WIN32) || defined(_WIN64)
+					browserJson["path"] = std::string("");
+#elif defined(__APPLE__)
+					// todo update
+					browserJson["path"] = std::string("open");
+#endif
+				}
+				else
+				{
+					// N/A
+					//   do nothing
+				}
+
+				////
+				// update openAs
+				if (!browserJson.contains("openAs") || browserJson.at("openAs").get<std::string>().size() == 0)
+				{
+					browserJson["openAs"] = std::string("default");
+				}
+				// update browserJson["openAs"]
+				if (browserJson.at("type").get<std::string>() == "chrome")
+				{
+					// chrome supports "app"|"window"|"tab"|"default"
+					//   precisely speaking, "tab" and "default" are the same
+				}
+				else if (browserJson.at("type").get<std::string>() == "firefox")
+				{
+					// firefox supports "window"|"tab"|"default"
+					//   precisely speaking, "tab" and "default" are the same
+					if (browserJson.at("openAs").get<std::string>() == "app")
+					{
+						browserJson.at("openAs") = std::string("window");
+					}
+				}
+				else if (browserJson.at("type").get<std::string>() == "edge")
+				{
+					// edge supports "app"|"window"|"tab"|"default"
+					//   precisely speaking, "tab" and "default" are the same
+				}
+				else if (browserJson.at("type").get<std::string>() == "safari")
+				{
+					// todo check which mode is supported by safari ...
+					// safari supports "app"|"window"|"tab"|"default"
+					//   precisely speaking, "tab" and "default" are the same
+				}
+				else if (browserJson.at("type").get<std::string>() == "default")
+				{
+					// for default browser (start/open command), we cannot know which type is supported ...
+					browserJson.at("openAs") = std::string("default");
+				}
+				else
+				{
+					// for N/A (specified by path), we cannot know which which type is supported ...
+					browserJson.at("openAs") = std::string("default");
+				}
+
+				////
+				// prepare cmd
+				// todo: check command line switches for each browser
+				std::stringstream cmd;
+				// browser path
+#if defined(_WIN32) || defined(_WIN64)
+				// make sure that program runs in background.
+				if (browserJson.at("type").get<std::string>() != "default")
+				{
+					cmd << "start \"\"";
+					cmd << " ";
+				}
+#endif
+				cmd << "\"";
+				cmd << browserJson.at("path").get<std::string>();
+				cmd << "\"";
+				cmd << " ";
+				if (browserJson.at("openAs").get<std::string>() == "app")
+				{
+					cmd << "--app=";
+				}
+				else if (browserJson.at("openAs").get<std::string>() == "window")
+				{
+					cmd << "--new-window";
+					cmd << " ";
+				}
+				else if (browserJson.at("openAs").get<std::string>() == "tab")
+				{
+					// no command line switch
+				}
+				else // default
+				{
+					// no command line switch
+				}
+				// URL
+				cmd << config.at("server").at("completeURL").get<std::string>();
+				browserJson["cmd"] = cmd.str();
+				logger.log(cmd.str(), "SYSTEM");
+				system(cmd.str().c_str());
+			}
+		}
 	}
 
 	void Core::fail(

@@ -24,8 +24,8 @@ namespace Doppelganger
 		~Plugin() {}
 		const std::shared_ptr<Core> core;
 
-		void loadPlugin(const std::string &name, const std::string &pluginUrl);
-		void loadPlugin(const fs::path &pluginDir);
+		bool loadPlugin(const std::string &name, const std::string &pluginUrl);
+		bool loadPlugin(const fs::path &pluginDir);
 		// following variables are iniaitlized by calling loadPlugin
 		std::string name;
 		std::string author;

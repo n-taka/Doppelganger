@@ -7,9 +7,11 @@ project(${PROJECT})
 ##### target #####
 ##################
 file(GLOB DOPPELGANGER_CPP "Doppelganger/*.cpp")
+file(GLOB UTIL_CPP "Util/*.cpp")
 set(CPP_FILES
     main.cpp
     ${DOPPELGANGER_CPP}
+    ${UTIL_CPP}
 )
 
 file(GLOB_RECURSE RESOURCES_FILES "${CMAKE_CURRENT_SOURCE_DIR}/resources/*")

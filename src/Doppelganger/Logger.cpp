@@ -1,7 +1,7 @@
 #ifndef LOGGER_CPP
 #define LOGGER_CPP
 
-#include "Logger.h"
+#include "Doppelganger/Logger.h"
 
 #include <sstream>
 #include <iostream>
@@ -17,7 +17,7 @@ namespace Doppelganger
 		logLevel.clear();
 		logType.clear();
 
-		const std::string logsDir = config.at("logsDir").get<std::string>();
+		const std::string logsDir = config.at("dir").get<std::string>();
 		std::stringstream tmp;
 		tmp << getCurrentTimestampAsString(false);
 		tmp << "-";
@@ -27,11 +27,11 @@ namespace Doppelganger
 		logDir.make_preferred();
 		fs::create_directories(logDir);
 
-		for (const auto &level : config.at("logLevel"))
+		for (const auto &level : config.at("level"))
 		{
 			logLevel[level.get<std::string>()] = true;
 		}
-		for (const auto &type : config.at("logType"))
+		for (const auto &type : config.at("type"))
 		{
 			logType[type.get<std::string>()] = true;
 		}

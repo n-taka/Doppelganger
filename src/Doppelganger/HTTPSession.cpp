@@ -1,13 +1,13 @@
 #ifndef HTTPSESSION_CPP
 #define HTTPSESSION_CPP
 
-#include "HTTPSession.h"
+#include "Doppelganger/HTTPSession.h"
 
-#include "Core.h"
-#include "Logger.h"
-#include "Room.h"
-#include "WebsocketSession.h"
-#include "Plugin.h"
+#include "Doppelganger/Core.h"
+#include "Doppelganger/Logger.h"
+#include "Doppelganger/Room.h"
+#include "Doppelganger/WebsocketSession.h"
+#include "Doppelganger/Plugin.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <filesystem>
@@ -333,7 +333,7 @@ namespace
 				else
 				{
 					// return 301 (moved permanently)
-					std::string location = core->config.at("completeURL").get<std::string>();
+					std::string location = core->config.at("server").at("completeURL").get<std::string>();
 					location += "/";
 					location += room->UUID;
 					location += "/html/index.html";
@@ -343,7 +343,7 @@ namespace
 			else
 			{
 				// return 301 (moved permanently)
-				std::string location = core->config.at("completeURL").get<std::string>();
+				std::string location = core->config.at("server").at("completeURL").get<std::string>();
 				location += "/";
 				location += room->UUID;
 				location += "/html/index.html";
@@ -459,7 +459,7 @@ namespace Doppelganger
 			core->rooms[roomUUID] = std::move(room);
 
 			// return 301 (moved permanently)
-			std::string location = core->config.at("completeURL").get<std::string>();
+			std::string location = core->config.at("server").at("completeURL").get<std::string>();
 			location += "/";
 			location += roomUUID;
 

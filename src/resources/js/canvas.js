@@ -107,6 +107,7 @@ canvas.init = function () {
         canvas.effectComposer.setSize(canvas.width, canvas.height);
     });
 
+    // todo
     //     canvas.pullUpdate();
     //     this.camera.lookAt(this.scene.position);
 
@@ -210,165 +211,165 @@ canvas.pushUpdate = function () {
     //     }
 };
 
+canvas.resetCamera = function () {
+    // export function resetCamera(refreshBSphere) {
+    //     if (canvas.meshGroup.children.filter(function (obj) { return (obj instanceof THREE.Mesh); }).length > 0) {
+    //         var sliderValue = document.getElementById("clippingSlider").noUiSlider.get();
+    //         var clippingNear = (parseFloat(sliderValue[0]) - 50) / 50;
+    //         var clippingFar = (parseFloat(sliderValue[1]) - 50) / 50;
+
+    //         if (refreshBSphere) {
+    //             var posAttrib = BufferGeometryUtils.mergeBufferAttributes(canvas.meshGroup.children.filter(function (obj) { return (obj instanceof THREE.Mesh); }).map(function (obj) { return obj.geometry.getAttribute("position"); }));
+    //             var geometry = new THREE.BufferGeometry();
+    //             geometry.setAttribute("position", posAttrib);
+    //             geometry.computeBoundingSphere();
+    //             canvas.unifiedBSphere = geometry.boundingSphere.clone();
+    //             geometry.dispose();
+    //         }
+
+    //         var targetToCamera = canvas.camera.position.clone();
+    //         targetToCamera.sub(canvas.controls.target);
+    //         targetToCamera.normalize();
+
+    //         var targetToBCenter = canvas.unifiedBSphere.center.clone();
+    //         targetToBCenter.sub(canvas.controls.target);
+    //         var shift = targetToBCenter.length();
+    //         shift += canvas.unifiedBSphere.radius;
+    //         // for safety
+    //         shift *= 1.01;
+    //         var cameraPos = canvas.controls.target.clone();
+    //         targetToCamera.multiplyScalar(shift);
+    //         cameraPos.add(targetToCamera);
+    //         canvas.camera.position.copy(cameraPos);
+
+    //         // update pan speed
+    //         targetToCamera = canvas.camera.position.clone();
+    //         targetToCamera.sub(canvas.controls.target);
+    //         canvas.controls.panSpeed = 100.0 / targetToCamera.length();
+
+    //         // update near/far clip
+    //         var cameraToBCenter = canvas.unifiedBSphere.center.clone();
+    //         cameraToBCenter.sub(canvas.camera.position);
+    //         var cameraToTarget = canvas.controls.target.clone();
+    //         cameraToTarget.sub(canvas.camera.position);
+    //         cameraToTarget.normalize();
+    //         canvas.camera.near = cameraToBCenter.dot(cameraToTarget) + canvas.unifiedBSphere.radius * clippingNear
+    //         canvas.camera.far = cameraToBCenter.dot(cameraToTarget) + canvas.unifiedBSphere.radius * clippingFar
+    //         canvas.camera.updateProjectionMatrix();
+
+    //         DoppelCore.strokeTimeStamp = Date.now();
+    //         syncCanvasParameters();
+    //     }
+    // }
+};
+
+canvas.alignCamera = function () {
+    // export function alignCamera(direction) {
+    //     // directions[X][0]: camera position based from the origin
+    //     // directions[X][1]: camera up direction
+    //     var directions = [
+    //         [new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 1, 0)],
+    //         [new THREE.Vector3(-1, 0, 0), new THREE.Vector3(0, 1, 0)],
+    //         [new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, -1)],
+    //         [new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 1, 0)],
+    //         [new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 1, 0)],
+    //         [new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, 1)]
+    //     ];
+
+    //     if (canvas.meshGroup.children.filter(function (obj) { return (obj instanceof THREE.Mesh); }).length > 0) {
+    //         var posAttrib = BufferGeometryUtils.mergeBufferAttributes(canvas.meshGroup.children.filter(function (obj) { return (obj instanceof THREE.Mesh); }).map(function (obj) { return obj.geometry.getAttribute("position"); }));
+    //         var geometry = new THREE.BufferGeometry();
+    //         geometry.setAttribute("position", posAttrib);
+    //         geometry.computeBoundingSphere();
+    //         var BSphere = geometry.boundingSphere;
+
+    //         canvas.controls.target.copy(BSphere.center);
+
+    //         var targetToCamera = directions[direction][0].clone();
+    //         targetToCamera.multiplyScalar(BSphere.radius * 1.05);
+
+    //         canvas.camera.position.copy(targetToCamera);
+    //         canvas.camera.position.add(canvas.controls.target);
+    //         canvas.camera.far = targetToCamera.length() * 2.0;
+
+    //         canvas.camera.up.copy(directions[direction][1]);
+
+    //         // update pan speed
+    //         targetToCamera = canvas.camera.position.clone();
+    //         targetToCamera.sub(canvas.controls.target);
+    //         canvas.controls.panSpeed = 100.0 / targetToCamera.length();
+
+    //         canvas.camera.far = targetToCamera.length() * 2.0;
+    //         canvas.camera.updateProjectionMatrix();
+
+    //         DoppelCore.strokeTimeStamp = Date.now();
+    //         syncCanvasParameters();
+    //     } else {
+    //         canvas.controls.target.copy(new THREE.Vector3(0, 0, 0));
+    //         canvas.camera.position.copy(directions[direction][0]);
+    //         canvas.camera.up.copy(directions[direction][1]);
+    //         canvas.camera.updateProjectionMatrix();
+    //         canvas.controls.panSpeed = 100.0;
+
+    //         DoppelCore.strokeTimeStamp = Date.now();
+    //         syncCanvasParameters();
+    //     }
+    // }
+};
+
+canvas.fitToFrame = function () {
+    // export function fitToFrame() {
+    //     if (canvas.meshGroup.children.filter(function (obj) { return (obj instanceof THREE.Mesh && obj.visible); }).length > 0) {
+    //         var posAttrib = BufferGeometryUtils.mergeBufferAttributes(canvas.meshGroup.children.filter(function (obj) { return (obj instanceof THREE.Mesh && obj.visible); }).map(function (obj) { return obj.geometry.getAttribute("position"); }));
+    //         var geometry = new THREE.BufferGeometry();
+    //         geometry.setAttribute("position", posAttrib);
+    //         geometry.computeBoundingSphere();
+    //         var BSphere = geometry.boundingSphere;
+
+    //         var translateVec = BSphere.center.clone();
+    //         translateVec.sub(canvas.controls.target);
+    //         canvas.camera.position.add(translateVec);
+    //         canvas.controls.target.add(translateVec);
+
+    //         // update pan speed
+    //         var targetToCamera = canvas.camera.position.clone();
+    //         targetToCamera.sub(canvas.controls.target);
+    //         canvas.controls.panSpeed = 100 / targetToCamera.length();
+
+    //         // var raycaster = new THREE.Raycaster();
+    //         // var mouse = new THREE.Vector2();
+    //         // mouse.x = (window.innerWidth > window.innerHeight) ? 0.0 : 1.0;
+    //         // mouse.y = (window.innerWidth > window.innerHeight) ? 1.0 : 0.0;
+    //         // raycaster.setFromCamera(mouse, canvas.camera);
+
+    //         // var theta = raycaster.ray.direction.angleTo(targetToCamera);
+    //         // var distTargetToCamera = BSphere.radius / Math.sin(theta);
+
+    //         // canvas.camera.position.copy(canvas.controls.target);
+    //         // var offset = targetToCamera.multiplyScalar(distTargetToCamera / targetToCamera.length());
+    //         // canvas.camera.position.add(offset);
+
+    //         if (canvas.width > canvas.height) {
+    //             canvas.camera.zoom = (canvas.height / 2) / BSphere.radius;
+    //         } else {
+    //             canvas.camera.zoom = (canvas.width / 2) / BSphere.radius;
+    //         }
+    //         canvas.camera.far = targetToCamera.length() * 2.0;
+    //         canvas.camera.updateProjectionMatrix();
+
+    //         DoppelCore.strokeTimeStamp = Date.now();
+    //         syncCanvasParameters();
+    //     }
+    // }
+};
+
 // call init() function
 canvas.init();
 
 
 
-/////////////////////
-// var targetCanvas = function (w, h) {
-    //     this.lastControlTarget = null;
-//     this.lastCameraPos = null;
-//     this.lastCameraUp = null;
-//     this.lastCameraZoom = null;
-//     this.lastCursorDir = null;
-//     this.defaultColor = [208.0 / 255.0, 208.0 / 255.0, 208.0 / 255.0];
-// }
 
-// export function resetCamera(refreshBSphere) {
-//     if (canvas.meshGroup.children.filter(function (obj) { return (obj instanceof THREE.Mesh); }).length > 0) {
-//         var sliderValue = document.getElementById("clippingSlider").noUiSlider.get();
-//         var clippingNear = (parseFloat(sliderValue[0]) - 50) / 50;
-//         var clippingFar = (parseFloat(sliderValue[1]) - 50) / 50;
 
-//         if (refreshBSphere) {
-//             var posAttrib = BufferGeometryUtils.mergeBufferAttributes(canvas.meshGroup.children.filter(function (obj) { return (obj instanceof THREE.Mesh); }).map(function (obj) { return obj.geometry.getAttribute("position"); }));
-//             var geometry = new THREE.BufferGeometry();
-//             geometry.setAttribute("position", posAttrib);
-//             geometry.computeBoundingSphere();
-//             canvas.unifiedBSphere = geometry.boundingSphere.clone();
-//             geometry.dispose();
-//         }
 
-//         var targetToCamera = canvas.camera.position.clone();
-//         targetToCamera.sub(canvas.controls.target);
-//         targetToCamera.normalize();
-
-//         var targetToBCenter = canvas.unifiedBSphere.center.clone();
-//         targetToBCenter.sub(canvas.controls.target);
-//         var shift = targetToBCenter.length();
-//         shift += canvas.unifiedBSphere.radius;
-//         // for safety
-//         shift *= 1.01;
-//         var cameraPos = canvas.controls.target.clone();
-//         targetToCamera.multiplyScalar(shift);
-//         cameraPos.add(targetToCamera);
-//         canvas.camera.position.copy(cameraPos);
-
-//         // update pan speed
-//         targetToCamera = canvas.camera.position.clone();
-//         targetToCamera.sub(canvas.controls.target);
-//         canvas.controls.panSpeed = 100.0 / targetToCamera.length();
-
-//         // update near/far clip
-//         var cameraToBCenter = canvas.unifiedBSphere.center.clone();
-//         cameraToBCenter.sub(canvas.camera.position);
-//         var cameraToTarget = canvas.controls.target.clone();
-//         cameraToTarget.sub(canvas.camera.position);
-//         cameraToTarget.normalize();
-//         canvas.camera.near = cameraToBCenter.dot(cameraToTarget) + canvas.unifiedBSphere.radius * clippingNear
-//         canvas.camera.far = cameraToBCenter.dot(cameraToTarget) + canvas.unifiedBSphere.radius * clippingFar
-//         canvas.camera.updateProjectionMatrix();
-
-//         DoppelCore.strokeTimeStamp = Date.now();
-//         syncCanvasParameters();
-//     }
-// }
-
-// export function alignCamera(direction) {
-//     // directions[X][0]: camera position based from the origin
-//     // directions[X][1]: camera up direction
-//     var directions = [
-//         [new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 1, 0)],
-//         [new THREE.Vector3(-1, 0, 0), new THREE.Vector3(0, 1, 0)],
-//         [new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, -1)],
-//         [new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 1, 0)],
-//         [new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 1, 0)],
-//         [new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, 1)]
-//     ];
-
-//     if (canvas.meshGroup.children.filter(function (obj) { return (obj instanceof THREE.Mesh); }).length > 0) {
-//         var posAttrib = BufferGeometryUtils.mergeBufferAttributes(canvas.meshGroup.children.filter(function (obj) { return (obj instanceof THREE.Mesh); }).map(function (obj) { return obj.geometry.getAttribute("position"); }));
-//         var geometry = new THREE.BufferGeometry();
-//         geometry.setAttribute("position", posAttrib);
-//         geometry.computeBoundingSphere();
-//         var BSphere = geometry.boundingSphere;
-
-//         canvas.controls.target.copy(BSphere.center);
-
-//         var targetToCamera = directions[direction][0].clone();
-//         targetToCamera.multiplyScalar(BSphere.radius * 1.05);
-
-//         canvas.camera.position.copy(targetToCamera);
-//         canvas.camera.position.add(canvas.controls.target);
-//         canvas.camera.far = targetToCamera.length() * 2.0;
-
-//         canvas.camera.up.copy(directions[direction][1]);
-
-//         // update pan speed
-//         targetToCamera = canvas.camera.position.clone();
-//         targetToCamera.sub(canvas.controls.target);
-//         canvas.controls.panSpeed = 100.0 / targetToCamera.length();
-
-//         canvas.camera.far = targetToCamera.length() * 2.0;
-//         canvas.camera.updateProjectionMatrix();
-
-//         DoppelCore.strokeTimeStamp = Date.now();
-//         syncCanvasParameters();
-//     } else {
-//         canvas.controls.target.copy(new THREE.Vector3(0, 0, 0));
-//         canvas.camera.position.copy(directions[direction][0]);
-//         canvas.camera.up.copy(directions[direction][1]);
-//         canvas.camera.updateProjectionMatrix();
-//         canvas.controls.panSpeed = 100.0;
-
-//         DoppelCore.strokeTimeStamp = Date.now();
-//         syncCanvasParameters();
-//     }
-// }
-
-// export function fitToFrame() {
-//     if (canvas.meshGroup.children.filter(function (obj) { return (obj instanceof THREE.Mesh && obj.visible); }).length > 0) {
-//         var posAttrib = BufferGeometryUtils.mergeBufferAttributes(canvas.meshGroup.children.filter(function (obj) { return (obj instanceof THREE.Mesh && obj.visible); }).map(function (obj) { return obj.geometry.getAttribute("position"); }));
-//         var geometry = new THREE.BufferGeometry();
-//         geometry.setAttribute("position", posAttrib);
-//         geometry.computeBoundingSphere();
-//         var BSphere = geometry.boundingSphere;
-
-//         var translateVec = BSphere.center.clone();
-//         translateVec.sub(canvas.controls.target);
-//         canvas.camera.position.add(translateVec);
-//         canvas.controls.target.add(translateVec);
-
-//         // update pan speed
-//         var targetToCamera = canvas.camera.position.clone();
-//         targetToCamera.sub(canvas.controls.target);
-//         canvas.controls.panSpeed = 100 / targetToCamera.length();
-
-//         // var raycaster = new THREE.Raycaster();
-//         // var mouse = new THREE.Vector2();
-//         // mouse.x = (window.innerWidth > window.innerHeight) ? 0.0 : 1.0;
-//         // mouse.y = (window.innerWidth > window.innerHeight) ? 1.0 : 0.0;
-//         // raycaster.setFromCamera(mouse, canvas.camera);
-
-//         // var theta = raycaster.ray.direction.angleTo(targetToCamera);
-//         // var distTargetToCamera = BSphere.radius / Math.sin(theta);
-
-//         // canvas.camera.position.copy(canvas.controls.target);
-//         // var offset = targetToCamera.multiplyScalar(distTargetToCamera / targetToCamera.length());
-//         // canvas.camera.position.add(offset);
-
-//         if (canvas.width > canvas.height) {
-//             canvas.camera.zoom = (canvas.height / 2) / BSphere.radius;
-//         } else {
-//             canvas.camera.zoom = (canvas.width / 2) / BSphere.radius;
-//         }
-//         canvas.camera.far = targetToCamera.length() * 2.0;
-//         canvas.camera.updateProjectionMatrix();
-
-//         DoppelCore.strokeTimeStamp = Date.now();
-//         syncCanvasParameters();
-//     }
-// }
 
 

@@ -1,8 +1,8 @@
 #ifndef ROOM_CPP
 #define ROOM_CPP
 
-#include "Room.h"
-#include "Core.h"
+#include "Doppelganger/Room.h"
+#include "Doppelganger/Core.h"
 
 namespace Doppelganger
 {
@@ -49,7 +49,7 @@ namespace Doppelganger
 		// initialize logger for this room
 		////
 		{
-			logger.initialize(UUID, core->config);
+			logger.initialize(UUID, core->config.at("log"));
 			{
 				std::stringstream s;
 				s << "New room \"" << UUID << "\" is created.";
@@ -68,7 +68,7 @@ namespace Doppelganger
 			tmp << UUID;
 			const std::string timestampAndUUID = tmp.str();
 
-			outputDir = core->config.at("outputsDir").get<std::string>();
+			outputDir = core->config.at("output").at("dir").get<std::string>();
 			outputDir.append(timestampAndUUID);
 			outputDir.make_preferred();
 			fs::create_directories(outputDir);

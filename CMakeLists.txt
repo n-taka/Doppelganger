@@ -93,7 +93,7 @@ endif ()
 set(INCLUDE_DIR
     ${EIGEN3_INCLUDE_DIR}
     ${Boost_INCLUDE_DIRS}
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/submodule/libigl/include
     ${CMAKE_CURRENT_SOURCE_DIR}/submodule/certify/include
 )
