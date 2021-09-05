@@ -74,12 +74,12 @@ namespace Doppelganger
 		fs::path zipPath(core->systemParams.workingDir);
 		zipPath.append("plugin");
 		zipPath.append("tmp.zip");
-		if (Util::download(core, pluginUrl, zipPath))
+		if (Util::download(pluginUrl, zipPath))
 		{
 			// path to extracted directory
 			fs::path pluginDir(core->config.at("plugin").at("dir").get<std::string>());
 			pluginDir.append(name);
-			Util::unzip(core, zipPath, pluginDir);
+			Util::unzip(zipPath, pluginDir);
 			// erase temporary file
 			fs::remove_all(zipPath);
 

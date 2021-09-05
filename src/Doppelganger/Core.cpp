@@ -124,7 +124,7 @@ namespace Doppelganger
 					fs::path listJsonPath(pluginJson.at("dir").get<std::string>());
 					listJsonPath.make_preferred();
 					listJsonPath.append("tmp.json");
-					Util::download(shared_from_this(), listUrl.get<std::string>(), listJsonPath);
+					Util::download(listUrl.get<std::string>(), listJsonPath);
 					std::ifstream ifs(listJsonPath);
 					nlohmann::json listJson = nlohmann::json::parse(ifs);
 					ifs.close();

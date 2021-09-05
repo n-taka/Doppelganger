@@ -21,10 +21,11 @@ namespace Doppelganger
 		// initialize edit history parameters
 		//////
 		{
-			editHistoryParams.editHistoryVec.clear();
-			editHistoryParams.editHistoryVec.push_back(editHistory({std::vector<std::string>({}), nlohmann::json::object()}));
-			editHistoryParams.editHistoryIndex = 0;
-			editHistoryParams.mutexEditHistoryParams = std::make_shared<std::mutex>();
+			// todo
+			// editHistoryParams.editHistoryVec.clear();
+			// editHistoryParams.editHistoryVec.push_back(editHistory({std::vector<std::string>({}), nlohmann::json::object()}));
+			// editHistoryParams.editHistoryIndex = 0;
+			// editHistoryParams.mutexEditHistoryParams = std::make_shared<std::mutex>();
 		}
 
 		//////

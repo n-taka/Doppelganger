@@ -123,5 +123,45 @@ endif()
 ##### app bundle settings #####
 ###############################
 
+#########################
+##### object target #####
+#########################
+file(GLOB DOPPELGANGER_CPP "src/Doppelganger/*.cpp")
+file(GLOB UTIL_CPP "src/Util/*.cpp")
+set(DoppelgangerObjSrc
+    ${DOPPELGANGER_CPP}
+    ${UTIL_CPP}
+)
+add_library(DoppelgangerObj OBJECT)
+target_sources(DoppelgangerObj PRIVATE ${DoppelgangerObjSrc})
+target_include_directories(DoppelgangerObj PUBLIC ${INCLUDE_DIR})
+###########################
+##### compile options #####
+###########################
+if (WIN32)
+    # because we want to use std::filesystem, we require C++17 for windows
+    target_compile_features(DoppelgangerObj PUBLIC cxx_std_17)
+elseif (APPLE)
+    # because we support macOS Mojave, we only require C++14 for macOS
+    # we use boost::filesystem for macOS
+    target_compile_features(DoppelgangerObj PUBLIC cxx_std_14)
+endif ()
+target_compile_definitions(DoppelgangerObj PUBLIC _USE_MATH_DEFINES)
+
+if (WIN32)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4244 /wd4819")
+    add_definitions(-D_WIN32_WINNT=0x0A00)
+endif ()
+#################################
+##### compile options (end) #####
+#################################
+set(LINK_LIBS
+    ${LINK_LIBS}
+    $<TARGET_OBJECTS:DoppelgangerObj>
+)
+#########################
+##### object target #####
+#########################
+
 add_subdirectory(src)
 add_subdirectory(plugin)

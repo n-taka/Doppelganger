@@ -14,6 +14,7 @@ target_sources(
     ${PROJECT}
     PRIVATE
     ${PLUGIN_CPP}
+    "../../submodule/libigl/include/igl/tinyply.cpp"
 )
 ########################
 ##### target (end) #####
