@@ -2,6 +2,11 @@
 #define LOADPOLYGONMESH_CPP
 
 #include "../pluginHeader.h"
+#include "Doppelganger/Room.h"
+#include "Doppelganger/triangleMesh.h"
+#include "Doppelganger/Logger.h"
+#include "Util/uuid.h"
+#include "Util/writeBase64ToFile.h"
 
 #include <string>
 #include <sstream>
@@ -13,58 +18,244 @@ namespace fs = std::filesystem;
 namespace fs = boost::filesystem;
 #endif
 
-extern "C" DLLEXPORT void metadata(const std::shared_ptr<Doppelganger::Room> &room, const nlohmann::json &parameters, nlohmann::json &response)
+#include "igl/readOBJ.h"
+#include "igl/readPLY.h"
+#include "igl/readSTL.h"
+#include "igl/readWRL.h"
+#include "igl/remove_duplicate_vertices.h"
+#include "igl/polygon_corners.h"
+#include "igl/polygons_to_triangles.h"
+
+#include "igl/per_face_normals.h"
+#include "igl/per_vertex_normals.h"
+
+extern "C" DLLEXPORT void metadata(const std::shared_ptr<Doppelganger::Room> &room, const nlohmann::json &parameters, nlohmann::json &response, nlohmann::json &broadcast)
 {
 	response["author"] = "Kazutaka Nakashima";
 	response["version"] = "1.0.0";
+	broadcast = nlohmann::json::object();
 }
 
-extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room> &room, const nlohmann::json &parameters, nlohmann::json &response)
+extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room> &room, const nlohmann::json &parameters, nlohmann::json &response, nlohmann::json &broadcast)
 {
 	////
 	// [IN]
-	//    parameters: config json
+	// parameters = {
+	// 	"file": {
+	// 		"type": extensiton of this file,
+	// 		"base64Str": base64-encoded content
+	// 	},
+	// 	"mesh": {
+	// 		"name": name of this mesh (usually, filename without extension)
+	// 	}
+	// }
+
 	// [OUT]
-	//    response[""] =
+	// response = {}
+	// broadcast = {
+	// 	"mesh" : {
+	//    "<meshUUID>": JSON object that represents the loaded mesh
+	//  }
+	// }
 
-	// writeBase64ToFile(room, parameters, response);
-	// if (response.contains("tmpFileName"))
+	const std::string &fileType = parameters.at("file").at("type").get<std::string>();
+	const std::string &base64Str = parameters.at("file").at("base64Str").get<std::string>();
+
+	fs::path filePath = fs::temp_directory_path();
+	filePath /= Doppelganger::Util::uuid();
+	filePath += ".";
+	filePath += fileType;
+	Doppelganger::Util::writeBase64ToFile(base64Str, filePath);
+
+	const std::string &meshName = parameters.at("mesh").at("name").get<std::string>();
+	std::shared_ptr<Doppelganger::triangleMesh> mesh = std::make_shared<Doppelganger::triangleMesh>();
+
+	mesh->name = meshName;
+	Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &V = mesh->V;
+	Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &VN = mesh->VN;
+	Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> &F = mesh->F;
+	Eigen::Matrix<int, Eigen::Dynamic, 1> &FG = mesh->FG;
+	Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &FN = mesh->FN;
+	Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &VC = mesh->VC;
+	Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &TC = mesh->TC;
+	Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> &FTC = mesh->FTC;
+
+	std::vector<std::vector<double>> VVec;
+	std::vector<std::vector<double>> TCVec;
+	std::vector<std::vector<double>> VNVec;
+	std::vector<std::vector<double>> VCVec;
+	std::vector<std::vector<int>> FVec;
+	std::vector<std::vector<int>> FTCVec;
+	std::vector<std::vector<int>> FNVec;
+	std::vector<int> FGVec;
+
+	if (fileType == ".obj")
 	{
-		// const fs::path tmpFilePath(response.at("tmpFileName").get<std::string>());
-
-		// std::vector<int> updateDoppelId;
-
-		// const std::string meshName = parameters.at("meshName");
-
-		// std::vector<Doppel::triangleMesh> newMeshes;
-		// readMeshFromPolygonFile(
-		// 	tmpFilePath,
-		// 	meshName,
-		// 	false,
-		// 	newMeshes);
-
-		// {
-		// 	std::lock_guard<std::mutex> lock(pantry->mutexMeshes);
-		// 	for (const auto &m : newMeshes)
-		// 	{
-		// 		int freshId = 0;
-		// 		for (const auto &id_m : pantry->meshes)
-		// 		{
-		// 			freshId = std::max(freshId, id_m.first + 1);
-		// 		}
-		// 		pantry->meshes[freshId] = m;
-		// 		updateDoppelId.push_back(freshId);
-		// 	}
-
-		// 	Doppel::Logger logger(pantry);
-		// 	logger.logFile(tmpFilePath, Doppel::Logger::LogLevel::APICALL);
-		// 	fs::remove(tmpFilePath);
-
-		// 	Doppel::HistoryHandler handler;
-		// 	handler.saveCurrentState(updateDoppelId, pantry);
-		// 	pantry->broadcastMeshUpdate(updateDoppelId);
-		// }
+		std::vector<std::tuple<std::string, int, int>> FM;
+		igl::readOBJ(filePath.string(), VVec, TCVec, VNVec, VCVec, FVec, FTCVec, FNVec, FGVec, FM);
 	}
+	else if (fileType == ".ply")
+	{
+		Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> temp_V, temp_E, temp_VN, temp_VC, temp_TC;
+		Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> temp_F;
+		std::vector<std::string> Vheader({"red", "green", "blue"});
+		igl::readPLY(filePath.string(), temp_V, temp_F, temp_E, temp_VN, temp_TC, temp_VC, Vheader);
+		// normalize vertex colors
+		temp_VC /= 255.;
+
+		// write into vector (this is not optimal, but makes the code easy-to-read)
+		VVec.resize(temp_V.rows());
+		for (int v = 0; v < temp_V.rows(); ++v)
+		{
+			VVec.at(v) = std::vector<double>({temp_V(v, 0), temp_V(v, 1), temp_V(v, 2)});
+		}
+		FVec.resize(temp_F.rows());
+		for (int f = 0; f < temp_F.rows(); ++f)
+		{
+			FVec.at(f) = std::vector<int>({temp_F(f, 0), temp_F(f, 1), temp_F(f, 2)});
+		}
+		VNVec.resize(temp_VN.rows());
+		for (int v = 0; v < temp_VN.rows(); ++v)
+		{
+			VNVec.at(v) = std::vector<double>({temp_VN(v, 0), temp_VN(v, 1), temp_VN(v, 2)});
+		}
+		TCVec.resize(temp_TC.rows());
+		for (int v = 0; v < temp_TC.rows(); ++v)
+		{
+			TCVec.at(v) = std::vector<double>({temp_TC(v, 0), temp_TC(v, 1)});
+		}
+		VCVec.resize(temp_VC.rows());
+		for (int v = 0; v < temp_VC.rows(); ++v)
+		{
+			VCVec.at(v) = std::vector<double>({temp_VC(v, 0), temp_VC(v, 1), temp_VC(v, 2)});
+		}
+	}
+	else if (fileType == ".stl")
+	{
+		// todo: support vertex color (magics extension)
+		Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> temp_V, unified_V, temp_FN;
+		Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> temp_F;
+		Eigen::Matrix<int, Eigen::Dynamic, 1> SVI, SVJ;
+		FILE *fp = fopen(filePath.string().c_str(), "rb");
+		igl::readSTL(fp, temp_V, temp_F, temp_FN);
+		fclose(fp);
+		igl::remove_duplicate_vertices(temp_V, 0, unified_V, SVI, SVJ);
+		std::for_each(temp_F.data(), temp_F.data() + temp_F.size(), [&SVJ](int &f)
+					  { f = SVJ(f); });
+
+		// write into vector (this is not optimal, but makes the code easy-to-read)
+		VVec.resize(unified_V.rows());
+		for (int v = 0; v < unified_V.rows(); ++v)
+		{
+			VVec.at(v) = std::vector<double>({unified_V(v, 0), unified_V(v, 1), unified_V(v, 2)});
+		}
+		FVec.resize(temp_F.rows());
+		for (int f = 0; f < temp_F.rows(); ++f)
+		{
+			FVec.at(f) = std::vector<int>({temp_F(f, 0), temp_F(f, 1), temp_F(f, 2)});
+		}
+		// Currently, FN is ignored.
+	}
+	else if (fileType == ".wrl")
+	{
+		igl::readWRL(filePath.string(), VVec, FVec, VCVec);
+	}
+	else
+	{
+		std::stringstream ss;
+		ss << "file type ";
+		ss << fileType;
+		ss << " is not yet supported.";
+		room->logger.log(ss.str(), "ERROR");
+	}
+
+	// format parsed info
+	// V (required)
+	{
+		V.resize(VVec.size(), 3);
+		for (int v = 0; v < VVec.size(); ++v)
+		{
+			V.row(v) << VVec.at(v).at(0), VVec.at(v).at(1), VVec.at(v).at(2);
+		}
+	}
+	// F (required)
+	{
+		Eigen::Matrix<int, Eigen::Dynamic, 1> I, C;
+		igl::polygon_corners(FVec, I, C);
+		Eigen::Matrix<int, Eigen::Dynamic, 1> J;
+		igl::polygons_to_triangles(I, C, F, J);
+	}
+
+	// VN (optional, calculate manually)
+	VN.resize(VNVec.size(), 3);
+	for (int v = 0; v < VNVec.size(); ++v)
+	{
+		VN.row(v) << VNVec.at(v).at(0), VNVec.at(v).at(1), VNVec.at(v).at(2);
+	}
+	if (VVec.size() != VNVec.size())
+	{
+		igl::per_vertex_normals(V, F, VN);
+	}
+	// FN (optional)
+	igl::per_face_normals(V, F, FN);
+	// VC (optional, but filled manually)
+	VC.resize(VCVec.size(), 3);
+	for (int v = 0; v < VCVec.size(); ++v)
+	{
+		VC.row(v) << VCVec.at(v).at(0), VCVec.at(v).at(1), VCVec.at(v).at(2);
+	}
+	// TC (optional)
+	TC.resize(TCVec.size(), 2);
+	for (int v = 0; v < TCVec.size(); ++v)
+	{
+		TC.row(v) << TCVec.at(v).at(0), TCVec.at(v).at(1);
+	}
+	// FTC (optional)
+	{
+		Eigen::Matrix<int, Eigen::Dynamic, 1> I, C;
+		igl::polygon_corners(FTCVec, I, C);
+		Eigen::Matrix<int, Eigen::Dynamic, 1> J;
+		igl::polygons_to_triangles(I, C, FTC, J);
+	}
+	// FG (optional)
+	// for dealing with non-triangle polygons (which is triangulated onLoad), we manually fill FG
+	if (FVec.size() == FGVec.size())
+	{
+		FG.resize(F.rows(), 1);
+		int fIdx = 0;
+		for (int f = 0; f < FVec.size(); ++f)
+		{
+			for (int tri = 0; tri < FVec.at(f).size() - 2; ++tri)
+			{
+				FG(fIdx++, 0) = FGVec.at(f);
+			}
+		}
+	}
+
+	// register to this room
+	std::string meshUUID("mesh-");
+	meshUUID += Doppelganger::Util::uuid();
+	room->meshes[meshUUID] = mesh;
+
+	// create response/broadcast
+	response = nlohmann::json::object();
+	broadcast = nlohmann::json::object();
+	broadcast["mesh"] = nlohmann::json::object();
+	broadcast.at("mesh")[meshUUID] = mesh->dumpToJson();
+
+	{
+		// message
+		std::stringstream ss;
+		ss << "New mesh \"" << meshUUID << "\" is loaded.";
+		room->logger.log(ss.str(), "APICALL");
+		// file
+		room->logger.log(filePath, "APICALL", true);
+	}
+
+	// TODO!! edit history
+	// 	Doppel::HistoryHandler handler;
+	// 	handler.saveCurrentState(updateDoppelId, pantry);
+	// 	pantry->broadcastMeshUpdate(updateDoppelId);
 }
 
 #endif

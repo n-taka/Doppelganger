@@ -30,7 +30,8 @@ namespace Doppelganger
 			const std::string &level);
 		void log(
 			const fs::path &path,
-			const std::string &level);
+			const std::string &level,
+			const bool remove);
 
 		static std::string getCurrentTimestampAsString(bool separator);
 

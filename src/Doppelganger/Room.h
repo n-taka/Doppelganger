@@ -54,15 +54,11 @@ namespace Doppelganger
 
 		////
 		// parameter for edit history
-		struct editHistory
-		{
-			std::vector<std::string> updatedFromPrevUUIDVec;
-			nlohmann::json json;
-		};
 		struct editHistoryParameters
 		{
 			int editHistoryIndex;
-			std::vector<editHistory> editHistoryVec;
+			std::vector<nlohmann::json> diffFromPrev;
+			std::vector<nlohmann::json> diffFromNext;
 			std::shared_ptr<std::mutex> mutexEditHistoryParams;
 		};
 		editHistoryParameters editHistoryParams;

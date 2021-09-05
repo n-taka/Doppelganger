@@ -8,6 +8,7 @@
 #include "Doppelganger/Room.h"
 #include "Doppelganger/WebsocketSession.h"
 #include "Doppelganger/Plugin.h"
+#include "Util/uuid.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <filesystem>
@@ -16,11 +17,6 @@ namespace fs = std::filesystem;
 #include "boost/filesystem.hpp"
 namespace fs = boost::filesystem;
 #endif
-
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_io.hpp>
-#include <boost/uuid/uuid_generators.hpp>
-#include <boost/lexical_cast.hpp>
 
 namespace
 {
@@ -296,11 +292,18 @@ namespace
 							logContent << parameters.at("sessionUUID");
 							logContent << ")";
 
-							nlohmann::json response = nlohmann::json::object();
-
-							APIFunc(room, parameters, response);
+							nlohmann::json response, broadcast;
+							APIFunc(room, parameters, response, broadcast);
 							room->logger.log(logContent.str(), "APICALL");
 
+							// broadcast
+							if (!broadcast.empty())
+							{
+								// todo
+								// room->broadcast(broadcast);
+							}
+
+							// response
 							const std::string responseStr = response.dump();
 							boost::beast::http::string_body::value_type payloadBody = responseStr;
 							boost::beast::http::response<boost::beast::http::string_body> res{
@@ -448,7 +451,7 @@ namespace Doppelganger
 			{
 				roomUUID = "";
 				roomUUID += "room-";
-				roomUUID += boost::lexical_cast<std::string>(boost::uuids::random_generator()());
+				roomUUID += Util::uuid();
 			}
 			else
 			{

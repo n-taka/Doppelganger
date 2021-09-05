@@ -2,7 +2,6 @@
 #define DOWNLOAD_CPP
 
 #include "Util/download.h"
-#include "Doppelganger/Core.h"
 #include <string>
 #include <fstream>
 
@@ -22,7 +21,7 @@ namespace Doppelganger
 {
 	namespace Util
 	{
-		bool download(const std::shared_ptr<Core> &core, const std::string &targetUrl, const fs::path &destPath)
+		bool download(const std::string &targetUrl, const fs::path &destPath)
 		{
 			namespace beast = boost::beast; // from <boost/beast.hpp>
 			namespace http = beast::http;	// from <boost/beast/http.hpp>
@@ -145,7 +144,6 @@ namespace Doppelganger
 			}
 			catch (std::exception const &e)
 			{
-				core->logger.log(std::string(e.what()), "ERROR");
 				return false;
 			}
 		}

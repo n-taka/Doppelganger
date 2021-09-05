@@ -20,7 +20,7 @@ namespace
 {
 	////
 	// typedef for loading API from dll/lib
-	typedef void(STDCALL *APIPtr_t)(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &, nlohmann::json &);
+	typedef void(STDCALL *APIPtr_t)(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &, nlohmann::json &, nlohmann::json &);
 
 	bool loadDll(const fs::path &dllPath, const std::string &functionName, Doppelganger::Plugin::API_t &apiFunc)
 	{
@@ -111,9 +111,9 @@ namespace Doppelganger
 		{
 			return false;
 		}
-		nlohmann::json parameters, response;
+		nlohmann::json parameters, response, broadcast;
 		// dummy parameters...
-		metadataFunc(nullptr, parameters, response);
+		metadataFunc(nullptr, parameters, response, broadcast);
 		author = response.at("author").get<std::string>();
 		version = response.at("version").get<std::string>();
 

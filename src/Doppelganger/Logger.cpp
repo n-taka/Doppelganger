@@ -92,7 +92,7 @@ namespace Doppelganger
 		}
 	}
 
-	void Logger::log(const fs::path &path, const std::string &level)
+	void Logger::log(const fs::path &path, const std::string &level, const bool remove)
 	{
 		if (logLevel[level])
 		{
@@ -101,6 +101,10 @@ namespace Doppelganger
 				try
 				{
 					fs::copy(path, logDir);
+					if (remove)
+					{
+						fs::remove_all(path);
+					}
 					s << "temporary file " << path.filename().string() << " is stored in " << logDir.string();
 				}
 				catch (const fs::filesystem_error &e)

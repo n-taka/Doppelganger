@@ -12,10 +12,9 @@ namespace fs = boost::filesystem;
 
 namespace Doppelganger
 {
-	class Core;
 	namespace Util
 	{
-		void unzip(const std::shared_ptr<Core> &core, const fs::path &zipPath, const fs::path &destPath);
+		void unzip(const fs::path &zipPath, const fs::path &destPath);
 	};
 } // namespace
 

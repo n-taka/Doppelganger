@@ -51,9 +51,9 @@ namespace Doppelganger
 		{
 			logger.initialize(UUID, core->config.at("log"));
 			{
-				std::stringstream s;
-				s << "New room \"" << UUID << "\" is created.";
-				logger.log(s.str(), "SYSTEM");
+				std::stringstream ss;
+				ss << "New room \"" << UUID << "\" is created.";
+				logger.log(ss.str(), "SYSTEM");
 			}
 		}
 

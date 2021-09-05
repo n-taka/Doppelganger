@@ -11,7 +11,7 @@ namespace Doppelganger
 {
 	namespace Util
 	{
-		void unzip(const std::shared_ptr<Core> &core, const fs::path &zipPath, const fs::path &destPath)
+		void unzip(const fs::path &zipPath, const fs::path &destPath)
 		{
 			// http://hp.vector.co.jp/authors/VA016379/cpplib/zip.cpp
 			unzFile unzipHandle = unzOpen(zipPath.string().c_str());

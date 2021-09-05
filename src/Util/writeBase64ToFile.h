@@ -1,5 +1,5 @@
-#ifndef DOWNLOAD_H
-#define DOWNLOAD_H
+#ifndef WRITEBASE64TOFILE_H
+#define WRITEBASE64TOFILE_H
 
 #include <memory>
 #if defined(_WIN32) || defined(_WIN64)
@@ -14,8 +14,8 @@ namespace Doppelganger
 {
 	namespace Util
 	{
-		bool download(const std::string &targetUrl, const fs::path &destPath);
+		void writeBase64ToFile(const std::string &base64Str, const fs::path &destPath);
 	};
-} // namespace
+}
 
 #endif

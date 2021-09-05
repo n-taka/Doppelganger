@@ -3,8 +3,9 @@
 
 #include "Eigen/Core"
 #include "igl/AABB.h"
-#include <boost/any.hpp>
 
+#include <boost/any.hpp>
+#include <nlohmann/json.hpp>
 #include <vector>
 #include <string>
 #include <unordered_map>
@@ -25,6 +26,9 @@ namespace Doppelganger
 			RGBA(0, 3) = static_cast<double>(1.0);
 		};
 		~triangleMesh(){};
+
+		// dump to json
+		nlohmann::json dumpToJson() const;
 
 	public:
 		std::string name;

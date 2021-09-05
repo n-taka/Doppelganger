@@ -34,7 +34,7 @@ namespace Doppelganger
 		////
 		// typedef for API
 		//   all API have this signature, and other parameters (e.g. meshUUID) are supplied within the parameter json.
-		typedef std::function<void(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &, nlohmann::json &)> API_t;
+		typedef std::function<void(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &, nlohmann::json &, nlohmann::json &)> API_t;
 		API_t func;
 		std::string moduleJS;
 	};
