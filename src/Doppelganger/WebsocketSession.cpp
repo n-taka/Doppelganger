@@ -13,6 +13,9 @@ namespace Doppelganger
 									   const std::shared_ptr<Room> &room_)
 		: UUID(UUID_), ws(std::move(socket)), room(room_)
 	{
+		std::stringstream ss;
+		ss << "New WS session \"" << UUID << "\" is created.";
+		room->logger.log(ss.str(), "SYSTEM");
 	}
 
 	WebsocketSession::~WebsocketSession()

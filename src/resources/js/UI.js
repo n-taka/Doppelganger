@@ -142,6 +142,3 @@ UI.init = function () {
     }
 };
 
-// call init() function
-UI.init();
-

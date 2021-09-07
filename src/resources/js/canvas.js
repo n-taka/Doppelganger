@@ -3,10 +3,10 @@ import { TrackballControls } from 'https://unpkg.com/three@0.126.0/examples/jsm/
 import { RenderPass } from 'https://unpkg.com/three@0.126.0/examples/jsm/postprocessing/RenderPass.js';
 import { EffectComposer } from 'https://unpkg.com/three@0.126.0/examples/jsm/postprocessing/EffectComposer.js';
 import { BufferGeometryUtils } from 'https://unpkg.com/three@0.126.0/examples/jsm/utils/BufferGeometryUtils.js';
-import { DoppelWS } from './websocket.js';
-import { APIcall } from './APIcall.js';
-import { DoppelCore } from './DoppelCore.js';
-import { mouseCursors } from './mouseKey.js';
+// import { DoppelWS } from './websocket.js';
+// import { APIcall } from './APIcall.js';
+// import { DoppelCore } from './DoppelCore.js';
+// import { mouseCursors } from './mouseKey.js';
 
 import { UI } from './UI.js';
 
@@ -16,112 +16,112 @@ import { UI } from './UI.js';
 //   with the model whose bounding box is (100, 100, 100)
 ////
 
-export const canvas = {};
+export const Canvas = {};
 
-canvas.init = function () {
+Canvas.init = function () {
     // width / height
     {
-        canvas.width = UI.webGLDiv.offsetWidth;
-        canvas.height = UI.webGLDiv.offsetHeight;
+        Canvas.width = UI.webGLDiv.offsetWidth;
+        Canvas.height = UI.webGLDiv.offsetHeight;
     }
 
     // scene
-    canvas.scene = new THREE.Scene();
+    Canvas.scene = new THREE.Scene();
 
     // groups
     {
-        canvas.predefGroup = new THREE.Group();
-        canvas.meshGroup = new THREE.Group();
-        // canvas.backMeshGroup = new THREE.Group();
-        canvas.scene.add(canvas.predefGroup);
-        canvas.scene.add(canvas.meshGroup);
-        // canvas.scene.add(canvas.backMeshGroup);
+        Canvas.predefGroup = new THREE.Group();
+        Canvas.meshGroup = new THREE.Group();
+        // Canvas.backMeshGroup = new THREE.Group();
+        Canvas.scene.add(Canvas.predefGroup);
+        Canvas.scene.add(Canvas.meshGroup);
+        // Canvas.scene.add(Canvas.backMeshGroup);
     }
 
     // orthographic camera
     {
-        canvas.camera = new THREE.OrthographicCamera(-canvas.width / 2.0, canvas.width / 2.0, canvas.height / 2.0, -canvas.height / 2.0, 0.0, 2000.0);
-        canvas.predefGroup.add(canvas.camera);
+        Canvas.camera = new THREE.OrthographicCamera(-Canvas.width / 2.0, Canvas.width / 2.0, Canvas.height / 2.0, -Canvas.height / 2.0, 0.0, 2000.0);
+        Canvas.predefGroup.add(Canvas.camera);
     }
 
     // light (need to tweak??)
     {
-        canvas.ambientLight = new THREE.AmbientLight(0x444444);
-        canvas.predefGroup.add(canvas.ambientLight);
-        canvas.directionalLights = [];
-        canvas.directionalLights.push(new THREE.DirectionalLight(0xaaaaaa));
-        canvas.directionalLights[0].shadow.mapSize.width = 2048;
-        canvas.directionalLights[0].shadow.mapSize.height = 2048;
-        canvas.directionalLights[0].position.set(20, 20, 20);
-        canvas.directionalLights[0].castShadow = true;
-        canvas.predefGroup.add(canvas.directionalLights[0]);
-        canvas.directionalLights.push(new THREE.DirectionalLight(0xaaaaaa));
-        canvas.directionalLights[1].shadow.mapSize.width = 2048;
-        canvas.directionalLights[1].shadow.mapSize.height = 2048;
-        canvas.directionalLights[1].position.set(0, -15, -20);
-        canvas.directionalLights[1].castShadow = true;
-        canvas.predefGroup.add(canvas.directionalLights[1]);
-        canvas.directionalLights.push(new THREE.DirectionalLight(0xaaaaaa));
-        canvas.directionalLights[2].shadow.mapSize.width = 2048;
-        canvas.directionalLights[2].shadow.mapSize.height = 2048;
-        canvas.directionalLights[2].position.set(-25, 20, 0);
-        canvas.directionalLights[2].castShadow = true;
-        canvas.predefGroup.add(canvas.directionalLights[2]);
+        Canvas.ambientLight = new THREE.AmbientLight(0x444444);
+        Canvas.predefGroup.add(Canvas.ambientLight);
+        Canvas.directionalLights = [];
+        Canvas.directionalLights.push(new THREE.DirectionalLight(0xaaaaaa));
+        Canvas.directionalLights[0].shadow.mapSize.width = 2048;
+        Canvas.directionalLights[0].shadow.mapSize.height = 2048;
+        Canvas.directionalLights[0].position.set(20, 20, 20);
+        Canvas.directionalLights[0].castShadow = true;
+        Canvas.predefGroup.add(Canvas.directionalLights[0]);
+        Canvas.directionalLights.push(new THREE.DirectionalLight(0xaaaaaa));
+        Canvas.directionalLights[1].shadow.mapSize.width = 2048;
+        Canvas.directionalLights[1].shadow.mapSize.height = 2048;
+        Canvas.directionalLights[1].position.set(0, -15, -20);
+        Canvas.directionalLights[1].castShadow = true;
+        Canvas.predefGroup.add(Canvas.directionalLights[1]);
+        Canvas.directionalLights.push(new THREE.DirectionalLight(0xaaaaaa));
+        Canvas.directionalLights[2].shadow.mapSize.width = 2048;
+        Canvas.directionalLights[2].shadow.mapSize.height = 2048;
+        Canvas.directionalLights[2].position.set(-25, 20, 0);
+        Canvas.directionalLights[2].castShadow = true;
+        Canvas.predefGroup.add(Canvas.directionalLights[2]);
     }
 
     // renderer
     {
-        canvas.renderer = new THREE.WebGLRenderer({ preserveDrawingBuffer: true, alpha: true });
-        canvas.renderer.setSize(canvas.width, canvas.height);
-        canvas.renderer.setClearColor(0xeeeeee, 1.0);
-        canvas.renderer.shadowMap.enabled = true;
+        Canvas.renderer = new THREE.WebGLRenderer({ preserveDrawingBuffer: true, alpha: true });
+        Canvas.renderer.setSize(Canvas.width, Canvas.height);
+        Canvas.renderer.setClearColor(0xeeeeee, 1.0);
+        Canvas.renderer.shadowMap.enabled = true;
         UI.webGLOutputDiv.appendChild(this.renderer.domElement);
     }
 
     // effectComposer
     {
-        canvas.effectComposer = new EffectComposer(canvas.renderer);
-        canvas.renderPass = new RenderPass(canvas.scene, canvas.camera);
-        canvas.effectComposer.addPass(canvas.renderPass);
+        Canvas.effectComposer = new EffectComposer(Canvas.renderer);
+        Canvas.renderPass = new RenderPass(Canvas.scene, Canvas.camera);
+        Canvas.effectComposer.addPass(Canvas.renderPass);
     }
 
     // controls
     {
-        canvas.controls = new TrackballControls(canvas.camera, canvas.renderer.domElement);
-        canvas.controls.panSpeed = 0.3 * 5;
+        Canvas.controls = new TrackballControls(Canvas.camera, Canvas.renderer.domElement);
+        Canvas.controls.panSpeed = 0.3 * 5;
     }
 
     // event listener
     window.addEventListener('resize', function () {
-        canvas.width = UI.webGLDiv.offsetWidth;
-        canvas.height = UI.webGLDiv.offsetHeight;
+        Canvas.width = UI.webGLDiv.offsetWidth;
+        Canvas.height = UI.webGLDiv.offsetHeight;
 
-        canvas.camera.left = -canvas.width / 2.0;
-        canvas.camera.right = canvas.width / 2.0;
-        canvas.camera.top = canvas.height / 2.0;
-        canvas.camera.bottom = -canvas.height / 2.0;
-        canvas.camera.updateProjectionMatrix();
+        Canvas.camera.left = -Canvas.width / 2.0;
+        Canvas.camera.right = Canvas.width / 2.0;
+        Canvas.camera.top = Canvas.height / 2.0;
+        Canvas.camera.bottom = -Canvas.height / 2.0;
+        Canvas.camera.updateProjectionMatrix();
 
-        canvas.renderer.setPixelRatio(window.devicePixelRatio);
-        canvas.renderer.setSize(canvas.width, canvas.height);
-        canvas.effectComposer.setSize(canvas.width, canvas.height);
+        Canvas.renderer.setPixelRatio(window.devicePixelRatio);
+        Canvas.renderer.setSize(Canvas.width, Canvas.height);
+        Canvas.effectComposer.setSize(Canvas.width, Canvas.height);
     });
 
     // todo
     //     canvas.pullUpdate();
     //     this.camera.lookAt(this.scene.position);
 
-    canvas.drawLoop();
+    Canvas.drawLoop();
 };
 
-canvas.drawLoop = function () {
-    canvas.controls.update();
+Canvas.drawLoop = function () {
+    Canvas.controls.update();
     // canvas.pushUpdate();
-    requestAnimationFrame(canvas.drawLoop);
-    canvas.effectComposer.render();
+    requestAnimationFrame(Canvas.drawLoop);
+    Canvas.effectComposer.render();
 };
 
-canvas.pullUpdate = function () {
+Canvas.pullUpdate = function () {
     //     var callback = function (response) {
     //         var j = JSON.parse(response);
     //         canvas.controls.target.set(j["target"].x, j["target"].y, j["target"].z);
@@ -171,7 +171,7 @@ canvas.pullUpdate = function () {
     //     APIcall("GET", "api/latestCanvasParameters").then(res => callback(res));
 };
 
-canvas.pushUpdate = function () {
+Canvas.pushUpdate = function () {
     //     var targetnEq = (canvas.lastControlTarget != null
     //         && !canvas.lastControlTarget.equals(canvas.controls.target));
     //     var posnEq = (canvas.lastCameraPos != null
@@ -211,7 +211,7 @@ canvas.pushUpdate = function () {
     //     }
 };
 
-canvas.resetCamera = function () {
+Canvas.resetCamera = function () {
     // export function resetCamera(refreshBSphere) {
     //     if (canvas.meshGroup.children.filter(function (obj) { return (obj instanceof THREE.Mesh); }).length > 0) {
     //         var sliderValue = document.getElementById("clippingSlider").noUiSlider.get();
@@ -263,7 +263,7 @@ canvas.resetCamera = function () {
     // }
 };
 
-canvas.alignCamera = function () {
+Canvas.alignCamera = function () {
     // export function alignCamera(direction) {
     //     // directions[X][0]: camera position based from the origin
     //     // directions[X][1]: camera up direction
@@ -317,7 +317,7 @@ canvas.alignCamera = function () {
     // }
 };
 
-canvas.fitToFrame = function () {
+Canvas.fitToFrame = function () {
     // export function fitToFrame() {
     //     if (canvas.meshGroup.children.filter(function (obj) { return (obj instanceof THREE.Mesh && obj.visible); }).length > 0) {
     //         var posAttrib = BufferGeometryUtils.mergeBufferAttributes(canvas.meshGroup.children.filter(function (obj) { return (obj instanceof THREE.Mesh && obj.visible); }).map(function (obj) { return obj.geometry.getAttribute("position"); }));
@@ -362,14 +362,3 @@ canvas.fitToFrame = function () {
     //     }
     // }
 };
-
-// call init() function
-canvas.init();
-
-
-
-
-
-
-
-
