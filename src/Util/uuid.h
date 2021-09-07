@@ -7,7 +7,7 @@ namespace Doppelganger
 {
 	namespace Util
 	{
-		std::string uuid();
+		std::string uuid(const std::string& prefix);
 	};
 } // namespace
 

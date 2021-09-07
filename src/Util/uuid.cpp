@@ -12,9 +12,11 @@ namespace Doppelganger
 {
 	namespace Util
 	{
-		std::string uuid()
+		std::string uuid(const std::string &prefix)
 		{
-			return boost::lexical_cast<std::string>(boost::uuids::random_generator()());
+			std::string uuid(prefix);
+			uuid += boost::lexical_cast<std::string>(boost::uuids::random_generator()());
+			return uuid;
 		}
 	}
 } // namespace
