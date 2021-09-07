@@ -16,7 +16,8 @@ namespace Doppelganger
 	{
 	public:
 		// constructors/destructors
-		triangleMesh()
+		triangleMesh(const std::string &UUID_)
+			: UUID(UUID_)
 		{
 			visibility = true;
 			RGBA.resize(1, 4);
@@ -28,10 +29,11 @@ namespace Doppelganger
 		~triangleMesh(){};
 
 		// dump to json
-		nlohmann::json dumpToJson() const;
+		nlohmann::json dumpToJson(const bool &sendToClient) const;
 
 	public:
 		std::string name;
+		const std::string UUID;
 		bool visibility;
 		// geometry
 		Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> V;
@@ -41,15 +43,18 @@ namespace Doppelganger
 		// face group
 		Eigen::Matrix<int, Eigen::Dynamic, 1> FG;
 		// color/texture
+		// In this library, RGB value is always [0.0, 1.0].
 		Eigen::Matrix<double, 1, Eigen::Dynamic> RGBA;
 		Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> VC;
 		Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> FC;
 		Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> TC;
 		Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> FTC;
-		// In this library, RGB value is always [0.0, 1.0].
 		std::vector<std::string> mtlFileName;
-		std::vector<std::string> textureFileNames;
-		std::vector<Eigen::Matrix<uint32_t, Eigen::Dynamic, Eigen::Dynamic>> textures;
+		typedef struct Texture_ {
+			std::string fileName;
+			Eigen::Matrix<uint32_t, Eigen::Dynamic, Eigen::Dynamic> texData;
+		} Texture;
+		std::vector<Texture> textures;
 		// Halfedge data structure
 		Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> TT;
 		Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> TTi;
@@ -66,13 +71,7 @@ namespace Doppelganger
 		Eigen::Matrix<double, Eigen::Dynamic, 1> PV2;
 		Eigen::Matrix<double, Eigen::Dynamic, 1> K;
 
-		////
-		// custom data
-		////
 		std::unordered_map<std::string, boost::any> customData;
-		////
-		// custom data (end)
-		////
 	};
 }
 
