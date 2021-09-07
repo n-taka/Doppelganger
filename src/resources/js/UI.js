@@ -138,7 +138,7 @@ UI.init = function () {
             UI.loadingDiv.setAttribute('style', (mode ? 'visibility: visible;' : 'visibility: hidden;'));
         };
 
-        // todo ...
+        // todo: add more functions
     }
 };
 

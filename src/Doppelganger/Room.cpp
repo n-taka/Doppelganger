@@ -3,6 +3,7 @@
 
 #include "Doppelganger/Room.h"
 #include "Doppelganger/Core.h"
+#include "Doppelganger/WebsocketSession.h"
 
 namespace Doppelganger
 {
@@ -11,15 +12,7 @@ namespace Doppelganger
 		: UUID(UUID_), core(core_)
 	{
 		//////
-		// initialize server parameter
-		//////
-		{
-			serverParams.mutexServerParams = std::make_shared<std::mutex>();
-		}
-
-		//////
 		// initialize edit history parameters
-		//////
 		{
 			// todo
 			// editHistoryParams.editHistoryVec.clear();
@@ -30,25 +23,15 @@ namespace Doppelganger
 
 		//////
 		// initialize user interface parameters
-		//////
 		{
 			interfaceParams.cameraTarget << 0, 0, 0;
 			interfaceParams.cameraPos << -30, 40, 30;
 			interfaceParams.cameraUp << 0, 1, 0;
 			interfaceParams.cameraZoom = 1.0;
-			interfaceParams.mutexInterfaceParams = std::make_shared<std::mutex>();
-		}
-
-		////
-		// initialize mesh data parameter
-		////
-		{
-			mutexMeshes = std::make_shared<std::mutex>();
 		}
 
 		////
 		// initialize logger for this room
-		////
 		{
 			logger.initialize(UUID, core->config.at("log"));
 			{
@@ -60,7 +43,6 @@ namespace Doppelganger
 
 		////
 		// initialize outputDir for this room
-		////
 		{
 			const std::string roomCreatedTimeStamp = Logger::getCurrentTimestampAsString(false);
 			std::stringstream tmp;
@@ -75,6 +57,54 @@ namespace Doppelganger
 			fs::create_directories(outputDir);
 		}
 	}
+
+	void Room::joinWS(const std::shared_ptr<WebsocketSession> &session)
+	{
+		std::lock_guard<std::mutex> lock(serverParams.mutexServerParams);
+		serverParams.websocketSessions[session->UUID] = session;
+	}
+
+	void Room::leaveWS(const std::string &sessionUUID)
+	{
+		std::lock_guard<std::mutex> lock(serverParams.mutexServerParams);
+		serverParams.websocketSessions.erase(sessionUUID);
+	}
+
+	void Room::broadcastWS(const std::string &payload, const std::unordered_set<std::string> &doNotSend)
+	{
+		std::lock_guard<std::mutex> lock(serverParams.mutexServerParams);
+		const std::shared_ptr<const std::string> ss = std::make_shared<const std::string>(std::move(payload));
+
+		for (const auto &uuid_session : serverParams.websocketSessions)
+		{
+			if (doNotSend.find(uuid_session.first) == doNotSend.end())
+			{
+				uuid_session.second->send(ss);
+			}
+		}
+	}
+
+#if 0
+	void Room::broadcastMeshUpdate(const std::vector<int> &doppelIdVec)
+	{
+		// load internal API
+		typedef std::function<void(const int &, const std::unordered_map<int, Doppel::triangleMesh> &, nlohmann::json &, const bool)> writeMeshToJson_t;
+		const writeMeshToJson_t &writeMeshToJson = boost::any_cast<writeMeshToJson_t &>(internalAPI.at("writeMeshToJson"));
+
+		nlohmann::json meshesJson = nlohmann::json::object();
+		for (const auto &doppelId : doppelIdVec)
+		{
+			nlohmann::json meshJson = nlohmann::json::object();
+			writeMeshToJson(doppelId, meshes, meshJson, true);
+			meshesJson[std::to_string(doppelId)] = meshJson;
+		}
+		nlohmann::json json = nlohmann::json::object();
+		json["task"] = "syncMeshes";
+		json["meshes"] = meshesJson;
+
+		broadcastWS(json.dump());
+	}
+#endif
 } // namespace
 
 #endif

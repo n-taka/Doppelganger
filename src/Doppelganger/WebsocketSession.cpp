@@ -9,17 +9,16 @@
 namespace Doppelganger
 {
 	WebsocketSession::WebsocketSession(boost::asio::ip::tcp::socket socket,
+									   const std::string &UUID_,
 									   const std::shared_ptr<Room> &room_)
-		: ws(std::move(socket)), room(room_)
+		: UUID(UUID_), ws(std::move(socket)), room(room_)
 	{
 	}
 
 	WebsocketSession::~WebsocketSession()
 	{
-// Remove this session from the list of active sessions
-#if 0
-		room->leaveWS(sessionId);
-#endif
+		// Remove this session from the list of active sessions
+		room->leaveWS(UUID);
 	}
 
 	void WebsocketSession::fail(boost::system::error_code ec, char const *what)
@@ -33,7 +32,7 @@ namespace Doppelganger
 
 		std::stringstream s;
 		s << what << ": " << ec.message();
-		// Logger::getInstance().log(s.str(), "ERROR");
+		room->logger.log(s.str(), "ERROR");
 	}
 
 	void WebsocketSession::onAccept(boost::system::error_code ec)
@@ -44,19 +43,19 @@ namespace Doppelganger
 			return fail(ec, "accept (websocket)");
 		}
 
-#if 0
 		// Add this session to the list of active sessions
-		sessionId = pantry->joinWS(shared_from_this());
+		room->joinWS(shared_from_this());
 
 		// initialize session
 		nlohmann::json json;
 		json["task"] = "initializeSession";
-		json["sessionId"] = sessionId;
+		json["parameters"] = nlohmann::json::object();
+		json.at("parameters")["UUID"] = UUID;
 		const std::string payload = json.dump();
 		const std::shared_ptr<const std::string> ss = std::make_shared<const std::string>(std::move(payload));
 		send(ss);
 
-		// Read a message
+		// start reading a message
 		ws.async_read(
 			buffer,
 			[sp = shared_from_this()](
@@ -64,7 +63,6 @@ namespace Doppelganger
 			{
 				sp->onRead(ec, bytes);
 			});
-#endif
 	}
 
 	void WebsocketSession::onRead(boost::system::error_code ec, std::size_t bytes_transferred)
@@ -76,7 +74,7 @@ namespace Doppelganger
 		}
 
 		const std::string payload = boost::beast::buffers_to_string(buffer.data());
-		nlohmann::json parameters = nlohmann::json::parse(payload);
+		const nlohmann::json parameters = nlohmann::json::parse(payload);
 // ===== todo call API =====
 #if 0
 		// Send to all connections

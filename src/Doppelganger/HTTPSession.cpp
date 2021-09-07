@@ -449,9 +449,7 @@ namespace Doppelganger
 			// create new room
 			if (roomUUID.size() <= 0)
 			{
-				roomUUID = "";
-				roomUUID += "room-";
-				roomUUID += Util::uuid();
+				roomUUID = Util::uuid("room-");
 			}
 			else
 			{
@@ -475,7 +473,8 @@ namespace Doppelganger
 			if (boost::beast::websocket::is_upgrade(req))
 			{
 				// Create a WebSocket session by transferring the socket
-				std::make_shared<WebsocketSession>(std::move(socket), room)->run(std::move(req));
+				const std::string sessionUUID = Util::uuid("session-");
+				std::make_shared<WebsocketSession>(std::move(socket), sessionUUID, room)->run(std::move(req));
 				return;
 			}
 			else

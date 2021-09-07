@@ -44,13 +44,13 @@ namespace Doppelganger
 		struct serverParameters
 		{
 			std::unordered_map<std::string, std::shared_ptr<WebsocketSession>> websocketSessions;
-			std::shared_ptr<std::mutex> mutexServerParams;
+			std::mutex mutexServerParams;
 		};
 		serverParameters serverParams;
-		int joinWS(const std::shared_ptr<WebsocketSession> &session);
+		void joinWS(const std::shared_ptr<WebsocketSession> &session);
 		void leaveWS(const std::string &sessionUUID);
-		void broadcastWS(const std::string &payload, const std::unordered_set<int> &exceptionSet = {});
-		void broadcastMeshUpdate(const std::vector<std::string> &meshUUIDVec);
+		void broadcastWS(const std::string &payload, const std::unordered_set<std::string> &doNotSend = {});
+		// void broadcastMeshUpdate(const std::vector<std::string> &meshUUIDVec);
 
 		////
 		// parameter for edit history
@@ -59,7 +59,7 @@ namespace Doppelganger
 			int editHistoryIndex;
 			std::vector<nlohmann::json> diffFromPrev;
 			std::vector<nlohmann::json> diffFromNext;
-			std::shared_ptr<std::mutex> mutexEditHistoryParams;
+			std::mutex mutexEditHistoryParams;
 		};
 		editHistoryParameters editHistoryParams;
 
@@ -73,14 +73,14 @@ namespace Doppelganger
 			std::unordered_map<std::string, std::vector<double>> cursors;
 			// loading state
 			std::unordered_set<std::string> taskUUIDInProgress;
-			std::shared_ptr<std::mutex> mutexInterfaceParams;
+			std::mutex mutexInterfaceParams;
 		};
 		interfaceParameters interfaceParams;
 
 		////
 		// mesh data
 		std::unordered_map<std::string, std::shared_ptr<Doppelganger::triangleMesh>> meshes;
-		std::shared_ptr<std::mutex> mutexMeshes;
+		std::mutex mutexMeshes;
 
 		////
 		// custom data

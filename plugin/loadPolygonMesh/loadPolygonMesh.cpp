@@ -62,14 +62,15 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 	const std::string &base64Str = parameters.at("file").at("base64Str").get<std::string>();
 
 	fs::path filePath = fs::temp_directory_path();
-	filePath /= Doppelganger::Util::uuid();
+	filePath /= Doppelganger::Util::uuid("DoppelgangerTmpFile-");
 	filePath += ".";
 	filePath += fileType;
 	Doppelganger::Util::writeBase64ToFile(base64Str, filePath);
 
-	const std::string &meshName = parameters.at("mesh").at("name").get<std::string>();
-	std::shared_ptr<Doppelganger::triangleMesh> mesh = std::make_shared<Doppelganger::triangleMesh>();
+	const std::string meshUUID = Doppelganger::Util::uuid("mesh-");
+	std::shared_ptr<Doppelganger::triangleMesh> mesh = std::make_shared<Doppelganger::triangleMesh>(meshUUID);
 
+	const std::string &meshName = parameters.at("mesh").at("name").get<std::string>();
 	mesh->name = meshName;
 	Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &V = mesh->V;
 	Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &VN = mesh->VN;
@@ -233,15 +234,13 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 	}
 
 	// register to this room
-	std::string meshUUID("mesh-");
-	meshUUID += Doppelganger::Util::uuid();
 	room->meshes[meshUUID] = mesh;
 
 	// create response/broadcast
 	response = nlohmann::json::object();
 	broadcast = nlohmann::json::object();
 	broadcast["mesh"] = nlohmann::json::object();
-	broadcast.at("mesh")[meshUUID] = mesh->dumpToJson();
+	broadcast.at("mesh")[meshUUID] = mesh->dumpToJson(true);
 
 	{
 		// message
