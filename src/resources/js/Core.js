@@ -1,19 +1,17 @@
 import { UI } from './UI.js';
 import { Canvas } from './Canvas.js';
 import { WS } from './WS.js';
+import { MouseKey } from './MouseKey.js';
 
-// import { DoppelWS } from './websocket.js';
 // import { syncMeshes } from './websocketCallBackFuncs.js';
 // import { modal } from './setupModal.js';
 // import { APIcall } from './APIcall.js';
-// import { mouseKey } from './mouseKey.js';
 
-export var Core = {};
+export const Core = {};
 
 Core.init = function () {
     // unique ID for websocket connection
-    Core.sessionId = null;
-    Core.strokeTimeStamp = null;
+    Core.UUID = null;
 
     Core.selectedMeshUUID = [];
 
@@ -25,12 +23,11 @@ Core.init = function () {
     Core.language = Core.language.substring(0, 2);
 
     window.onload = function () {
-        // initialize UI
+        // initialize
         UI.init();
         Canvas.init();
         WS.init();
-
-        // mouseKey.init();
+        MouseKey.init();
 
         // APIcall("GET", "api/serverInfo").then((res) => {
         //     var j = JSON.parse(res);

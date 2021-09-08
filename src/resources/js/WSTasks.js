@@ -1,17 +1,21 @@
 import * as THREE from 'https://unpkg.com/three@0.126.0/build/three.module.js';
 import { Core } from './Core.js';
+import { UI } from './UI.js';
 
 export const WSTasks = {};
 
 WSTasks["initializeSession"] = initializeSession;
+WSTasks["isServerBusy"] = isServerBusy;
 // WSTasks["syncParams"] = syncParams;
 // WSTasks["syncCursors"] = syncCursors;
 // WSTasks["syncMeshes"] = syncMeshes;
-// WSTasks["syncLoadingState"] = syncLoadingState;
 
 async function initializeSession(parameters) {
-    Core.sessionId = parameters["UUID"];
-    document.body.style.cursor = "url(../icon/cursorIcon" + Math.floor(Math.random() * 10) + ".png) 16 16 , default"
+    Core.UUID = parameters["UUID"];
+}
+
+async function isServerBusy(parameters) {
+    UI.setBusyMode(parameters["isBusy"]);
 }
 
 // async function updateToolElement(mesh, remove) {
@@ -416,6 +420,3 @@ async function initializeSession(parameters) {
 //     }
 // }
 
-// async function syncLoadingState(j) {
-//     document.getElementById("taskState").style.visibility = (j["isBusy"] ? "visible" : "hidden");
-// }

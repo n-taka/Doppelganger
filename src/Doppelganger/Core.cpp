@@ -12,6 +12,8 @@
 #include <sstream>
 #include <nlohmann/json.hpp>
 
+// https://github.com/boostorg/beast/blob/develop/example/http/server/async/http_server_async.cpp
+
 namespace Doppelganger
 {
 	Core::Core(boost::asio::io_context &ioc_)

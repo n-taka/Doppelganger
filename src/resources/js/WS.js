@@ -1,6 +1,6 @@
 import { WSTasks } from './WSTasks.js';
 
-export var WS = {};
+export const WS = {};
 
 function onOpen(event) {
     console.log("connected. (websocket)");
@@ -8,7 +8,6 @@ function onOpen(event) {
 function onMessage(event) {
     if (event && event.data) {
         const json = JSON.parse(event.data);
-        console.log(json);
 
         if ("task" in json) {
             if (json["task"] in WSTasks) {
@@ -37,12 +36,7 @@ function onClose(event) {
 
 WS.init = function () {
     // location.pathname.split('/')[1]: roomUUID
-    if (location.protocol == "http:") {
-        var uri = "ws://" + location.host + "/" + location.pathname.split('/')[1] + "/"
-    }
-    else if (location.protocol == "https:") {
-        var uri = "wss://" + location.host + "/" + location.pathname.split('/')[1] + "/"
-    }
+    const uri = (location.protocol == "http:" ? "ws://" : "wss://") + location.host + "/" + location.pathname.split('/')[1] + "/";
     if (WS.ws == null) {
         WS.ws = new WebSocket(uri);
         WS.ws.onopen = onOpen;
@@ -51,6 +45,7 @@ WS.init = function () {
         WS.ws.onerror = onError;
     }
 
+    // when we close tab/window, we gracefully close websocket
     window.addEventListener('beforeunload', function () {
         WS.ws.close();
     });

@@ -265,19 +265,18 @@ namespace
 						// API
 						try
 						{
-#if 0
-					int currentTaskId = -1;
-					{
-						std::lock_guard<std::mutex> lock(room->interfaceParams.mutexInterfaceParams);
-						currentTaskId = room->interfaceParams.taskId++;
-						room->interfaceParams.taskIdInProgress.insert(currentTaskId);
+							std::string taskUUID;
+							{
+								std::lock_guard<std::mutex> lock(room->interfaceParams.mutexInterfaceParams);
+								taskUUID = Doppelganger::Util::uuid("task-");
+								room->interfaceParams.taskUUIDInProgress.insert(taskUUID);
 
-						nlohmann::json json;
-						json["task"] = "syncLoadingState";
-						json["isBusy"] = (room->interfaceParams.taskIdInProgress.size() > 0);
-						room->broadcastWS(json.dump());
-					}
-#endif
+								nlohmann::json json;
+								json["task"] = "isServerBusy";
+								json["isBusy"] = (room->interfaceParams.taskUUIDInProgress.size() > 0);
+								room->broadcastWS(json.dump());
+							}
+
 							const std::string &APIName = reqPathVec.at(2);
 							const Doppelganger::Plugin::API_t &APIFunc = core->plugin.at(APIName)->func;
 
@@ -291,10 +290,20 @@ namespace
 							logContent << "(";
 							logContent << parameters.at("sessionUUID");
 							logContent << ")";
+							room->logger.log(logContent.str(), "APICALL");
 
 							nlohmann::json response, broadcast;
 							APIFunc(room, parameters, response, broadcast);
-							room->logger.log(logContent.str(), "APICALL");
+
+							{
+								std::lock_guard<std::mutex> lock(room->interfaceParams.mutexInterfaceParams);
+								room->interfaceParams.taskUUIDInProgress.erase(taskUUID);
+
+								nlohmann::json json;
+								json["task"] = "isServerBusy";
+								json["isBusy"] = (room->interfaceParams.taskUUIDInProgress.size() > 0);
+								room->broadcastWS(json.dump());
+							}
 
 							// broadcast
 							if (!broadcast.empty())
@@ -314,18 +323,8 @@ namespace
 							res.set(boost::beast::http::field::content_type, "application/json");
 							res.content_length(responseStr.size());
 							res.keep_alive(req.keep_alive());
-							return send(std::move(res));
-#if 0
-							{
-								std::lock_guard<std::mutex> lock(room->interfaceParams.mutexInterfaceParams);
-								room->interfaceParams.taskIdInProgress.erase(currentTaskId);
 
-								nlohmann::json json;
-								json["task"] = "syncLoadingState";
-								json["isBusy"] = (room->interfaceParams.taskIdInProgress.size() > 0);
-								room->broadcastWS(json.dump());
-							}
-#endif
+							return send(std::move(res));
 						}
 						catch (...)
 						{

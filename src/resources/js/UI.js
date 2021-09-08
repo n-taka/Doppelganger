@@ -110,32 +110,32 @@ UI.init = function () {
             }
             document.body.appendChild(UI.rootDiv);
         }
-        // loading icon
+        // busy icon
         {
-            UI.loadingDiv = document.createElement('div');
-            UI.loadingDiv.setAttribute('class', 'taskState');
-            UI.loadingDiv.setAttribute('style', 'visibility: hidden;');
+            UI.busyDiv = document.createElement('div');
+            UI.busyDiv.setAttribute('class', 'taskState');
+            UI.busyDiv.setAttribute('style', 'visibility: hidden;');
             {
-                UI.loadingIconA = document.createElement('a');
-                UI.loadingIconA.setAttribute('class', 'taskStateText');
-                UI.loadingIconA.setAttribute('style', 'pointer-events: none;');
+                UI.busyIconA = document.createElement('a');
+                UI.busyIconA.setAttribute('class', 'taskStateText');
+                UI.busyIconA.setAttribute('style', 'pointer-events: none;');
                 {
-                    UI.loadingIconI = document.createElement('i');
-                    UI.loadingIconI.setAttribute('class', 'material-icons');
-                    UI.loadingIconI.setAttribute('style', 'font-size: 128px;');
-                    UI.loadingIconI.innerText = 'timer';
-                    UI.loadingIconA.appendChild(UI.loadingIconI);
+                    UI.busyIconI = document.createElement('i');
+                    UI.busyIconI.setAttribute('class', 'material-icons');
+                    UI.busyIconI.setAttribute('style', 'font-size: 128px;');
+                    UI.busyIconI.innerText = 'timer';
+                    UI.busyIconA.appendChild(UI.busyIconI);
                 }
-                UI.loadingDiv.appendChild(UI.loadingIconA);
+                UI.busyDiv.appendChild(UI.busyIconA);
             }
-            document.body.appendChild(UI.loadingDiv);
+            document.body.appendChild(UI.busyDiv);
         }
     }
 
     // utility function definitions
     {
-        UI.setLoadingMode = function (mode) {
-            UI.loadingDiv.setAttribute('style', (mode ? 'visibility: visible;' : 'visibility: hidden;'));
+        UI.setBusyMode = function (mode) {
+            UI.busyDiv.setAttribute('style', (mode ? 'visibility: visible;' : 'visibility: hidden;'));
         };
 
         // todo: add more functions
