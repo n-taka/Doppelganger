@@ -22,7 +22,7 @@ MouseKey.init = function () {
     });
     // we first updateCursor, then syncCursor
     document.addEventListener("pointermove", function (e) { e.preventDefault(); MouseKey.updateCursor(e) });
-    document.addEventListener("pointermove", function (e) { e.preventDefault(); MouseKey.syncCursor(false) });
+    document.addEventListener("pointermove", function (e) { e.preventDefault(); MouseKey.syncCursor() });
     // document.addEventListener("pointerup", customClick);
     MouseKey["cursors"] = {};
     MouseKey["prevCursor"] = new THREE.Vector2(-1.0, -1.0);
@@ -49,11 +49,6 @@ MouseKey.init = function () {
             // currently, other keyboard shortcut is not implemented.
         }
     }));
-
-    // we explicitly useCapture to perform syncCursor BEFORE WS is closed.
-    window.addEventListener('beforeunload', function () {
-        syncCursors(true);
-    }, true);
 };
 
 MouseKey.updateCursor = function (e) {
@@ -84,7 +79,7 @@ MouseKey.updateCursor = function (e) {
     }
 }
 
-MouseKey.syncCursor = function (remove = false) {
+MouseKey.syncCursor = function () {
     const cursorNEq = (Core["UUID"]
         && MouseKey["cursors"][Core["UUID"]]
         && !MouseKey["prevCursor"].equals(MouseKey["cursors"][Core["UUID"]]["dir"]));
@@ -92,8 +87,7 @@ MouseKey.syncCursor = function (remove = false) {
     var json = {
         "task": "syncCursor",
         "UUID": Core["UUID"],
-        "timestamp": MouseKey.strokeTimeStamp,
-        "remove": remove
+        "timestamp": MouseKey.strokeTimeStamp
     };
     if (cursorNEq) {
         json["cursor"] = {

@@ -8,6 +8,7 @@ function onOpen(event) {
 function onMessage(event) {
     if (event && event.data) {
         const json = JSON.parse(event.data);
+        console.log(json);
 
         if ("task" in json) {
             if (json["task"] in WSTasks) {
@@ -46,7 +47,9 @@ WS.init = function () {
     }
 
     // when we close tab/window, we gracefully close websocket
-    window.addEventListener('beforeunload', function () {
+    // this is not reliable??
+    window.addEventListener('beforeunload', function (e) {
+        WS.ws.onclose = function () { };
         WS.ws.close();
     });
 };

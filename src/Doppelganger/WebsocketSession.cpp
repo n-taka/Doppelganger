@@ -24,18 +24,20 @@ namespace Doppelganger
 
 	void WebsocketSession::fail(boost::system::error_code ec, char const *what)
 	{
+		// Remove this session from the list of active sessions
+		// If something wrong happens and WS is invalidated, such WS will be removed 
+		//   in the next write operation.
+		{
+			std::stringstream ss;
+			ss << "WS session \"" << UUID << "\" is closed.";
+			room->logger.log(ss.str(), "SYSTEM");
+		}
+		room->leaveWS(UUID);
+
 		// Don't report these
 		if (ec == boost::asio::error::operation_aborted ||
 			ec == boost::beast::websocket::error::closed)
 		{
-			// Remove this session from the list of active sessions
-			{
-				std::stringstream ss;
-				ss << "WS session \"" << UUID << "\" is closed.";
-				room->logger.log(ss.str(), "SYSTEM");
-			}
-			room->leaveWS(UUID);
-
 			return;
 		}
 

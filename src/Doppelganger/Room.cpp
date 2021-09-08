@@ -68,6 +68,8 @@ namespace Doppelganger
 	{
 		std::lock_guard<std::mutex> lock(serverParams.mutexServerParams);
 		serverParams.websocketSessions.erase(sessionUUID);
+		// todo
+		// update cursors
 	}
 
 	void Room::broadcastWS(const std::string &payload, const std::unordered_set<std::string> &doNotSend)
