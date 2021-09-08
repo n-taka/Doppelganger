@@ -30,7 +30,7 @@ MouseKey.init = function () {
     ////
     // keyboard events
     document.addEventListener("keyup", (function (e) {
-        DoppelCore.strokeTimeStamp = Date.now();
+        MouseKey.strokeTimeStamp = Date.now();
         var keycode = e.code;
         if (keycode == 'KeyF') {
             // 'f' key
