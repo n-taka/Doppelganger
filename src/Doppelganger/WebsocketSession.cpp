@@ -20,8 +20,6 @@ namespace Doppelganger
 
 	WebsocketSession::~WebsocketSession()
 	{
-		// Remove this session from the list of active sessions
-		room->leaveWS(UUID);
 	}
 
 	void WebsocketSession::fail(boost::system::error_code ec, char const *what)
@@ -30,6 +28,14 @@ namespace Doppelganger
 		if (ec == boost::asio::error::operation_aborted ||
 			ec == boost::beast::websocket::error::closed)
 		{
+			// Remove this session from the list of active sessions
+			{
+				std::stringstream ss;
+				ss << "WS session \"" << UUID << "\" is closed.";
+				room->logger.log(ss.str(), "SYSTEM");
+			}
+			room->leaveWS(UUID);
+
 			return;
 		}
 
@@ -77,7 +83,7 @@ namespace Doppelganger
 		}
 
 		const std::string payload = boost::beast::buffers_to_string(buffer.data());
-		const nlohmann::json parameters = nlohmann::json::parse(payload);
+		const nlohmann::json payloadJson = nlohmann::json::parse(payload);
 // ===== todo call API =====
 #if 0
 		// Send to all connections

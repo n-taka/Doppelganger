@@ -1,3 +1,5 @@
+import { WSTasks } from './WSTasks.js';
+
 export var WS = {};
 
 function onOpen(event) {
@@ -9,11 +11,8 @@ function onMessage(event) {
         console.log(json);
 
         if ("task" in json) {
-            if (json["task"] in wsCallbackFuncs) {
-                // do some APIcall
-                // json["task"]
-                // json["parameters"]
-
+            if (json["task"] in WSTasks) {
+                WSTasks[json["task"]](json["parameters"]);
                 // navigator.locks.request('websocketTask', async lock => {
                 //     return wsCallbackFuncs[j["task"]](j);
                 // });
@@ -51,6 +50,10 @@ WS.init = function () {
         WS.ws.onclose = onClose;
         WS.ws.onerror = onError;
     }
+
+    window.addEventListener('beforeunload', function () {
+        WS.ws.close();
+    });
 };
 
 WS.sendMsg = function (msg) {
