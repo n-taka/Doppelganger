@@ -139,36 +139,34 @@ namespace Doppelganger
 				pluginJson["list"] = pluginListJson;
 			}
 
-			// install plugins
-			if (pluginJson.contains("installed"))
+			// initialize Doppelganger::Plugin instances
+			for (const auto &pluginEntry : pluginJson["list"].items())
 			{
-				for (const auto &pluginToBeInstalled : pluginJson.at("installed"))
+				const std::string &name = pluginEntry.key();
+				const nlohmann::json &pluginInfo = pluginEntry.value();
+				const std::shared_ptr<Doppelganger::Plugin> plugin_ = std::make_shared<Doppelganger::Plugin>(shared_from_this(), name, pluginInfo);
+				plugin[name] = plugin_;
+			}
+
+			// install plugins
+			// installed plugins are stored in config["plugin"]["dir"]/installed.json
+			fs::path installedPluginJsonPath(config.at("plugin").at("dir").get<std::string>());
+			installedPluginJsonPath.append("installed.json");
+			if (fs::exists(installedPluginJsonPath))
+			{
+				std::ifstream ifs(installedPluginJsonPath);
+				const nlohmann::json installedPluginJson = nlohmann::json::parse(ifs);
+				ifs.close();
+
+				for (const auto &pluginToBeInstalled : installedPluginJson.items())
 				{
-					const std::string &name = pluginToBeInstalled.at("name").get<std::string>();
-					const std::string &version = pluginToBeInstalled.at("version").get<std::string>();
-					if (pluginJson.at("list").contains(name))
+					const std::string &name = pluginToBeInstalled.key();
+					const nlohmann::json &pluginInfo = pluginToBeInstalled.value();
+					const std::string &version = pluginInfo.at("version").get<std::string>();
+
+					if (plugin.find(name) != plugin.end())
 					{
-						if (pluginJson.at("list").at(name).at("versions").contains(version))
-						{
-							const std::shared_ptr<Doppelganger::Plugin> plugin_ = std::make_shared<Doppelganger::Plugin>(shared_from_this());
-							const bool loadSuccess = plugin_->loadPlugin(name, pluginJson.at("list").at(name).at("versions").at(version).get<std::string>());
-							if (loadSuccess)
-							{
-								plugin[name] = plugin_;
-								pluginJson.at("list").at(name)["installed"] = true;
-							}
-							else
-							{
-								std::stringstream ss;
-								ss << "Plugin \"";
-								ss << name;
-								ss << "\" (";
-								ss << version;
-								ss << ")";
-								ss << " is NOT loaded correctly.";
-								logger.log(ss.str(), "ERROR");
-							}
-						}
+						plugin.at(name)->install(version);
 					}
 					else
 					{
@@ -185,34 +183,28 @@ namespace Doppelganger
 			}
 
 			// install non-optional plugins
-			for (const auto &pluginToBeInstalled : pluginJson.at("list").items())
+			for (const auto &pluginEntry : pluginJson.at("list").items())
 			{
-				const std::string name = pluginToBeInstalled.key();
-				nlohmann::json &pluginInfo = pluginToBeInstalled.value();
+				const std::string &name = pluginEntry.key();
+				const nlohmann::json &pluginInfo = pluginEntry.value();
 				const bool &optional = pluginInfo.at("optional").get<bool>();
 				if (!optional)
 				{
-					const bool installed = (pluginInfo.contains("installed") && pluginInfo.at("installed").get<bool>());
-					if (!installed)
+					if (plugin.find(name) != plugin.end())
 					{
-						const std::shared_ptr<Doppelganger::Plugin> plugin_ = std::make_shared<Doppelganger::Plugin>(shared_from_this());
-						const bool loadSuccess = plugin_->loadPlugin(name, pluginJson.at("list").at(name).at("versions").at("latest").get<std::string>());
-						if (loadSuccess)
+						if (plugin.at(name)->installedVersion.size() == 0)
 						{
-							plugin[name] = plugin_;
-							pluginJson.at("list").at(name)["installed"] = true;
+							plugin.at(name)->install(std::string("latest"));
 						}
-						else
-						{
-							std::stringstream ss;
-							ss << "Plugin \"";
-							ss << name;
-							ss << "\" (";
-							ss << "latest";
-							ss << ")";
-							ss << " is NOT loaded correctly.";
-							logger.log(ss.str(), "ERROR");
-						}
+					}
+					else
+					{
+						std::stringstream ss;
+						ss << "Non-optional plugin \"";
+						ss << name;
+						ss << "\" (latest)";
+						ss << " is NOT found.";
+						logger.log(ss.str(), "ERROR");
 					}
 				}
 			}

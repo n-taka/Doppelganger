@@ -1,3 +1,5 @@
+import { Modal } from './Modal.js';
+
 export const UI = {};
 
 UI.init = function () {
@@ -140,5 +142,7 @@ UI.init = function () {
 
         // todo: add more functions
     }
+
+    Modal.init();
 };
 

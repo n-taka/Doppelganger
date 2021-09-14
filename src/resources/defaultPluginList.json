@@ -1,7 +1,8 @@
 {
     "browserInfo": {
         "description": "Automatically open browser on system boot.",
-        "optional": false,
+        "optional": true,
+        "latest": "1.0.0",
         "versions": {
             "1.0.0": "https://n-taka.info/nextcloud/s/R985TytEobs6D8A/download/browserInfo.zip"
         }
@@ -9,9 +10,10 @@
     "example": {
         "description": "This is just an example.",
         "optional": true,
+        "latest": "1.0.1",
         "versions": {
-            "1.0.0": "https://examples0.com/1.0.0",
-            "1.0.1": "https://examples0.com/1.0.1"
+            "1.0.1": "https://examples0.com/1.0.1",
+            "1.0.0": "https://examples0.com/1.0.0"
         }
     }
 }

@@ -23,12 +23,6 @@
         "dir": "",
         "listURL": [
             "https://n-taka.info/nextcloud/s/KKH2dWmTRT5wRA5/download/defaultPluginList.json"
-        ],
-        "installed": [
-            {
-                "name": "pluginB",
-                "version": "2.3.0"
-            }
         ]
     },
     "output": {

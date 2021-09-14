@@ -20,23 +20,25 @@ namespace Doppelganger
 	class Plugin
 	{
 	public:
-		Plugin(const std::shared_ptr<Core> &core_);
+		Plugin(const std::shared_ptr<Core> &core_, const std::string &name_, const nlohmann::json &parameters_);
 		~Plugin() {}
 		const std::shared_ptr<Core> core;
+		const std::string name;
+		const nlohmann::json parameters;
 
-		bool loadPlugin(const std::string &name, const std::string &pluginUrl);
-		bool loadPlugin(const fs::path &pluginDir);
-		// following variables are iniaitlized by calling loadPlugin
-		std::string name;
-		std::string author;
-		std::string version;
+		void install(const std::string &version);
+		std::string installedVersion;
 		int priority;
+
 		////
 		// typedef for API
 		//   all API have this signature, and other parameters (e.g. meshUUID) are supplied within the parameter json.
 		typedef std::function<void(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &, nlohmann::json &, nlohmann::json &)> API_t;
 		API_t func;
 		std::string moduleJS;
+
+	private:
+		void installFromDirectory(const fs::path &pluginDir);
 	};
 } // namespace
 
