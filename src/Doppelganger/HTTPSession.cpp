@@ -177,6 +177,8 @@ namespace
 		// http://example.com/<roomUUID>/<path>/<to>/<resource>
 		// API
 		// http://example.com/<roomUUID>/<APIName>
+		// API (module.js)
+		// http://example.com/<roomUUID>/plugin/APIName_version/module.js
 		fs::path reqPath(req.target().to_string());
 		reqPath.make_preferred();
 		// reqPathVec
@@ -197,6 +199,73 @@ namespace
 					{
 						// resource
 						fs::path completePath(core->systemParams.resourceDir);
+						completePath.make_preferred();
+						for (int pIdx = 2; pIdx < reqPathVec.size(); ++pIdx)
+						{
+							completePath.append(reqPathVec.at(pIdx));
+						}
+
+						// // note: second condition is for boost::filesystem
+						// if (!completePath.has_filename() || completePath.filename().string() == ".")
+						// {
+						// 	// moved permanently (301)
+						// 	std::string location = core->config.at("completeURL").get<std::string>();
+						// 	location += "/html/index.html";
+
+						// 	return send(movedPermanently(res, location));
+						// }
+
+						// Attempt to open the file
+						boost::beast::error_code ec;
+						boost::beast::http::file_body::value_type body;
+						body.open(completePath.string().c_str(), boost::beast::file_mode::scan, ec);
+
+						// Handle the case where the file doesn't exist
+						if (ec == boost::system::errc::no_such_file_or_directory)
+						{
+							return send(notFound(std::move(req), req.target()));
+						}
+						// Handle an unknown error
+						if (ec)
+						{
+							return send(serverError(std::move(req), ec.message()));
+						}
+
+						// Cache the size since we need it after the move
+						const auto size = body.size();
+
+						// Respond to HEAD request
+						if (req.method() == boost::beast::http::verb::head)
+						{
+							boost::beast::http::response<boost::beast::http::empty_body> res{boost::beast::http::status::ok, req.version()};
+							res.set(boost::beast::http::field::server, BOOST_BEAST_VERSION_STRING);
+							res.set(boost::beast::http::field::content_type, mime_type(completePath));
+							res.content_length(size);
+							res.keep_alive(req.keep_alive());
+							return send(std::move(res));
+						}
+						else if (req.method() == boost::beast::http::verb::get)
+						{
+							// Respond to GET request
+							boost::beast::http::response<boost::beast::http::file_body> res{
+								std::piecewise_construct,
+								std::make_tuple(std::move(body)),
+								std::make_tuple(boost::beast::http::status::ok, req.version())};
+							res.set(boost::beast::http::field::server, BOOST_BEAST_VERSION_STRING);
+							res.set(boost::beast::http::field::content_type, mime_type(completePath));
+							res.content_length(size);
+							res.keep_alive(req.keep_alive());
+							return send(std::move(res));
+						}
+						else
+						{
+							return send(badRequest(std::move(req), "Illegal request"));
+						}
+					}
+					else if (reqPathVec.at(2) == "plugin")
+					{
+						// resource
+						fs::path completePath(core->systemParams.workingDir);
 						completePath.make_preferred();
 						for (int pIdx = 2; pIdx < reqPathVec.size(); ++pIdx)
 						{
