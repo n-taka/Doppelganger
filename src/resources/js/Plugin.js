@@ -1,3 +1,5 @@
+import { APICall } from "./APICall.js";
+
 export const Plugin = {};
 
 Plugin.loadPlugins = async function () {
@@ -29,6 +31,9 @@ Plugin.loadPlugins = async function () {
     });
 }
 
-Plugin.init = function () {
-
+Plugin.init = async function () {
+    const installedPluginList = JSON.parse(await APICall("getInstalledPlugins", {}));
+    for (let plugin of installedPluginList) {
+        // todo: install module.js from URL(plugin["modulePath"])
+    }
 };

@@ -2,12 +2,11 @@ import { UI } from './UI.js';
 import { Canvas } from './Canvas.js';
 import { WS } from './WS.js';
 import { MouseKey } from './MouseKey.js';
-
-import { APICall } from './APICall.js';
 import { Modal } from './Modal.js';
+import { Plugin } from './Plugin.js';
+import { APICall } from './APICall.js';
 
 // import { syncMeshes } from './websocketCallBackFuncs.js';
-// import { modal } from './setupModal.js';
 
 export const Core = {};
 
@@ -29,11 +28,10 @@ Core.init = function () {
         await UI.init();
         Modal.init();
         Canvas.init();
-        await WS.init();
+        WS.init();
         MouseKey.init();
+        await Plugin.init();
 
-        const response = await APICall("listPlugins", {});
-        console.log(response);
 
         // APIcall("GET", "api/serverInfo").then((res) => {
         //     var j = JSON.parse(res);

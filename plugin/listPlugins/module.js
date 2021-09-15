@@ -15,16 +15,19 @@ const generateUI = function () {
         {
             const modalContentDiv = document.createElement('div');
             modalContentDiv.setAttribute("class", "modal-content");
-            APICall("listPlugins").then((value) => {
-                // todo update innerHTML based on value
-                console.log(value);
-                modalContentDiv.innerHTML = `
+            const plugins = JSON.parse(await APICall("listPlugins", {}));
+            // todo: update innerHTML based on value
+            //   see: https://materializecss.com/table.html
+            //   see: https://materializecss.com/dropdown.html#!
+            console.log(plugins);
+            modalContentDiv.innerHTML = `
                 <h4>Oops!</h4>
                 <p>
                     Some error is happening. Please debug me!
                 </p>`;
-                modal.appendChild(modalContentDiv);
-            });
+            const installedPlugins = JSON.parse(await APICall("getInstalledPlugins", {}));
+            // todo: update innerHTML based on value
+            modal.appendChild(modalContentDiv);
         }
         // footer
         {
@@ -36,6 +39,10 @@ const generateUI = function () {
                 modalFooterCloseA.setAttribute("href", "#!");
                 modalFooterCloseA.innerHTML = "Close";
                 modalFooterDiv.appendChild(modalFooterCloseA);
+            }
+            {
+                // todo add "apply" button to change the version of the plugin
+                // after hitting "apply" button, we need to (reload the window or Plugin.init())
             }
             modal.appendChild(modalFooterDiv);
         }
