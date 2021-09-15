@@ -26,7 +26,10 @@
         ]
     },
     "output": {
-        "dir": ""
+        "type": "local",
+        "local": {
+            "dir": ""
+        }
     },
     "browser": {
         "type": "chrome",

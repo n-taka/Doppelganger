@@ -95,12 +95,17 @@ namespace Doppelganger
 		if (config.contains("output"))
 		{
 			nlohmann::json &outputJson = config.at("output");
-			if (outputJson.contains("dir") || outputJson.at("dir").get<std::string>().size() == 0)
+			// output["type"] == "local"|"download"
+			if (outputJson.contains("type") && outputJson.at("type").get<std::string>() == "local")
 			{
-				fs::path outputsDir = systemParams.workingDir;
-				outputsDir.append("output");
-				fs::create_directories(outputsDir);
-				outputJson["dir"] = outputsDir.string();
+				nlohmann::json &outputLocalJson = config.at("local");
+				if (outputLocalJson.contains("dir") || outputLocalJson.at("dir").get<std::string>().size() == 0)
+				{
+					fs::path outputsDir = systemParams.workingDir;
+					outputsDir.append("output");
+					fs::create_directories(outputsDir);
+					outputLocalJson["dir"] = outputsDir.string();
+				}
 			}
 		}
 
