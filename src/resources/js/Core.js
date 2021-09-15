@@ -3,9 +3,11 @@ import { Canvas } from './Canvas.js';
 import { WS } from './WS.js';
 import { MouseKey } from './MouseKey.js';
 
+import { APICall } from './APICall.js';
+import { Modal } from './Modal.js';
+
 // import { syncMeshes } from './websocketCallBackFuncs.js';
 // import { modal } from './setupModal.js';
-// import { APIcall } from './APIcall.js';
 
 export const Core = {};
 
@@ -22,12 +24,16 @@ Core.init = function () {
     // we only keep first two characters
     Core.language = Core.language.substring(0, 2);
 
-    window.onload = function () {
+    window.onload = async function () {
         // initialize
-        UI.init();
+        await UI.init();
+        Modal.init();
         Canvas.init();
-        WS.init();
+        await WS.init();
         MouseKey.init();
+
+        const response = await APICall("listPlugins", {});
+        console.log(response);
 
         // APIcall("GET", "api/serverInfo").then((res) => {
         //     var j = JSON.parse(res);
@@ -87,6 +93,7 @@ Core.init = function () {
         //     DoppelCore.periodicHandler.forEach((handler) => handler());
         // }, 1000);
     };
+    return;
 };
 
 Core.init();

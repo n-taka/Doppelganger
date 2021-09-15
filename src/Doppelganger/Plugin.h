@@ -28,7 +28,6 @@ namespace Doppelganger
 
 		void install(const std::string &version);
 		std::string installedVersion;
-		int priority;
 
 		////
 		// typedef for API

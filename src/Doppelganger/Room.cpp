@@ -43,6 +43,7 @@ namespace Doppelganger
 
 		////
 		// initialize outputDir for this room
+		if (core->config.at("output").at("type").get<std::string>() == "local")
 		{
 			const std::string roomCreatedTimeStamp = Logger::getCurrentTimestampAsString(false);
 			std::stringstream tmp;
@@ -51,7 +52,7 @@ namespace Doppelganger
 			tmp << UUID;
 			const std::string timestampAndUUID = tmp.str();
 
-			outputDir = core->config.at("output").at("dir").get<std::string>();
+			outputDir = core->config.at("output").at("local").at("dir").get<std::string>();
 			outputDir.append(timestampAndUUID);
 			outputDir.make_preferred();
 			fs::create_directories(outputDir);

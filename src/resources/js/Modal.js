@@ -2,7 +2,7 @@ import { UI } from './UI.js';
 
 export const Modal = {};
 
-Modal.generate = function () {
+Modal.generateModal = function () {
     ////
     // error
     {
@@ -37,11 +37,10 @@ Modal.generate = function () {
             UI.modalDiv.appendChild(Modal.errorModal);
         }
     }
-
 };
 
-Modal.init = function () {
-    this.generate();
+Modal.init = async function () {
+    this.generateModal();
 
     // because this function is called from window.onload, we should not use DOMContentLoaded
     const modal_elems = document.querySelectorAll('.modal');
@@ -50,5 +49,7 @@ Modal.init = function () {
     // var dropdown_instances = M.Dropdown.init(dropdown_elems, {});
     // var tooltip_elems = document.querySelectorAll('.tooltipped');
     // var tooltip_instances = M.Tooltip.init(tooltip_elems, {});
+    return;
+
 };
 

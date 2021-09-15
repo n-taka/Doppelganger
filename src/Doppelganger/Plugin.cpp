@@ -84,10 +84,9 @@ namespace Doppelganger
 		pluginDir.append(dirName);
 		if (!fs::exists(pluginDir))
 		{
-			if (parameters.at("version").contains(versionToBeInstalled))
+			if (parameters.at("versions").contains(versionToBeInstalled))
 			{
 				const std::string &pluginUrl = parameters.at("versions").at(versionToBeInstalled).get<std::string>();
-
 				fs::path zipPath(pluginsDir);
 				zipPath.append("tmp.zip");
 
@@ -124,6 +123,18 @@ namespace Doppelganger
 				core->logger.log(ss.str(), "ERROR");
 				return;
 			}
+		}
+		else
+		{
+			// already downloaded
+			std::stringstream ss;
+			ss << "Plugin \"";
+			ss << name;
+			ss << "\" (";
+			ss << versionToBeInstalled;
+			ss << ")";
+			ss << " is already downloaded. We reuse it.";
+			core->logger.log(ss.str(), "SYSTEM");
 		}
 		installedVersion = version;
 		installFromDirectory(pluginDir);
@@ -178,8 +189,25 @@ namespace Doppelganger
 			core->logger.log(ss.str(), "ERROR");
 		}
 
-		// todo
-		// update installedPlugins.json
+		// update installed plugin list "installed.json"
+		{
+			fs::path installedPluginJsonPath(core->config.at("plugin").at("dir").get<std::string>());
+			installedPluginJsonPath.append("installed.json");
+
+			nlohmann::json installedPluginJson;
+
+			std::ifstream ifs(installedPluginJsonPath);
+			installedPluginJson = nlohmann::json::parse(ifs);
+			ifs.close();
+
+			nlohmann::json pluginInfo = nlohmann::json::object();
+			pluginInfo["version"] = installedVersion;
+			installedPluginJson[name] = pluginInfo;
+
+			std::ofstream ofs(installedPluginJsonPath);
+			ofs << installedPluginJson.dump(4);
+			ofs.close();
+		}
 	}
 } // namespace
 

@@ -19,17 +19,17 @@
             "FILE"
         ]
     },
-    "plugin": {
-        "dir": "",
-        "listURL": [
-            "https://n-taka.info/nextcloud/s/KKH2dWmTRT5wRA5/download/defaultPluginList.json"
-        ]
-    },
     "output": {
         "type": "local",
         "local": {
             "dir": ""
         }
+    },
+    "plugin": {
+        "dir": "",
+        "listURL": [
+            "https://n-taka.info/nextcloud/s/KKH2dWmTRT5wRA5/download/defaultPluginList.json"
+        ]
     },
     "browser": {
         "type": "chrome",

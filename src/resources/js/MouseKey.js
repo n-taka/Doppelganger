@@ -4,7 +4,7 @@ import { WS } from './WS.js';
 
 export const MouseKey = {};
 
-MouseKey.init = function () {
+MouseKey.init = async function () {
     ////
     // icon
     MouseKey.iconIdx = Math.floor(Math.random() * 10);
@@ -49,6 +49,8 @@ MouseKey.init = function () {
             // currently, other keyboard shortcut is not implemented.
         }
     }));
+    
+    return;
 };
 
 MouseKey.updateCursor = function (e) {

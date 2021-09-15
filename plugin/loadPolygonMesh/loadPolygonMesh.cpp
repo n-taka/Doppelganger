@@ -51,7 +51,8 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 	// }
 
 	// [OUT]
-	// response = {}
+	// response = {
+	// }
 	// broadcast = {
 	// 	"mesh" : {
 	//    "<meshUUID>": JSON object that represents the loaded mesh

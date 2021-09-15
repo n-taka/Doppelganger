@@ -18,7 +18,7 @@ import { UI } from './UI.js';
 
 export const Canvas = {};
 
-Canvas.init = function () {
+Canvas.init = async function () {
     // width / height
     {
         Canvas.width = UI.webGLDiv.offsetWidth;
@@ -112,6 +112,7 @@ Canvas.init = function () {
     //     this.camera.lookAt(this.scene.position);
 
     Canvas.drawLoop();
+    return;
 };
 
 Canvas.drawLoop = function () {

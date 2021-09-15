@@ -35,7 +35,7 @@ function onClose(event) {
     // window.open('about:blank','_self').close();
 }
 
-WS.init = function () {
+WS.init = async function () {
     // location.pathname.split('/')[1]: roomUUID
     const uri = (location.protocol == "http:" ? "ws://" : "wss://") + location.host + "/" + location.pathname.split('/')[1] + "/";
     if (WS.ws == null) {
@@ -52,11 +52,16 @@ WS.init = function () {
         WS.ws.onclose = function () { };
         WS.ws.close();
     });
+    return;
 };
 
-WS.sendMsg = function (msg) {
+WS.sendMsg = async function (msg) {
     if (WS.ws.readyState == 1) {
         WS.ws.send(msg);
+        return;
+    }
+    else {
+        throw new Error("cannot sendMsg (WS)");
     }
 }
 

@@ -4,3 +4,5 @@ set(PROJECT DoppelgangerPlugin)
 project(${PROJECT})
 
 add_subdirectory(loadPolygonMesh)
+add_subdirectory(listPlugins)
+add_subdirectory(getInstalledPlugins)

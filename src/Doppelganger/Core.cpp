@@ -98,8 +98,8 @@ namespace Doppelganger
 			// output["type"] == "local"|"download"
 			if (outputJson.contains("type") && outputJson.at("type").get<std::string>() == "local")
 			{
-				nlohmann::json &outputLocalJson = config.at("local");
-				if (outputLocalJson.contains("dir") || outputLocalJson.at("dir").get<std::string>().size() == 0)
+				nlohmann::json &outputLocalJson = outputJson.at("local");
+				if (!outputLocalJson.contains("dir") || outputLocalJson.at("dir").get<std::string>().size() == 0)
 				{
 					fs::path outputsDir = systemParams.workingDir;
 					outputsDir.append("output");
@@ -185,6 +185,13 @@ namespace Doppelganger
 						logger.log(ss.str(), "ERROR");
 					}
 				}
+			}
+			else
+			{
+				const nlohmann::json emptyObject = nlohmann::json::object();
+				std::ofstream ofs(installedPluginJsonPath);
+				ofs << emptyObject.dump(4);
+				ofs.close();
 			}
 
 			// install non-optional plugins

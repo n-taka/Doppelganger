@@ -2,7 +2,7 @@ import { Modal } from './Modal.js';
 
 export const UI = {};
 
-UI.init = function () {
+UI.init = async function () {
     // title
     document.title = 'Doppelganger - HTML5 GUI for geometry processing with C++ backend';
 
@@ -136,13 +136,13 @@ UI.init = function () {
 
     // utility function definitions
     {
-        UI.setBusyMode = function (mode) {
+        UI.setBusyMode = async function (mode) {
             UI.busyDiv.setAttribute('style', (mode ? 'visibility: visible;' : 'visibility: hidden;'));
         };
 
         // todo: add more functions
     }
 
-    Modal.init();
+    return;
 };
 

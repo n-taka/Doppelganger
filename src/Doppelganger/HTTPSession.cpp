@@ -271,17 +271,23 @@ namespace
 								taskUUID = Doppelganger::Util::uuid("task-");
 								room->interfaceParams.taskUUIDInProgress.insert(taskUUID);
 
-								nlohmann::json json;
+								nlohmann::json json = nlohmann::json::object();
 								json["task"] = "isServerBusy";
-								json["isBusy"] = (room->interfaceParams.taskUUIDInProgress.size() > 0);
+								nlohmann::json parameters = nlohmann::json::object();
+								parameters["isBusy"] = (room->interfaceParams.taskUUIDInProgress.size() > 0);
+								json["parameters"] = parameters;
 								room->broadcastWS(json.dump());
 							}
 
 							const std::string &APIName = reqPathVec.at(2);
 							const Doppelganger::Plugin::API_t &APIFunc = core->plugin.at(APIName)->func;
 
-							nlohmann::json parameters;
-							parameters = nlohmann::json::parse(req.body());
+							nlohmann::json parameters = nlohmann::json::object();
+							boost::optional<std::uint64_t> size = req.payload_size();
+							if (size && *size > 0)
+							{
+								parameters = nlohmann::json::parse(req.body());
+							}
 							std::stringstream logContent;
 							logContent << req.method_string();
 							logContent << " ";
@@ -299,9 +305,11 @@ namespace
 								std::lock_guard<std::mutex> lock(room->interfaceParams.mutexInterfaceParams);
 								room->interfaceParams.taskUUIDInProgress.erase(taskUUID);
 
-								nlohmann::json json;
+								nlohmann::json json = nlohmann::json::object();
 								json["task"] = "isServerBusy";
-								json["isBusy"] = (room->interfaceParams.taskUUIDInProgress.size() > 0);
+								nlohmann::json parameters = nlohmann::json::object();
+								parameters["isBusy"] = (room->interfaceParams.taskUUIDInProgress.size() > 0);
+								json["parameters"] = parameters;
 								room->broadcastWS(json.dump());
 							}
 

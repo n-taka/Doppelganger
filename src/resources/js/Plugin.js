@@ -1,6 +1,6 @@
 export const Plugin = {};
 
-Plugin.loadPlugins = function () {
+Plugin.loadPlugins = async function () {
     return APIcall("GET", "api/getPlugins").then(res => {
         var promises = [];
         var j = JSON.parse(res);
