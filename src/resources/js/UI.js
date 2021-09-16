@@ -139,7 +139,6 @@ UI.init = async function () {
         UI.setBusyMode = async function (mode) {
             UI.busyDiv.setAttribute('style', (mode ? 'visibility: visible;' : 'visibility: hidden;'));
         };
-
         // todo: add more functions
     }
 

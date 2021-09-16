@@ -4,7 +4,7 @@ import { WS } from './WS.js';
 import { MouseKey } from './MouseKey.js';
 import { Modal } from './Modal.js';
 import { Plugin } from './Plugin.js';
-import { APICall } from './APICall.js';
+import { request } from './request.js';
 
 // import { syncMeshes } from './websocketCallBackFuncs.js';
 

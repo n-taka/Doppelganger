@@ -61,8 +61,10 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 			versionList.push_back(version_url.key());
 		}
 		pluginInfo["versions"] = versionList;
+		pluginInfo["latest"] = plugin->parameters.at("latest");
 		pluginInfo["description"] = plugin->parameters.at("description");
 		pluginInfo["optional"] = plugin->parameters.at("optional");
+		pluginInfo["hasModuleJS"] = plugin->hasModuleJS;
 
 		response[name] = pluginInfo;
 	}

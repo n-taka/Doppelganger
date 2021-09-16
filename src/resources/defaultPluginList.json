@@ -1,18 +1,17 @@
 {
-    "browserInfo": {
-        "description": "Automatically open browser on system boot.",
-        "optional": true,
+    "listPlugins": {
+        "description": "List all available plugins.",
+        "optional": false,
         "latest": "1.0.0",
         "versions": {
-            "1.0.0": "https://n-taka.info/nextcloud/s/R985TytEobs6D8A/download/browserInfo.zip"
+            "1.0.0": "https://n-taka.info/nextcloud/s/RTpw8YjeQ5bWcyt/download/listPlugins.zip"
         }
     },
     "example": {
-        "description": "This is just an example.",
+        "description": "This is an example.",
         "optional": true,
-        "latest": "1.0.1",
+        "latest": "1.0.0",
         "versions": {
-            "1.0.1": "https://examples0.com/1.0.1",
             "1.0.0": "https://examples0.com/1.0.0"
         }
     }

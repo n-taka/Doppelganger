@@ -42,13 +42,8 @@ Modal.generateModal = function () {
 Modal.init = async function () {
     this.generateModal();
 
-    // because this function is called from window.onload, we should not use DOMContentLoaded
     const modal_elems = document.querySelectorAll('.modal');
     const modal_instances = M.Modal.init(modal_elems, {});
-    // var dropdown_elems = document.querySelectorAll('.dropdown-trigger');
-    // var dropdown_instances = M.Dropdown.init(dropdown_elems, {});
-    // var tooltip_elems = document.querySelectorAll('.tooltipped');
-    // var tooltip_instances = M.Tooltip.init(tooltip_elems, {});
     return;
 
 };

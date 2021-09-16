@@ -1,39 +1,29 @@
-import { APICall } from "./APICall.js";
+import { request } from "./request.js";
 
 export const Plugin = {};
 
-Plugin.loadPlugins = async function () {
-    return APIcall("GET", "api/getPlugins").then(res => {
-        var promises = [];
-        var j = JSON.parse(res);
-        console.log(j);
-        j["plugins"].forEach((pluginPath) => {
-            promises.push(
-                import(pluginPath).then(
-                    plugin => {
-                        return plugin;
-                    }
-                )
-            );
-        });
-        return Promise.all(promises);
-    }).then((plugins) => {
-        // sort plugins based on priority
-        plugins.sort((a, b) => {
-            if (a.priority < b.priority) return -1;
-            if (a.priority > b.priority) return 1;
-            return 0;
-        });
-        // generate UI (buttons, modal, etc...)
-        plugins.forEach((plugin) => {
-            plugin.generateUI();
-        });
-    });
+Plugin.loadPlugin = async function (name, version) {
+    // http://example.com/<roomUUID>/plugin/APIName_version/module.js
+    const path = "../plugin/" + name + "_" + version + "/module.js";
+    const module = await import(path);
+    await module.init();
 }
 
 Plugin.init = async function () {
-    const installedPluginList = JSON.parse(await APICall("getInstalledPlugins", {}));
-    for (let plugin of installedPluginList) {
-        // todo: install module.js from URL(plugin["modulePath"])
+    const pluginList = JSON.parse(await request("listPlugins", {}));
+    for (let name in pluginList) {
+        const plugin = pluginList[name];
+        if (plugin["installedVersion"].length > 0 && plugin["hasModuleJS"]) {
+            // we explicitly load plugin sequentially
+            await Plugin.loadPlugin(name, plugin["installedVersion"] == "latest" ? plugin["latest"] : plugin["installedVersion"]);
+        }
     }
+
+    // we take care of UI components that plugins generated.
+    const modal_elems = document.querySelectorAll('.modal');
+    const modal_instances = M.Modal.init(modal_elems, {});
+    const dropdown_elems = document.querySelectorAll('.dropdown-trigger');
+    const dropdown_instances = M.Dropdown.init(dropdown_elems, {});
+    const tooltip_elems = document.querySelectorAll('.tooltipped');
+    const tooltip_instances = M.Tooltip.init(tooltip_elems, {});
 };

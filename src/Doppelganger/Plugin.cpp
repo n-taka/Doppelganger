@@ -64,7 +64,7 @@ namespace
 namespace Doppelganger
 {
 	Plugin::Plugin(const std::shared_ptr<Core> &core_, const std::string &name_, const nlohmann::json &parameters_)
-		: core(core_), name(name_), parameters(parameters_)
+		: core(core_), name(name_), parameters(parameters_), hasModuleJS(false)
 	{
 	}
 
@@ -167,15 +167,10 @@ namespace Doppelganger
 
 			// javascript module (if exists)
 			// todo: update
-			std::string moduleName(name);
-			moduleName += ".js";
+			std::string moduleName("module.js");
 			fs::path modulePath(pluginDir);
 			modulePath.append(moduleName);
-			if (fs::exists(modulePath))
-			{
-				std::ifstream ifs(modulePath);
-				moduleJS = std::string(std::istreambuf_iterator<char>(ifs), std::istreambuf_iterator<char>());
-			}
+			hasModuleJS = fs::exists(modulePath);
 		}
 		else
 		{

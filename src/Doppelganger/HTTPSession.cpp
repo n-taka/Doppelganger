@@ -363,6 +363,8 @@ namespace
 							logContent << req.target().to_string();
 							logContent << " ";
 							logContent << "(";
+							// In some cases, sessionUUID could be NULL (we need to handle the order of initialization...)
+							// logContent << parameters.at("sessionUUID").get<std::string>();
 							logContent << parameters.at("sessionUUID");
 							logContent << ")";
 							room->logger.log(logContent.str(), "APICALL");

@@ -1,10 +1,13 @@
 import { Core } from "./Core.js";
 
-export async function APICall(path, bodyJson, contentType) {
+export async function request(path, bodyJson, contentType) {
     // location.pathname.split('/')[1]: roomUUID
     const uri = location.protocol + "//" + location.host + "/" + location.pathname.split('/')[1] + "/" + path;
     const requestInfo = {};
     requestInfo["method"] = "POST";
+    if (!bodyJson) {
+        bodyJson = {};
+    }
     if (!bodyJson["sessionUUID"]) {
         bodyJson["sessionUUID"] = Core.UUID;
     }

@@ -1,11 +1,12 @@
-import { UI } from '../../../js/UI.js';
-import { APICall } from '../../../js/APICall.js';
+import { Core } from '../../js/Core.js';
+import { UI } from '../../js/UI.js';
+import { request } from '../../js/request.js';
 
 var text = {
     "tooltip": { "default": "Plugins", "ja": "プラグイン" }
 };
 
-const generateUI = function () {
+const generateUI = async function () {
     ////
     // modal
     const modal = document.createElement("div");
@@ -15,7 +16,7 @@ const generateUI = function () {
         {
             const modalContentDiv = document.createElement('div');
             modalContentDiv.setAttribute("class", "modal-content");
-            const plugins = JSON.parse(await APICall("listPlugins", {}));
+            const plugins = JSON.parse(await request("listPlugins", {}));
             // todo: update innerHTML based on value
             //   see: https://materializecss.com/table.html
             //   see: https://materializecss.com/dropdown.html#!
@@ -25,8 +26,6 @@ const generateUI = function () {
                 <p>
                     Some error is happening. Please debug me!
                 </p>`;
-            const installedPlugins = JSON.parse(await APICall("getInstalledPlugins", {}));
-            // todo: update innerHTML based on value
             modal.appendChild(modalContentDiv);
         }
         // footer
@@ -41,8 +40,10 @@ const generateUI = function () {
                 modalFooterDiv.appendChild(modalFooterCloseA);
             }
             {
-                // todo add "apply" button to change the version of the plugin
-                // after hitting "apply" button, we need to (reload the window or Plugin.init())
+                // todo
+                //   changing the version of plugins need rebooting.
+                //   so, we prompt to reboot this system.
+                //     for better usage, we perform loading/unloading dll on the fly...
             }
             modal.appendChild(modalFooterDiv);
         }
@@ -60,7 +61,7 @@ const generateUI = function () {
             });
             a.setAttribute("class", "tooltipped");
             a.setAttribute("data-position", "top");
-            a.setAttribute("data-tooltip", text["tooltip"][DoppelCore.language in text["tooltip"] ? DoppelCore.language : "default"]);
+            a.setAttribute("data-tooltip", text["tooltip"][Core.language in text["tooltip"] ? Core.language : "default"]);
             {
                 const i = document.createElement("i");
                 a.appendChild(i);
@@ -75,9 +76,7 @@ const generateUI = function () {
 
 ////
 // UI
-export const init = function () {
-    generateUI();
-
-    const modal_elems = document.querySelectorAll('.modal');
-    const modal_instances = M.Modal.init(modal_elems, {});
+export const init = async function () {
+    console.log("listPlugins.init()");
+    await generateUI();
 }
