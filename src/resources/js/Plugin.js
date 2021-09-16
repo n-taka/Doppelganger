@@ -10,9 +10,9 @@ Plugin.loadPlugin = async function (name, version) {
 }
 
 Plugin.init = async function () {
-    const pluginList = JSON.parse(await request("listPlugins", {}));
-    for (let name in pluginList) {
-        const plugin = pluginList[name];
+    Plugin.pluginList = JSON.parse(await request("listPlugins", {}));
+    for (let name in Plugin.pluginList) {
+        const plugin = Plugin.pluginList[name];
         if (plugin["installedVersion"].length > 0 && plugin["hasModuleJS"]) {
             // we explicitly load plugin sequentially
             await Plugin.loadPlugin(name, plugin["installedVersion"] == "latest" ? plugin["latest"] : plugin["installedVersion"]);
