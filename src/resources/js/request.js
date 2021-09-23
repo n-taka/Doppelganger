@@ -1,17 +1,19 @@
 import { Core } from "./Core.js";
 
-export async function request(path, bodyJson, contentType) {
+export async function request(path, parameterJson, contentType) {
     // location.pathname.split('/')[1]: roomUUID
     const uri = location.protocol + "//" + location.host + "/" + location.pathname.split('/')[1] + "/" + path;
     const requestInfo = {};
     requestInfo["method"] = "POST";
-    if (!bodyJson) {
-        bodyJson = {};
+    const payloadJson = {};
+    payloadJson["sessionUUID"] = Core.UUID;
+    if (!parameterJson) {
+        payloadJson["parameters"] = parameterJson;
     }
-    if (!bodyJson["sessionUUID"]) {
-        bodyJson["sessionUUID"] = Core.UUID;
+    else {
+        payloadJson["parameters"] = {};
     }
-    requestInfo["body"] = JSON.stringify(bodyJson);
+    requestInfo["body"] = JSON.stringify(payloadJson);
     if (contentType) {
         requestInfo["headers"] = {};
         requestInfo["headers"]["Content-Type"] = contentType;

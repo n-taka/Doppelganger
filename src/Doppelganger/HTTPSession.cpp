@@ -370,7 +370,7 @@ namespace
 							room->logger.log(logContent.str(), "APICALL");
 
 							nlohmann::json response, broadcast;
-							APIFunc(room, parameters, response, broadcast);
+							APIFunc(room, parameters.at("parameters"), response, broadcast);
 
 							{
 								std::lock_guard<std::mutex> lock(room->interfaceParams.mutexInterfaceParams);
