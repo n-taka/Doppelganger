@@ -54,7 +54,7 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 		for (const auto &pluginToBeUpdated : parameters.items())
 		{
 			const std::string &name = pluginToBeUpdated.key();
-			const std::string &newVersion = pluginToBeUpdated.value().get<std::string>();
+			std::string newVersion = pluginToBeUpdated.value().get<std::string>();
 			if (plugins.find(name) != plugins.end())
 			{
 				installedPluginJson.erase(name);
@@ -62,6 +62,10 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 				{
 					const std::shared_ptr<Doppelganger::Plugin> &pluginPtr = plugins.at(name);
 					const nlohmann::json &pluginParameters = pluginPtr->parameters;
+					if (newVersion == "latest")
+					{
+						newVersion = pluginParameters.at("latest").get<std::string>();
+					}
 					if (pluginParameters.at("versions").contains(newVersion))
 					{
 						nlohmann::json pluginJson = nlohmann::json::object();
