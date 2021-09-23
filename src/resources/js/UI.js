@@ -52,7 +52,7 @@ UI.init = async function () {
                         UI.topNavWrapper.setAttribute('class', 'nav-wrapper');
                         {
                             UI.topMenuUl = document.createElement('ul');
-                            UI.topMenuUl.setAttribute('class', 'right');
+                            UI.topMenuUl.setAttribute('class', 'left');
                             UI.topNavWrapper.appendChild(UI.topMenuUl);
                         }
                         UI.topNavBar.appendChild(UI.topNavWrapper);

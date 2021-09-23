@@ -71,9 +71,9 @@ const generateUI = async function () {
             a.setAttribute("data-tooltip", getText(text, "Shutdown"));
             {
                 const i = document.createElement("i");
-                a.appendChild(i);
                 i.innerHTML = "power_settings_new";
                 i.setAttribute("class", "material-icons");
+                a.appendChild(i);
             }
             li.appendChild(a);
         }
