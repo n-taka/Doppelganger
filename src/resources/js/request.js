@@ -7,7 +7,7 @@ export async function request(path, parameterJson, contentType) {
     requestInfo["method"] = "POST";
     const payloadJson = {};
     payloadJson["sessionUUID"] = Core.UUID;
-    if (!parameterJson) {
+    if (parameterJson) {
         payloadJson["parameters"] = parameterJson;
     }
     else {
