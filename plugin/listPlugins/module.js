@@ -4,15 +4,15 @@ import { Plugin } from '../../js/Plugin.js';
 import { getText } from '../../js/Text.js';
 
 const text = {
-    "tooltip": { "ja": "プラグイン" },
-    "Apply & Shutdown": { "ja": "更新して終了" },
-    "Cancel": { "ja": "キャンセル" },
-    "Name": { "ja": "プラグイン名" },
-    "Current": { "ja": "現在のバージョン" },
-    "Change to": { "ja": "アップデート先" },
-    "Description": { "ja": "説明" },
-    "Uninstall": { "ja": "アンインストール" },
-    "Don't install": { "ja": "インストールしない" }
+    "Plugin": { "en": "Plugin", "ja": "プラグイン" },
+    "Apply & Shutdown": { "en": "Apply & Shutdown", "ja": "更新して終了" },
+    "Cancel": { "en": "Cancel", "ja": "キャンセル" },
+    "Name": { "en": "Name", "ja": "プラグイン名" },
+    "Current": { "en": "Current", "ja": "現在のバージョン" },
+    "Change to...": { "en": "Change to...", "ja": "アップデート先" },
+    "Description": { "en": "Description", "ja": "説明" },
+    "Uninstall": { "en": "Uninstall", "ja": "アンインストール" },
+    "Don't install": { "en": "Don't install", "ja": "インストールしない" }
 };
 
 const update = {};
@@ -35,6 +35,7 @@ const generateUI = async function () {
             {
                 const table = document.createElement("table");
                 table.setAttribute("class", "striped");
+                table.setAttribute("style", "table-layout: fixed;");
                 {
                     const thead = document.createElement("thead");
                     {
@@ -42,25 +43,45 @@ const generateUI = async function () {
                         {
                             const thName = document.createElement("th");
                             thName.setAttribute("style", "width: 15%;");
-                            thName.innerText = getText(text, "Name");
+                            {
+                                const spanName = document.createElement("span");
+                                spanName.setAttribute("class", "truncate");
+                                spanName.innerText = getText(text, "Name");
+                                thName.appendChild(spanName);
+                            }
                             tr.appendChild(thName);
                         }
                         {
                             const thCurrent = document.createElement("th");
                             thCurrent.setAttribute("style", "width: 15%;");
-                            thCurrent.innerText = getText(text, "Current");
+                            {
+                                const spanCurrent = document.createElement("span");
+                                spanCurrent.setAttribute("class", "truncate");
+                                spanCurrent.innerText = getText(text, "Current");
+                                thCurrent.appendChild(spanCurrent);
+                            }
                             tr.appendChild(thCurrent);
                         }
                         {
                             const thAction = document.createElement("th");
                             thAction.setAttribute("style", "width: 15%;");
-                            thAction.innerText = getText(text, "Change to");
+                            {
+                                const spanAction = document.createElement("span");
+                                spanAction.setAttribute("class", "truncate");
+                                spanAction.innerText = getText(text, "Change to");
+                                thAction.appendChild(spanAction);
+                            }
                             tr.appendChild(thAction);
                         }
                         {
                             const thDescription = document.createElement("th");
                             thDescription.setAttribute("style", "width: 55%;");
-                            thDescription.innerText = getText(text, "Description");
+                            {
+                                const spanDescription = document.createElement("span");
+                                spanDescription.setAttribute("class", "truncate");
+                                spanDescription.innerText = getText(text, "Description");
+                                thDescription.appendChild(spanDescription);
+                            }
                             tr.appendChild(thDescription);
                         }
                         thead.appendChild(tr);
@@ -93,18 +114,20 @@ const generateUI = async function () {
                                 {
                                     const dropdownA = document.createElement("a");
                                     dropdownA.setAttribute("class", "dropdown-trigger btn-flat");
-                                    dropdownA.setAttribute("style", "width: 100%; text-transform: none;");
+                                    dropdownA.setAttribute("style", "width: 100%; text-transform: none; text-overflow: ellipsis;");
                                     dropdownA.setAttribute("href", "#");
                                     dropdownA.setAttribute("data-target", "versionDropdown" + name);
-                                    {
-                                        dropdownSpan.innerText = (plugin["installedVersion"].length > 0) ? plugin["installedVersion"] : getText(text, "Don't install");
-                                        dropdownA.appendChild(dropdownSpan);
-                                    }
                                     {
                                         const dropdownI = document.createElement("i");
                                         dropdownI.setAttribute("class", "material-icons right");
                                         dropdownI.innerText = "arrow_drop_down";
                                         dropdownA.appendChild(dropdownI);
+                                    }
+                                    {
+                                        dropdownSpan.setAttribute("class", "truncate");
+                                        dropdownSpan.setAttribute("style", "width: calc(100% - 40px);");
+                                        dropdownSpan.innerText = (plugin["installedVersion"].length > 0) ? plugin["installedVersion"] : getText(text, "Don't install");
+                                        dropdownA.appendChild(dropdownSpan);
                                     }
                                     tdVersion.appendChild(dropdownA);
                                 }
@@ -113,7 +136,9 @@ const generateUI = async function () {
                                     dropdownUl.setAttribute("id", "versionDropdown" + name);
                                     dropdownUl.setAttribute("class", "dropdown-content");
                                     // we add special entry "uninstall" or "Don't install" if we already installed this plugin
-                                    plugin["versions"].push((plugin["installedVersion"].length > 0) ? "Uninstall" : "Don't install");
+                                    if (plugin["optional"]) {
+                                        plugin["versions"].push((plugin["installedVersion"].length > 0) ? "Uninstall" : "Don't install");
+                                    }
                                     for (let version of plugin["versions"]) {
                                         const versionLi = document.createElement("li");
                                         {
@@ -128,7 +153,6 @@ const generateUI = async function () {
                                                 }
                                                 console.log(update);
                                             });
-                                            // todo addEventListener...
                                             versionLi.appendChild(versionA);
                                         }
                                         dropdownUl.appendChild(versionLi);
@@ -139,7 +163,11 @@ const generateUI = async function () {
                             }
                             {
                                 const tdDescription = document.createElement("td");
-                                tdDescription.innerText = plugin["description"];
+                                if (Core.language in plugin["description"]) {
+                                    tdDescription.innerText = plugin["description"][Core.language];
+                                } else {
+                                    tdDescription.innerText = plugin["description"]["en"];
+                                }
                                 tr.appendChild(tdDescription);
                             }
                             tbody.appendChild(tr);
@@ -187,7 +215,7 @@ const generateUI = async function () {
             });
             a.setAttribute("class", "tooltipped");
             a.setAttribute("data-position", "top");
-            a.setAttribute("data-tooltip", getText(text, "tooltip"));
+            a.setAttribute("data-tooltip", getText(text, "Plugin"));
             {
                 const i = document.createElement("i");
                 a.appendChild(i);

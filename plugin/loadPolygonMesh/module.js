@@ -2,8 +2,8 @@ import { DoppelCore } from '../../../js/DoppelCore.js';
 import { APIcall } from '../../../js/APIcall.js';
 
 var text = {
-    "polygon": { "default": "Polygon", "ja": "ポリゴン" },
-    "tooltip": { "default": "Import polygon", "ja": "ポリゴン読み込み" }
+    "Polygon": { "ja": "ポリゴン" },
+    "Import polygon": { "ja": "ポリゴン読み込み" }
 };
 
 ////
