@@ -357,17 +357,19 @@ namespace
 							{
 								parameters = nlohmann::json::parse(req.body());
 							}
-							std::stringstream logContent;
-							logContent << req.method_string();
-							logContent << " ";
-							logContent << req.target().to_string();
-							logContent << " ";
-							logContent << "(";
-							// In some cases, sessionUUID could be NULL (we need to handle the order of initialization...)
-							// logContent << parameters.at("sessionUUID").get<std::string>();
-							logContent << parameters.at("sessionUUID");
-							logContent << ")";
-							room->logger.log(logContent.str(), "APICALL");
+							{
+								std::stringstream logContent;
+								logContent << req.method_string();
+								logContent << " ";
+								logContent << req.target().to_string();
+								logContent << " ";
+								logContent << "(";
+								// In some cases, sessionUUID could be NULL (we need to handle the order of initialization...)
+								// logContent << parameters.at("sessionUUID").get<std::string>();
+								logContent << parameters.at("sessionUUID");
+								logContent << ")";
+								room->logger.log(logContent.str(), "APICALL");
+							}
 
 							nlohmann::json response, broadcast;
 							APIFunc(room, parameters.at("parameters"), response, broadcast);

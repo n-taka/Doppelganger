@@ -10,6 +10,9 @@ MouseKey.init = async function () {
     MouseKey.iconIdx = Math.floor(Math.random() * 10);
     document.body.style.cursor = "url(../icon/cursorIcon" + MouseKey.iconIdx + ".png) 16 16 , default"
 
+    // initialize timestamp
+    MouseKey.strokeTimeStamp = Date.now();
+
     ////
     // pointer event
     // canvas.controls.domElement.addEventListener?
@@ -49,7 +52,7 @@ MouseKey.init = async function () {
             // currently, other keyboard shortcut is not implemented.
         }
     }));
-    
+
     return;
 };
 
@@ -86,21 +89,19 @@ MouseKey.syncCursor = function () {
         && MouseKey["cursors"][Core["UUID"]]
         && !MouseKey["prevCursor"].equals(MouseKey["cursors"][Core["UUID"]]["dir"]));
 
-    var json = {
-        "task": "syncCursor",
-        "UUID": Core["UUID"],
-        "timestamp": MouseKey.strokeTimeStamp
+    const json = {
+        "sessionUUID": Core["UUID"]
     };
     if (cursorNEq) {
         json["cursor"] = {
-            "dirX": MouseKey["cursors"][Core["UUID"]]["dir"].x,
-            "dirY": MouseKey["cursors"][Core["UUID"]]["dir"].y
+            "x": MouseKey["cursors"][Core["UUID"]]["dir"].x,
+            "y": MouseKey["cursors"][Core["UUID"]]["dir"].y,
+            "idx": MouseKey["cursors"][Core["UUID"]]["idx"]
         };
         MouseKey["prevCursor"] = MouseKey["cursors"][Core["UUID"]]["dir"].clone();
+        WS.sendMsg("syncCursor", json);
     }
 
-    const msg = JSON.stringify(json);
-    WS.sendMsg(msg);
 }
 
 // function customClick(e) {

@@ -65,12 +65,18 @@ namespace Doppelganger
 
 		////
 		// parameter for user interface
+		struct cursorInfo{
+			double x;
+			double y;
+			int idx;
+		};
 		struct interfaceParameters
 		{
+			std::int64_t timestamp;
 			Eigen::Matrix<double, 3, 1> cameraTarget, cameraPos, cameraUp;
 			double cameraZoom;
 			// mouse cursors
-			std::unordered_map<std::string, std::vector<double>> cursors;
+			std::unordered_map<std::string, cursorInfo> cursors;
 			// loading state
 			std::unordered_set<std::string> taskUUIDInProgress;
 			std::mutex mutexInterfaceParams;

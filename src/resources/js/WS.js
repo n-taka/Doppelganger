@@ -1,3 +1,4 @@
+import { Core } from './Core.js';
 import { WSTasks } from './WSTasks.js';
 
 export const WS = {};
@@ -56,9 +57,19 @@ WS.init = async function () {
     return;
 };
 
-WS.sendMsg = async function (msg) {
+WS.sendMsg = async function (APIName, parameterJson) {
+    const payloadJson = {};
+    payloadJson["sessionUUID"] = Core.UUID;
+    payloadJson["API"] = APIName;
+    if (parameterJson) {
+        payloadJson["parameters"] = parameterJson;
+    }
+    else {
+        payloadJson["parameters"] = {};
+    }
+
     if (WS.ws.readyState == 1) {
-        WS.ws.send(msg);
+        WS.ws.send(JSON.stringify(payloadJson));
         return;
     }
     else {
