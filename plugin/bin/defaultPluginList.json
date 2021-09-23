@@ -1,14 +1,53 @@
 {
     "listPlugins": {
-        "description": "List all available plugins.",
+        "description": {
+            "en": "List all available plugins.",
+            "ja": "利用できるプラグインをリストアップします。"
+        },
         "optional": false,
         "latest": "1.0.0",
         "versions": {
             "1.0.0": "https://n-taka.info/nextcloud/s/RTpw8YjeQ5bWcyt/download/listPlugins.zip"
         }
     },
+    "updatePlugins": {
+        "description": {
+            "en": "Update plugins.",
+            "ja": "プラグインの更新を行います。"
+        },
+        "optional": false,
+        "latest": "1.0.0",
+        "versions": {
+            "1.0.0": "https://n-taka.info/nextcloud/s/58FYFkzySW9pkeP/download/updatePlugins.zip"
+        }
+    },
+    "shutdown": {
+        "description": {
+            "en": "Graceful shutdown.",
+            "ja": "正常終了を行います。"
+        },
+        "optional": false,
+        "latest": "1.0.0",
+        "versions": {
+            "1.0.0": "https://n-taka.info/nextcloud/s/iijmmJ33ZxFBPCy/download/shutdown.zip"
+        }
+    },
+    "loadPolygonMesh": {
+        "description": {
+            "en": "Load polygon mesh (OBJ, PLY, STL, VRML).",
+            "ja": "ポリゴンメッシュを読み込みます(OBJ, PLY, STL, VRML)。"
+        },
+        "optional": true,
+        "latest": "1.0.0",
+        "versions": {
+            "1.0.0": "https://n-taka.info/nextcloud/s/tADcEFkyqpiPZRZ/download/loadPolygonMesh.zip"
+        }
+    },
     "example": {
-        "description": "This is an example.",
+        "description": {
+            "en": "This is an example.",
+            "ja": "開発用のダミーです。"
+        },
         "optional": true,
         "latest": "1.0.0",
         "versions": {
