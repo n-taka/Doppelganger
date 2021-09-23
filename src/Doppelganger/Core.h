@@ -47,9 +47,9 @@ namespace Doppelganger
 		std::unordered_map<std::string, std::shared_ptr<Doppelganger::Room>> rooms;
 		std::unordered_map<std::string, std::shared_ptr<Doppelganger::Plugin>> plugin;
 
-	private:
 		// for graceful shutdown
 		boost::asio::io_context &ioc;
+	private:
 		boost::asio::ip::tcp::acceptor acceptor;
 		boost::asio::ip::tcp::socket socket;
 

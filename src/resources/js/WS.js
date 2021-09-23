@@ -32,7 +32,8 @@ function onError(event) {
 
 function onClose(event) {
     console.log("disconnected... (websocket)");
-    // window.open('about:blank','_self').close();
+    // this is not a good idea, but this works...
+    window.open('about:blank','_self').close();
 }
 
 WS.init = async function () {
