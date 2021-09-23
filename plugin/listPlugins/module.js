@@ -5,6 +5,7 @@ import { getText } from '../../js/Text.js';
 import { request } from "../../js/request.js";
 
 const text = {
+    "Plugin Manager": { "en": "Plugin Manager", "ja": "プラグインマネージャ" },
     "Plugin": { "en": "Plugin", "ja": "プラグイン" },
     "Apply & Shutdown": { "en": "Apply & Shutdown", "ja": "更新して終了" },
     "Cancel": { "en": "Cancel", "ja": "キャンセル" },
@@ -30,7 +31,7 @@ const generateUI = async function () {
             modalContentDiv.setAttribute("class", "modal-content");
             {
                 const heading = document.createElement("h4");
-                heading.innerText = "Plugin manager";
+                heading.innerText = getText(text, "Plugin Manager");
                 modalContentDiv.appendChild(heading);
             }
             {
@@ -69,7 +70,7 @@ const generateUI = async function () {
                             {
                                 const spanAction = document.createElement("span");
                                 spanAction.setAttribute("class", "truncate");
-                                spanAction.innerText = getText(text, "Change to");
+                                spanAction.innerText = getText(text, "Change to...");
                                 thAction.appendChild(spanAction);
                             }
                             tr.appendChild(thAction);
