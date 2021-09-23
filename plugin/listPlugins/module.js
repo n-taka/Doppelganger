@@ -2,6 +2,7 @@ import { Core } from '../../js/Core.js';
 import { UI } from '../../js/UI.js';
 import { Plugin } from '../../js/Plugin.js';
 import { getText } from '../../js/Text.js';
+import { request } from "../../js/request.js";
 
 const text = {
     "Plugin": { "en": "Plugin", "ja": "プラグイン" },
@@ -151,7 +152,6 @@ const generateUI = async function () {
                                                 if (plugin["installedVersion"] != version && version != "Don't install") {
                                                     update[name] = version;
                                                 }
-                                                console.log(update);
                                             });
                                             versionLi.appendChild(versionA);
                                         }
@@ -188,8 +188,10 @@ const generateUI = async function () {
                 modalFooterApplyA.setAttribute("class", "modal-close waves-effect waves-green btn-flat");
                 modalFooterApplyA.setAttribute("href", "#!");
                 modalFooterApplyA.innerHTML = getText(text, "Apply & Shutdown");
-                // todo addEventListener ...
-                //   send this.update to server and update plugins (installed.json), then reboot.
+                modalFooterApplyA.addEventListener("click", async function () {
+                    await request("updatePlugins", update);
+                    await request("shutdown", {});
+                });
                 modalFooterDiv.appendChild(modalFooterApplyA);
             }
             {

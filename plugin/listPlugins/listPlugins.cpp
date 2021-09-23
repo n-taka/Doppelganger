@@ -1,5 +1,5 @@
-#ifndef LOADPOLYGONMESH_CPP
-#define LOADPOLYGONMESH_CPP
+#ifndef LISTPLUGINS_CPP
+#define LISTPLUGINS_CPP
 
 #include "../pluginHeader.h"
 #include "nlohmann/json.hpp"
