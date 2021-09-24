@@ -66,7 +66,7 @@ const generateUI = async function () {
                         }
                         {
                             const thAction = document.createElement("th");
-                            thAction.setAttribute("style", "width: 15%;");
+                            thAction.setAttribute("style", "width: 20%;");
                             {
                                 const spanAction = document.createElement("span");
                                 spanAction.setAttribute("class", "truncate");
@@ -77,7 +77,7 @@ const generateUI = async function () {
                         }
                         {
                             const thDescription = document.createElement("th");
-                            thDescription.setAttribute("style", "width: 55%;");
+                            thDescription.setAttribute("style", "width: 50%;");
                             {
                                 const spanDescription = document.createElement("span");
                                 spanDescription.setAttribute("class", "truncate");
@@ -101,12 +101,22 @@ const generateUI = async function () {
                             const tr = document.createElement("tr");
                             {
                                 const tdName = document.createElement("td");
-                                tdName.innerText = name;
+                                {
+                                    const spanName = document.createElement("span");
+                                    spanName.setAttribute("class", "truncate");
+                                    spanName.innerText = name;
+                                    tdName.appendChild(spanName);
+                                }
                                 tr.appendChild(tdName);
                             }
                             {
                                 const tdCurrent = document.createElement("td");
-                                tdCurrent.innerText = plugin["installedVersion"];
+                                {
+                                    const spanCurrent = document.createElement("span");
+                                    spanCurrent.setAttribute("class", "truncate");
+                                    spanCurrent.innerText = plugin["installedVersion"];
+                                    tdCurrent.appendChild(spanCurrent);
+                                }
                                 tr.appendChild(tdCurrent);
                             }
                             {
