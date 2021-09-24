@@ -2,7 +2,7 @@ import * as THREE from 'https://unpkg.com/three@0.126.0/build/three.module.js';
 import { WSTasks } from '../../js/WSTasks.js';
 import { MouseKey } from '../../js/MouseKey.js';
 
-async function syncCursor(parameters) {
+const syncCursor = async function (parameters) {
     ////
     // [IN]
     // parameters = {
