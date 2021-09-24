@@ -3,12 +3,10 @@ import { TrackballControls } from 'https://unpkg.com/three@0.126.0/examples/jsm/
 import { RenderPass } from 'https://unpkg.com/three@0.126.0/examples/jsm/postprocessing/RenderPass.js';
 import { EffectComposer } from 'https://unpkg.com/three@0.126.0/examples/jsm/postprocessing/EffectComposer.js';
 import { BufferGeometryUtils } from 'https://unpkg.com/three@0.126.0/examples/jsm/utils/BufferGeometryUtils.js';
-// import { DoppelWS } from './websocket.js';
-// import { APIcall } from './APIcall.js';
-// import { DoppelCore } from './DoppelCore.js';
-// import { mouseCursors } from './mouseKey.js';
 
 import { UI } from './UI.js';
+import { request } from './request.js';
+import { MouseKey } from './MouseKey.js';
 
 ////
 // [note]
@@ -32,10 +30,8 @@ Canvas.init = async function () {
     {
         Canvas.predefGroup = new THREE.Group();
         Canvas.meshGroup = new THREE.Group();
-        // Canvas.backMeshGroup = new THREE.Group();
         Canvas.scene.add(Canvas.predefGroup);
         Canvas.scene.add(Canvas.meshGroup);
-        // Canvas.scene.add(Canvas.backMeshGroup);
     }
 
     // orthographic camera
@@ -108,8 +104,7 @@ Canvas.init = async function () {
     });
 
     // todo
-    //     canvas.pullUpdate();
-    //     this.camera.lookAt(this.scene.position);
+    await Canvas.pullUpdate();
 
     Canvas.drawLoop();
     return;
@@ -117,59 +112,51 @@ Canvas.init = async function () {
 
 Canvas.drawLoop = function () {
     Canvas.controls.update();
-    // canvas.pushUpdate();
+    // todo
+    //   canvas.pushUpdate();
     requestAnimationFrame(Canvas.drawLoop);
     Canvas.effectComposer.render();
 };
 
-Canvas.pullUpdate = function () {
-    //     var callback = function (response) {
-    //         var j = JSON.parse(response);
-    //         canvas.controls.target.set(j["target"].x, j["target"].y, j["target"].z);
-    //         canvas.camera.position.set(j["pos"].x, j["pos"].y, j["pos"].z);
-    //         canvas.camera.up.set(j["up"].x, j["up"].y, j["up"].z);
-    //         canvas.camera.zoom = j["zoom"];
-    //         canvas.camera.updateProjectionMatrix();
-    //         canvas.camera.lookAt(canvas.controls.target.clone());
-    //         canvas.camera.updateMatrixWorld(true);
+Canvas.pullUpdate = async function () {
+    const response = await request("pullCanvasParameters", {});
+    const json = JSON.parse(response);
+    Canvas.controls.target.set(json["controls"]["target"].x, json["controls"]["target"].y, json["controls"]["target"].z);
+    Canvas.camera.position.set(json["camera"]["position"].x, json["camera"]["position"].y, json["camera"]["position"].z);
+    Canvas.camera.up.set(json["camera"]["up"].x, json["camera"]["up"].y, json["camera"]["up"].z);
+    Canvas.camera.zoom = json["camera"]["zoom"];
+    Canvas.camera.updateProjectionMatrix();
+    Canvas.camera.lookAt(Canvas.controls.target.clone());
+    Canvas.camera.updateMatrixWorld(true);
 
-    //         // for avoiding (semi-)infinite messaging.
-    //         canvas.lastControlTarget = canvas.controls.target.clone();
-    //         canvas.lastCameraPos = canvas.camera.position.clone();
-    //         canvas.lastCameraUp = canvas.camera.up.clone();
-    //         canvas.lastCameraZoom = canvas.camera.zoom;
-    //         canvas.lastCursorDir = new THREE.Vector3(0, 0, 0);
+    // for avoiding (semi-)infinite messaging.
+    Canvas.lastControlTarget = Canvas.controls.target.clone();
+    Canvas.lastCameraPos = Canvas.camera.position.clone();
+    Canvas.lastCameraUp = Canvas.camera.up.clone();
+    Canvas.lastCameraZoom = Canvas.camera.zoom;
+    Canvas.lastCursorDir = new THREE.Vector2(0, 0);
 
-    //         // cursor
-    //         for (var sessionId in j["cursor"]) {
-    //             if (mouseCursors[sessionId] == null) {
-    //                 // new entry
-    //                 mouseCursors[sessionId] = { "dir": new THREE.Vector3(0, 0, 0), "img": new Image() };
-    //                 var style = mouseCursors[sessionId].img.style;
-    //                 style.position = "fixed";
-    //                 style["z-index"] = "1000"; // material css sidenav has 999
-    //                 style["pointer-events"] = "none";
-    //                 mouseCursors[sessionId].img.src = "../icon/cursorIcon" + (sessionId % 10) + ".png";
-    //                 mouseCursors[sessionId].img.sessionId = sessionId;
+    // cursor
+    for (let sessionUUID in json["cursors"]) {
+        if (!MouseKey["cursors"][sessionUUID]) {
+            // new entry
+            MouseKey["cursors"][sessionUUID] = { "dir": new THREE.Vector2(0, 0), "idx": json["cursors"][sessionUUID]["idx"], "img": new Image() };
+            const style = MouseKey["cursors"][sessionUUID].img.style;
+            style.position = "fixed";
+            style["z-index"] = "1000"; // material css sidenav has 999
+            style["pointer-events"] = "none";
+            MouseKey["cursors"][sessionUUID].img.src = "../icon/cursorIcon" + (MouseKey["cursors"][sessionUUID].idx % 10) + ".png";
 
-    //                 document.body.appendChild(mouseCursors[sessionId].img);
-    //             }
-    //             mouseCursors[sessionId]["dir"].set(j["cursor"][sessionId]["dirX"], j["cursor"][sessionId]["dirY"]);
+            document.body.appendChild(MouseKey["cursors"][sessionUUID].img);
+        }
+        MouseKey["cursors"][sessionUUID]["dir"].set(json["cursors"][sessionUUID]["dir"].x, json["cursors"][sessionUUID]["dir"].y);
 
-    //             var vector = mouseCursors[sessionId]["dir"].clone();
-    //             vector.multiplyScalar(1000.0);
-    //             vector.add(canvas.lastCameraPos);
-    //             var widthHalf = (canvas.width / 2);
-    //             var heightHalf = (canvas.height / 2);
-    //             // vector.project(canvas.camera);
-
-    //             var clientX = (vector.x * widthHalf) + widthHalf;
-    //             var clientY = - (vector.y * heightHalf) + heightHalf;
-    //             mouseCursors[sessionId].img.style.left = (clientX - 16) + "px";
-    //             mouseCursors[sessionId].img.style.top = (clientY - 16) + "px";
-    //         }
-    //     };
-    //     APIcall("GET", "api/latestCanvasParameters").then(res => callback(res));
+        const vector = MouseKey["cursors"][sessionUUID]["dir"].clone();
+        const clientX = vector.x + window.innerWidth / 2.0;
+        const clientY = vector.y + window.innerHeight / 2.0;
+        MouseKey["cursors"][sessionUUID].img.style.left = (clientX - 16) + "px";
+        MouseKey["cursors"][sessionUUID].img.style.top = (clientY - 16) + "px";
+    }
 };
 
 Canvas.pushUpdate = function () {

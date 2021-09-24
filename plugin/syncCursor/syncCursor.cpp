@@ -33,10 +33,12 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 
 	{
 		std::lock_guard<std::mutex> lock(room->interfaceParams.mutexInterfaceParams);
+		// todo support delete operation
+
 		std::unordered_map<std::string, Doppelganger::Room::cursorInfo> &cursors = room->interfaceParams.cursors;
 		const std::string &sessionUUID = parameters.at("sessionUUID").get<std::string>();
-		const double &x = parameters.at("cursor").at("x").get<double>();
-		const double &y = parameters.at("cursor").at("y").get<double>();
+		const double &x = parameters.at("cursor").at("dir").at("x").get<double>();
+		const double &y = parameters.at("cursor").at("dir").at("y").get<double>();
 		const int &idx = parameters.at("cursor").at("idx").get<int>();
 
 		// we don't need to check timestamp for cursors

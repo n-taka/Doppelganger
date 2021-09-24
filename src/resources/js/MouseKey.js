@@ -94,8 +94,10 @@ MouseKey.syncCursor = function () {
     };
     if (cursorNEq) {
         json["cursor"] = {
-            "x": MouseKey["cursors"][Core["UUID"]]["dir"].x,
-            "y": MouseKey["cursors"][Core["UUID"]]["dir"].y,
+            "dir": {
+                "x": MouseKey["cursors"][Core["UUID"]]["dir"].x,
+                "y": MouseKey["cursors"][Core["UUID"]]["dir"].y
+            },
             "idx": MouseKey["cursors"][Core["UUID"]]["idx"]
         };
         MouseKey["prevCursor"] = MouseKey["cursors"][Core["UUID"]]["dir"].clone();
