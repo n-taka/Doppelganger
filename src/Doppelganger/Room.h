@@ -10,7 +10,6 @@
 #include <mutex>
 #include <boost/any.hpp>
 #include <nlohmann/json.hpp>
-
 #if defined(_WIN32) || defined(_WIN64)
 #include <filesystem>
 namespace fs = std::filesystem;
@@ -18,6 +17,7 @@ namespace fs = std::filesystem;
 #include "boost/filesystem.hpp"
 namespace fs = boost::filesystem;
 #endif
+
 #include "Doppelganger/Logger.h"
 
 namespace Doppelganger
@@ -53,19 +53,9 @@ namespace Doppelganger
 		// void broadcastMeshUpdate(const std::vector<std::string> &meshUUIDVec);
 
 		////
-		// parameter for edit history
-		struct editHistoryParameters
-		{
-			int editHistoryIndex;
-			std::vector<nlohmann::json> diffFromPrev;
-			std::vector<nlohmann::json> diffFromNext;
-			std::mutex mutexEditHistoryParams;
-		};
-		editHistoryParameters editHistoryParams;
-
-		////
 		// parameter for user interface
-		struct cursorInfo{
+		struct cursorInfo
+		{
 			double x;
 			double y;
 			int idx;
@@ -82,6 +72,35 @@ namespace Doppelganger
 			std::mutex mutexInterfaceParams;
 		};
 		interfaceParameters interfaceParams;
+
+		////
+		// edit history
+		////
+		// edit history is defined as a json object
+		// {
+		//  "meshUUID-A": json object represents mesh with meshUUID-A,
+		//  "meshUUID-B": json object represents mesh with meshUUID-B,
+		//  "meshUUID-C": {
+		//	 remove: true
+		//  },
+		//  ...
+		// }
+		// * each json object ALWAYS contains entry with a key "remove"
+		struct EditHistory
+		{
+			int editHistoryIndex;
+			// for changing i => i+1 (redo),
+			//   we simply apply diffFromPrev.at(i+1)
+			std::vector<nlohmann::json> diffFromPrev;
+			// for changing i+1 => i (undo),
+			//   we simply apply diffFromNext.at(i)
+			//   diffFromNext is automatically calculated within storeCurrent(...)
+			std::vector<nlohmann::json> diffFromNext;
+		};
+		EditHistory editHistory;
+		void storeHistory(const nlohmann::json &diff, const nlohmann::json &diffInv);
+		void undo();
+		void redo();
 
 		////
 		// mesh data

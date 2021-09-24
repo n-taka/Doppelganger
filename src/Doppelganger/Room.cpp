@@ -13,12 +13,10 @@ namespace Doppelganger
 	{
 		//////
 		// initialize edit history parameters
+		editHistory.editHistoryIndex = 0;
 		{
-			// todo
-			// editHistoryParams.editHistoryVec.clear();
-			// editHistoryParams.editHistoryVec.push_back(editHistory({std::vector<std::string>({}), nlohmann::json::object()}));
-			// editHistoryParams.editHistoryIndex = 0;
-			// editHistoryParams.mutexEditHistoryParams = std::make_shared<std::mutex>();
+			const nlohmann::json empty = nlohmann::json::object();
+			editHistory.diffFromPrev.emplace_back(empty);
 		}
 
 		//////
@@ -78,13 +76,13 @@ namespace Doppelganger
 		std::lock_guard<std::mutex> lock(serverParams.mutexServerParams);
 		nlohmann::json broadcastJson = nlohmann::json::object();
 		nlohmann::json responseJson = nlohmann::json::object();
-		if(!broadcast.empty())
+		if (!broadcast.empty())
 		{
 			broadcastJson["API"] = APIName;
 			// broadcastJson["sessionUUID"] = sourceUUID;
 			broadcastJson["parameters"] = broadcast;
 		}
-		if(!response.empty())
+		if (!response.empty())
 		{
 			responseJson["API"] = APIName;
 			// responseJson["sessionUUID"] = sourceUUID;
@@ -109,6 +107,78 @@ namespace Doppelganger
 				if (!response.empty())
 				{
 					session->send(responseMessage);
+				}
+			}
+		}
+	}
+
+	void Room::storeHistory(const nlohmann::json &diff, const nlohmann::json &diffInv)
+	{
+		// erase future elements in the edit history
+		editHistory.diffFromNext.erase(editHistory.diffFromNext.begin() + (editHistory.editHistoryIndex + 1), editHistory.diffFromNext.end());
+		editHistory.diffFromPrev.erase(editHistory.diffFromPrev.begin() + (editHistory.editHistoryIndex + 0), editHistory.diffFromPrev.end());
+		// store diff/diffInv
+		editHistory.diffFromNext.emplace_back(diffInv);
+		editHistory.diffFromPrev.emplace_back(diff);
+	}
+
+	void Room::undo()
+	{
+		const int updatedIndex = std::max(0, static_cast<int>(editHistory.editHistoryIndex - 1));
+		if (updatedIndex != editHistory.editHistoryIndex)
+		{
+			editHistory.editHistoryIndex = updatedIndex;
+			for (const auto &uuid_mesh : editHistory.diffFromNext.at(editHistory.editHistoryIndex).items())
+			{
+				const std::string &meshUUID = uuid_mesh.key();
+				const nlohmann::json &meshJson = uuid_mesh.value();
+				if (meshJson.contains("remove") && meshJson.at("remove").get<bool>())
+				{
+					// remove
+					meshes.erase(meshUUID);
+				}
+				else if (meshes.find(meshUUID) == meshes.end())
+				{
+					// new mesh
+					std::shared_ptr<triangleMesh> mesh = std::make_shared<triangleMesh>(meshUUID);
+					mesh->restoreFromJson(meshJson);
+					meshes[meshUUID] = mesh;
+				}
+				else
+				{
+					// existing mesh
+					meshes[meshUUID]->restoreFromJson(meshJson);
+				}
+			}
+		}
+	}
+
+	void Room::redo()
+	{
+		const int updatedIndex = std::min(static_cast<int>(editHistory.diffFromPrev.size() - 1), editHistory.editHistoryIndex + 1);
+		if (updatedIndex != editHistory.editHistoryIndex)
+		{
+			editHistory.editHistoryIndex = updatedIndex;
+			for (const auto &uuid_mesh : editHistory.diffFromPrev.at(editHistory.editHistoryIndex).items())
+			{
+				const std::string &meshUUID = uuid_mesh.key();
+				const nlohmann::json &meshJson = uuid_mesh.value();
+				if (meshJson.contains("remove") && meshJson.at("remove").get<bool>())
+				{
+					// remove
+					meshes.erase(meshUUID);
+				}
+				else if (meshes.find(meshUUID) == meshes.end())
+				{
+					// new mesh
+					std::shared_ptr<triangleMesh> mesh = std::make_shared<triangleMesh>(meshUUID);
+					mesh->restoreFromJson(meshJson);
+					meshes[meshUUID] = mesh;
+				}
+				else
+				{
+					// existing mesh
+					meshes[meshUUID]->restoreFromJson(meshJson);
 				}
 			}
 		}

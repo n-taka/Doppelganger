@@ -7,6 +7,7 @@
 
 namespace
 {
+	// matrix => json
 	template <typename Derived>
 	std::string encodeEigenMatrixToBase64(const Eigen::MatrixBase<Derived> &mat)
 	{
@@ -67,6 +68,22 @@ namespace
 			json["FTC"] = encodeEigenMatrixToBase64(FacetTexCoords);
 		}
 	};
+
+	// json => matrix
+	template <typename Derived>
+	void decodeBase64ToEigenMatrix(const std::string &base64, const int &cols, Eigen::MatrixBase<Derived> &mat)
+	{
+		std::vector<unsigned char> binData;
+		const size_t len = boost::beast::detail::base64::decoded_size(base64.size());
+		binData.resize(len);
+		const std::pair<size_t, size_t> lenWrittenRead = boost::beast::detail::base64::decode(&(binData[0]), base64.data(), base64.size());
+
+		Eigen::Matrix<typename Derived::Scalar, Derived::RowsAtCompileTime, Derived::ColsAtCompileTime, Eigen::RowMajor> matRowMajor;
+		matRowMajor.resize(lenWrittenRead.first / (sizeof(typename Derived::Scalar) * cols), cols);
+		memmove(matRowMajor.data(), &(binData[0]), binData.size());
+		mat = matRowMajor;
+	}
+
 }
 
 namespace Doppelganger
@@ -172,6 +189,96 @@ namespace Doppelganger
 			}
 		}
 		return response;
+	}
+
+	void triangleMesh::restoreFromJson(const nlohmann::json &json)
+	{
+		// [IN]
+		// json = {
+		//  "UUID": UUID of this mesh,
+		//  "name": name of this mesh,
+		//  "visibility": visibility of this mesh,
+		//  "V": base64-encoded vertices (#V),
+		//  "F": base64-encoded facets (#F),
+		//  "VC": base64-encoded vertex colors (#V),
+		//  "TC": base64-encoded texture coordinates (#V),
+		//  "FC": base64-encoded vertices (#F, only for edit history),
+		//  "FTC": base64-encoded vertices (#F, only for edit history),
+		//  "textures": [
+		//   {
+		// 	  "name": original filename for this texture
+		// 	  "width" = width of this texture
+		// 	  "height" = height of this texture
+		// 	  "texData" = base64-encoded texture data
+		//   }
+		//  ]
+		// }
+
+		// [OUT]
+		// nothing.
+
+		// UUID
+		if (UUID != json.at("UUID").get<std::string>())
+		{
+			// invalid.
+			return;
+		}
+		// name
+		if (json.contains("name"))
+		{
+			name = json.at("name").get<std::string>();
+		}
+		// visibility
+		if (json.contains("visibility"))
+		{
+			visibility = json.at("visibility").get<bool>();
+		}
+		// V
+		if (json.contains("V"))
+		{
+			decodeBase64ToEigenMatrix(json.at("V").get<std::string>(), 3, V);
+		}
+		// F
+		if (json.contains("F"))
+		{
+			decodeBase64ToEigenMatrix(json.at("F").get<std::string>(), 3, F);
+		}
+		// VC
+		if (json.contains("VC"))
+		{
+			decodeBase64ToEigenMatrix(json.at("VC").get<std::string>(), 3, VC);
+		}
+		// TC
+		if (json.contains("TC"))
+		{
+			decodeBase64ToEigenMatrix(json.at("TC").get<std::string>(), 2, TC);
+		}
+		// FC
+		if (json.contains("FC"))
+		{
+			decodeBase64ToEigenMatrix(json.at("FC").get<std::string>(), 3, FC);
+		}
+		// FTC
+		if (json.contains("FTC"))
+		{
+			decodeBase64ToEigenMatrix(json.at("FTC").get<std::string>(), 3, FTC);
+		}
+		// textures
+		if (json.contains("textures"))
+		{
+			const nlohmann::json &texturesArray = json.at("textures");
+			textures.resize(texturesArray.size());
+			for (int texIdx = 0; texIdx < texturesArray.size(); ++texIdx)
+			{
+				const nlohmann::json &textureJson = texturesArray.at(texIdx);
+				Texture &texture = textures.at(texIdx);
+
+				texture.fileName = textureJson.at("name").get<std::string>();
+				texture.texData.resize(textureJson.at("height").get<int>(), textureJson.at("width").get<int>());
+				// todo check...
+				decodeBase64ToEigenMatrix(textureJson.at("texData").get<std::string>(), texture.texData.cols(), texture.texData);
+			}
+		}
 	}
 }
 

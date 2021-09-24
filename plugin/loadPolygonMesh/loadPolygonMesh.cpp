@@ -305,10 +305,16 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 			room->logger.log(filePath, "APICALL", true);
 		}
 
-		// TODO!! edit history
-		// 	Doppel::HistoryHandler handler;
-		// 	handler.saveCurrentState(updateDoppelId, pantry);
-		// 	pantry->broadcastMeshUpdate(updateDoppelId);
+		{
+			// edit history
+			nlohmann::json diff = nlohmann::json::object();
+			nlohmann::json diffInv = nlohmann::json::object();
+			diff[meshUUID] = mesh->dumpToJson(false);
+			diff[meshUUID]["remove"] = false;
+			diffInv[meshUUID] = {};
+			diffInv[meshUUID]["remove"] = true;
+			room->storeHistory(diff, diffInv);
+		}
 	}
 }
 

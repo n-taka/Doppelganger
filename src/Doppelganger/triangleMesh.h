@@ -30,6 +30,7 @@ namespace Doppelganger
 
 		// dump to json
 		nlohmann::json dumpToJson(const bool &sendToClient) const;
+		void restoreFromJson(const nlohmann::json& json);
 
 	public:
 		std::string name;
