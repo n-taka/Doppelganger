@@ -340,12 +340,10 @@ namespace
 								taskUUID = Doppelganger::Util::uuid("task-");
 								room->interfaceParams.taskUUIDInProgress.insert(taskUUID);
 
-								nlohmann::json json = nlohmann::json::object();
-								json["task"] = "isServerBusy";
-								nlohmann::json parameters = nlohmann::json::object();
-								parameters["isBusy"] = (room->interfaceParams.taskUUIDInProgress.size() > 0);
-								json["parameters"] = parameters;
-								room->broadcastWS(json.dump());
+								nlohmann::json broadcast = nlohmann::json::object();
+								nlohmann::json response = nlohmann::json::object();
+								broadcast["isBudy"] = (room->interfaceParams.taskUUIDInProgress.size() > 0);
+								room->broadcastWS("isServerBusy", std::string(""), broadcast, response);
 							}
 
 							const std::string &APIName = reqPathVec.at(2);
@@ -378,12 +376,10 @@ namespace
 								std::lock_guard<std::mutex> lock(room->interfaceParams.mutexInterfaceParams);
 								room->interfaceParams.taskUUIDInProgress.erase(taskUUID);
 
-								nlohmann::json json = nlohmann::json::object();
-								json["task"] = "isServerBusy";
-								nlohmann::json parameters = nlohmann::json::object();
-								parameters["isBusy"] = (room->interfaceParams.taskUUIDInProgress.size() > 0);
-								json["parameters"] = parameters;
-								room->broadcastWS(json.dump());
+								nlohmann::json broadcast = nlohmann::json::object();
+								nlohmann::json response = nlohmann::json::object();
+								broadcast["isBudy"] = (room->interfaceParams.taskUUIDInProgress.size() > 0);
+								room->broadcastWS("isServerBusy", std::string(""), broadcast, response);
 							}
 
 							// broadcast

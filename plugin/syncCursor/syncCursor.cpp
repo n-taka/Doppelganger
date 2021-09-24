@@ -17,10 +17,18 @@ extern "C" DLLEXPORT void metadata(const std::shared_ptr<Doppelganger::Room> &ro
 
 extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room> &room, const nlohmann::json &parameters, nlohmann::json &response, nlohmann::json &broadcast)
 {
-	////
-	// [IN]
-	// parameters = {
-	// }
+    ////
+    // [IN]
+    // parameters = {
+    //  "sessionUUID": sessionUUID string,
+    //  "cursor": {
+    //   "dir": {
+    //    "x": x corrdinate of this cursor,
+    //    "y": y corrdinate of this cursor
+    //   },
+    //   "idx": idx for cursor icon
+    //  }
+    // }
 
 	// [OUT]
 	// response = {

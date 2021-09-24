@@ -49,7 +49,7 @@ namespace Doppelganger
 		serverParameters serverParams;
 		void joinWS(const std::shared_ptr<WebsocketSession> &session);
 		void leaveWS(const std::string &sessionUUID);
-		void broadcastWS(const std::string &payload, const std::unordered_set<std::string> &doNotSend = {});
+		void broadcastWS(const std::string &APIName, const std::string &sourceUUID, const nlohmann::json &broadcast, const nlohmann::json &response);
 		// void broadcastMeshUpdate(const std::vector<std::string> &meshUUIDVec);
 
 		////

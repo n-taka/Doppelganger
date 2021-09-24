@@ -60,13 +60,10 @@ namespace Doppelganger
 		room->joinWS(shared_from_this());
 
 		// initialize session
-		nlohmann::json json;
-		json["task"] = "initializeSession";
-		json["parameters"] = nlohmann::json::object();
-		json.at("parameters")["UUID"] = UUID;
-		const std::string payload = json.dump();
-		const std::shared_ptr<const std::string> ss = std::make_shared<const std::string>(std::move(payload));
-		send(ss);
+		nlohmann::json broadcast = nlohmann::json::object();
+		nlohmann::json response = nlohmann::json::object();
+		response["sessionUUID"] = UUID;
+		room->broadcastWS("initializeSession", UUID, broadcast, response);
 
 		// start reading a message
 		ws.async_read(
@@ -92,6 +89,7 @@ namespace Doppelganger
 			const nlohmann::json parameters = nlohmann::json::parse(payload);
 
 			const std::string &APIName = parameters.at("API").get<std::string>();
+			const std::string &sourceUUID = parameters.at("sessionUUID").get<std::string>();
 			const Doppelganger::Plugin::API_t &APIFunc = room->core->plugin.at(APIName)->func;
 
 			// WS APIs are called so many times (e.g. syncCursor).
@@ -112,10 +110,8 @@ namespace Doppelganger
 
 			nlohmann::json response, broadcast;
 			APIFunc(room, parameters.at("parameters"), response, broadcast);
-#if 0
-		// Send to all connections
-		pantry->broadcastWS(payload, std::unordered_set<int>({parameters.at("sessionId")}));
-#endif
+
+			room->broadcastWS(APIName, sourceUUID, broadcast, response);
 		}
 		catch (...)
 		{

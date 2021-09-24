@@ -11,19 +11,19 @@ function onMessage(event) {
         const json = JSON.parse(event.data);
         console.log(json);
 
-        if ("task" in json) {
-            if (json["task"] in WSTasks) {
-                WSTasks[json["task"]](json["parameters"]);
+        if ("API" in json) {
+            if (json["API"] in WSTasks) {
+                WSTasks[json["API"]](json["parameters"]);
                 // navigator.locks.request('websocketTask', async lock => {
                 //     return wsCallbackFuncs[j["task"]](j);
                 // });
             }
             else {
-                console.log("task " + json["task"] + " is not yet implemented.");
+                console.log("API " + json["API"] + " is not yet implemented.");
             }
         }
         else {
-            console.log("json on websocket must have \"task\" entry!");
+            console.log("json on websocket must have \"API\" entry!");
         }
     }
 }

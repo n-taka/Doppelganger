@@ -73,16 +73,43 @@ namespace Doppelganger
 		// update cursors
 	}
 
-	void Room::broadcastWS(const std::string &payload, const std::unordered_set<std::string> &doNotSend)
+	void Room::broadcastWS(const std::string &APIName, const std::string &sourceUUID, const nlohmann::json &broadcast, const nlohmann::json &response)
 	{
 		std::lock_guard<std::mutex> lock(serverParams.mutexServerParams);
-		const std::shared_ptr<const std::string> ss = std::make_shared<const std::string>(std::move(payload));
+		nlohmann::json broadcastJson = nlohmann::json::object();
+		nlohmann::json responseJson = nlohmann::json::object();
+		if(!broadcast.empty())
+		{
+			broadcastJson["API"] = APIName;
+			// broadcastJson["sessionUUID"] = sourceUUID;
+			broadcastJson["parameters"] = broadcast;
+		}
+		if(!response.empty())
+		{
+			responseJson["API"] = APIName;
+			// responseJson["sessionUUID"] = sourceUUID;
+			responseJson["parameters"] = response;
+		}
+		const std::shared_ptr<const std::string> broadcastMessage = std::make_shared<const std::string>(broadcastJson.dump());
+		const std::shared_ptr<const std::string> responseMessage = std::make_shared<const std::string>(responseJson.dump());
 
 		for (const auto &uuid_session : serverParams.websocketSessions)
 		{
-			if (doNotSend.find(uuid_session.first) == doNotSend.end())
+			const std::string &sessionUUID = uuid_session.first;
+			const std::shared_ptr<WebsocketSession> &session = uuid_session.second;
+			if (sessionUUID != sourceUUID)
 			{
-				uuid_session.second->send(ss);
+				if (!broadcast.empty())
+				{
+					session->send(broadcastMessage);
+				}
+			}
+			else
+			{
+				if (!response.empty())
+				{
+					session->send(responseMessage);
+				}
 			}
 		}
 	}

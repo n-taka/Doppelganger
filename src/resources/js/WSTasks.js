@@ -1,21 +1,70 @@
 import * as THREE from 'https://unpkg.com/three@0.126.0/build/three.module.js';
 import { Core } from './Core.js';
 import { UI } from './UI.js';
+import { MouseKey } from './MouseKey.js';
 
 export const WSTasks = {};
 
 WSTasks["initializeSession"] = initializeSession;
 WSTasks["isServerBusy"] = isServerBusy;
+WSTasks["syncCursor"] = syncCursor;
 // WSTasks["syncParams"] = syncParams;
-// WSTasks["syncCursors"] = syncCursors;
 // WSTasks["syncMeshes"] = syncMeshes;
 
 async function initializeSession(parameters) {
-    Core.UUID = parameters["UUID"];
+    ////
+    // [IN]
+    // parameters = {
+    //  "sessionUUID": sessionUUID string
+    // }
+    Core.UUID = parameters["sessionUUID"];
 }
 
 async function isServerBusy(parameters) {
+    ////
+    // [IN]
+    // parameters = {
+    //  "isBusy": boolean value that represents the server is busy
+    // }
     UI.setBusyMode(parameters["isBusy"]);
+}
+
+async function syncCursor(parameters) {
+    ////
+    // [IN]
+    // parameters = {
+    //  "sessionUUID": sessionUUID string,
+    //  "cursor": {
+    //   "dir": {
+    //    "x": x corrdinate of this cursor,
+    //    "y": y corrdinate of this cursor
+    //   },
+    //   "idx": idx for cursor icon
+    //  }
+    // }
+
+    const sessionUUID = parameters["sessionUUID"];
+    const x = parameters["cursor"]["dir"]["x"];
+    const y = parameters["cursor"]["dir"]["y"];
+    const idx = parameters["cursor"]["idx"];
+
+    if (!MouseKey["cursors"][sessionUUID]) {
+        // new entry
+        MouseKey["cursors"][sessionUUID] = { "dir": new THREE.Vector2(x, y), "idx": idx, "img": new Image() };
+        const style = MouseKey["cursors"][sessionUUID].img.style;
+        style.position = "fixed";
+        style["z-index"] = "1000"; // material css sidenav has 999
+        style["pointer-events"] = "none";
+        MouseKey["cursors"][sessionUUID].img.src = "../icon/cursorIcon" + (idx % 10) + ".png";
+
+        document.body.appendChild(MouseKey["cursors"][sessionUUID].img);
+    }
+    MouseKey["cursors"][sessionUUID]["dir"].set(x, y);
+
+    const clientX = x + window.innerWidth / 2.0;
+    const clientY = y + window.innerHeight / 2.0;
+    MouseKey["cursors"][sessionUUID].img.style.left = (clientX - 16) + "px";
+    MouseKey["cursors"][sessionUUID].img.style.top = (clientY - 16) + "px";
 }
 
 // async function updateToolElement(mesh, remove) {
@@ -380,34 +429,7 @@ async function isServerBusy(parameters) {
 //     }
 // }
 
-// async function syncCursors(j) {
-//     if (j["remove"]) {
-//         document.body.removeChild(mouseCursors[j["sessionId"]].img);
-//         delete mouseCursors[j["sessionId"]];
-//     }
-//     else if ("cursor" in j) {
-//         if (mouseCursors[j["sessionId"]] == null) {
-//             // new entry
-//             mouseCursors[j["sessionId"]] = { "dir": new THREE.Vector2(0, 0), "img": new Image() };
-//             var style = mouseCursors[j["sessionId"]].img.style;
-//             style.position = "fixed";
-//             style["z-index"] = "1000"; // material css sidenav has 999
-//             style["pointer-events"] = "none";
-//             mouseCursors[j["sessionId"]].img.src = "../icon/cursorIcon" + (j["sessionId"] % 10) + ".png";
-//             mouseCursors[j["sessionId"]].img.sessionId = j["sessionId"];
 
-//             document.body.appendChild(mouseCursors[j["sessionId"]].img);
-//         }
-//         mouseCursors[j["sessionId"]]["dir"].set(j["cursor"]["dirX"], j["cursor"]["dirY"]);
-
-//         var vector = mouseCursors[j["sessionId"]]["dir"].clone();
-
-//         var clientX = vector.x + window.innerWidth / 2.0;
-//         var clientY = vector.y + window.innerHeight / 2.0;
-//         mouseCursors[j["sessionId"]].img.style.left = (clientX - 16) + "px";
-//         mouseCursors[j["sessionId"]].img.style.top = (clientY - 16) + "px";
-//     }
-// }
 
 // export async function syncMeshes(j) {
 //     var firstMesh = (canvas.meshGroup.children.length == 0);
