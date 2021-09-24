@@ -385,8 +385,7 @@ namespace
 							// broadcast
 							if (!broadcast.empty())
 							{
-								// todo
-								// room->broadcast(broadcast);
+								room->broadcastWS(APIName, std::string(""), broadcast, response);
 							}
 
 							// response

@@ -115,8 +115,14 @@ namespace Doppelganger
 	void Room::storeHistory(const nlohmann::json &diff, const nlohmann::json &diffInv)
 	{
 		// erase future elements in the edit history
-		editHistory.diffFromNext.erase(editHistory.diffFromNext.begin() + (editHistory.editHistoryIndex + 1), editHistory.diffFromNext.end());
-		editHistory.diffFromPrev.erase(editHistory.diffFromPrev.begin() + (editHistory.editHistoryIndex + 0), editHistory.diffFromPrev.end());
+		if (editHistory.editHistoryIndex + 1 < editHistory.diffFromNext.size())
+		{
+			editHistory.diffFromNext.erase(editHistory.diffFromNext.begin() + (editHistory.editHistoryIndex + 1), editHistory.diffFromNext.end());
+		}
+		if (editHistory.editHistoryIndex + 0 < editHistory.diffFromPrev.size())
+		{
+			editHistory.diffFromPrev.erase(editHistory.diffFromPrev.begin() + (editHistory.editHistoryIndex + 0), editHistory.diffFromPrev.end());
+		}
 		// store diff/diffInv
 		editHistory.diffFromNext.emplace_back(diffInv);
 		editHistory.diffFromPrev.emplace_back(diff);

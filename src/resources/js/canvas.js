@@ -17,6 +17,9 @@ import { MouseKey } from './MouseKey.js';
 export const Canvas = {};
 
 Canvas.init = async function () {
+    // default color
+    Canvas.defaultColor = [208.0 / 255.0, 208.0 / 255.0, 208.0 / 255.0];
+
     // width / height
     {
         Canvas.width = UI.webGLDiv.offsetWidth;
@@ -199,7 +202,7 @@ Canvas.pushUpdate = function () {
     //     }
 };
 
-Canvas.resetCamera = function () {
+Canvas.resetCamera = function (refreshBSphere) {
     // export function resetCamera(refreshBSphere) {
     //     if (canvas.meshGroup.children.filter(function (obj) { return (obj instanceof THREE.Mesh); }).length > 0) {
     //         var sliderValue = document.getElementById("clippingSlider").noUiSlider.get();
