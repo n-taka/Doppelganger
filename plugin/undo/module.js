@@ -27,7 +27,7 @@ const generateUI = async function () {
             {
                 const i = document.createElement("i");
                 i.innerHTML = "undo";
-                i.setAttribute("class", "material-icons left");
+                i.setAttribute("class", "material-icons");
                 a.appendChild(i);
             }
             li.appendChild(a);

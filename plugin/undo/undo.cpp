@@ -50,7 +50,7 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 		for (const auto &uuid_mesh : broadcast.at("meshes").items())
 		{
 			const std::string &meshUUID = uuid_mesh.key();
-			const nlohmann::json &meshJson = uuid_mesh.value();
+			nlohmann::json &meshJson = uuid_mesh.value();
 			if (meshJson.contains("remove") && meshJson.at("remove").get<bool>())
 			{
 				// remove
@@ -62,11 +62,16 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 				std::shared_ptr<Doppelganger::triangleMesh> mesh = std::make_shared<Doppelganger::triangleMesh>(meshUUID);
 				mesh->restoreFromJson(meshJson);
 				room->meshes[meshUUID] = mesh;
+				// this dumpToJson looks stupid, but mandatory. 
+				//   Because our editHistory uses double, but the clients use float for save the amount of communication.
+				//   In addition, this conversion is needed to handle faceColors
+				meshJson = mesh->dumpToJson(true);
 			}
 			else
 			{
 				// existing mesh
 				room->meshes[meshUUID]->restoreFromJson(meshJson);
+				meshJson = room->meshes[meshUUID]->dumpToJson(true);
 			}
 		}
 	}
