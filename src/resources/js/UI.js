@@ -51,9 +51,14 @@ UI.init = async function () {
                         UI.topNavWrapper = document.createElement('div');
                         UI.topNavWrapper.setAttribute('class', 'nav-wrapper');
                         {
-                            UI.topMenuUl = document.createElement('ul');
-                            UI.topMenuUl.setAttribute('class', 'left');
-                            UI.topNavWrapper.appendChild(UI.topMenuUl);
+                            UI.topMenuLeftUl = document.createElement('ul');
+                            UI.topMenuLeftUl.setAttribute('class', 'left');
+                            UI.topNavWrapper.appendChild(UI.topMenuLeftUl);
+                        }
+                        {
+                            UI.topMenuRightUl = document.createElement('ul');
+                            UI.topMenuRightUl.setAttribute('class', 'right');
+                            UI.topNavWrapper.appendChild(UI.topMenuRightUl);
                         }
                         UI.topNavBar.appendChild(UI.topNavWrapper);
                     }
@@ -92,9 +97,14 @@ UI.init = async function () {
                         UI.bottomNavWrapper = document.createElement('div');
                         UI.bottomNavWrapper.setAttribute('class', 'nav-wrapper');
                         {
-                            UI.bottomMenuUl = document.createElement('ul');
-                            UI.bottomMenuUl.setAttribute('class', 'left');
-                            UI.bottomNavWrapper.appendChild(UI.bottomMenuUl);
+                            UI.bottomMenuLeftUl = document.createElement('ul');
+                            UI.bottomMenuLeftUl.setAttribute('class', 'left');
+                            UI.bottomNavWrapper.appendChild(UI.bottomMenuLeftUl);
+                        }
+                        {
+                            UI.bottomMenuRightUl = document.createElement('ul');
+                            UI.bottomMenuRightUl.setAttribute('class', 'right');
+                            UI.bottomNavWrapper.appendChild(UI.bottomMenuRightUl);
                         }
                         UI.bottomNavBar.appendChild(UI.bottomNavWrapper);
                     }

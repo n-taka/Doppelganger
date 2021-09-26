@@ -237,7 +237,7 @@ const generateUI = async function () {
             }
             li.appendChild(a);
         }
-        UI.bottomMenuUl.appendChild(li);
+        UI.bottomMenuLeftUl.appendChild(li);
     }
 };
 
