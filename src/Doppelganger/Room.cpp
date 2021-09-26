@@ -129,39 +129,6 @@ namespace Doppelganger
 		editHistory.index = editHistory.diffFromNext.size();
 	}
 
-	void Room::redo(nlohmann::json &diff)
-	{
-		diff = nlohmann::json::object();
-		const int updatedIndex = std::min(static_cast<int>(editHistory.diffFromPrev.size() - 1), editHistory.index + 1);
-		if (updatedIndex != editHistory.index)
-		{
-			editHistory.index = updatedIndex;
-			diff = editHistory.diffFromPrev.at(editHistory.index);
-			for (const auto &uuid_mesh : diff.items())
-			{
-				const std::string &meshUUID = uuid_mesh.key();
-				const nlohmann::json &meshJson = uuid_mesh.value();
-				if (meshJson.contains("remove") && meshJson.at("remove").get<bool>())
-				{
-					// remove
-					meshes.erase(meshUUID);
-				}
-				else if (meshes.find(meshUUID) == meshes.end())
-				{
-					// new mesh
-					std::shared_ptr<triangleMesh> mesh = std::make_shared<triangleMesh>(meshUUID);
-					mesh->restoreFromJson(meshJson);
-					meshes[meshUUID] = mesh;
-				}
-				else
-				{
-					// existing mesh
-					meshes[meshUUID]->restoreFromJson(meshJson);
-				}
-			}
-		}
-	}
-
 #if 0
 	void Room::broadcastMeshUpdate(const std::vector<int> &doppelIdVec)
 	{

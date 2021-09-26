@@ -100,7 +100,6 @@ namespace Doppelganger
 		};
 		EditHistory editHistory;
 		void storeHistory(const nlohmann::json &diff, const nlohmann::json &diffInv);
-		void redo(nlohmann::json &diff);
 
 		////
 		// mesh data
