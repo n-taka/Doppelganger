@@ -78,6 +78,7 @@ namespace Doppelganger
 		////
 		// edit history is defined as a json object
 		// {
+		//  "meshes"
 		//  "meshUUID-A": json object represents mesh with meshUUID-A,
 		//  "meshUUID-B": json object represents mesh with meshUUID-B,
 		//  "meshUUID-C": {
@@ -88,7 +89,7 @@ namespace Doppelganger
 		// * each json object ALWAYS contains entry with a key "remove"
 		struct EditHistory
 		{
-			int editHistoryIndex;
+			int index;
 			// for changing i => i+1 (redo),
 			//   we simply apply diffFromPrev.at(i+1)
 			std::vector<nlohmann::json> diffFromPrev;
@@ -99,8 +100,7 @@ namespace Doppelganger
 		};
 		EditHistory editHistory;
 		void storeHistory(const nlohmann::json &diff, const nlohmann::json &diffInv);
-		void undo();
-		void redo();
+		void redo(nlohmann::json &diff);
 
 		////
 		// mesh data

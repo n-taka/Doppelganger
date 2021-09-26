@@ -35,7 +35,7 @@ const generateUI = async function () {
             }
             li.appendChild(a);
         }
-        UI.topMenuUl.appendChild(li);
+        UI.topMenuLeftUl.appendChild(li);
     }
 }
 
@@ -110,8 +110,8 @@ const loadPolygonMesh = async function (parameters) {
         Canvas.UUIDToMesh = {};
     }
     const isFirstMesh = (Canvas.meshGroup.children.length == 0);
-    if ("mesh" in parameters) {
-        for (let meshUUID in parameters["mesh"]) {
+    if ("meshes" in parameters) {
+        for (let meshUUID in parameters["meshes"]) {
             // erase old mesh (not optimal...)
             if (meshUUID in Canvas.UUIDToMesh) {
                 const mesh = Canvas.UUIDToMesh[meshUUID];
@@ -125,9 +125,11 @@ const loadPolygonMesh = async function (parameters) {
                 mesh.geometry.dispose();
                 mesh.material.dispose();
             }
-            const updatedMesh = constructMeshFromJson(parameters["mesh"][meshUUID]);
-            Canvas.meshGroup.add(updatedMesh);
-            Canvas.UUIDToMesh[meshUUID] = updatedMesh;
+            if (!("remove" in parameters["meshes"][meshUUID] && parameters["meshes"][meshUUID]["remove"])) {
+                const updatedMesh = constructMeshFromJson(parameters["meshes"][meshUUID]);
+                Canvas.meshGroup.add(updatedMesh);
+                Canvas.UUIDToMesh[meshUUID] = updatedMesh;
+            }
         }
         if (isFirstMesh) {
             Canvas.fitToFrame();

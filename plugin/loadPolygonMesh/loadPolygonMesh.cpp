@@ -66,7 +66,7 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 	// response = {
 	// }
 	// broadcast = {
-	// 	"mesh" : {
+	// 	"meshes" : {
 	//    "<meshUUID>": JSON object that represents the loaded mesh
 	//  }
 	// }
@@ -115,8 +115,6 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 
 	if (base64Str.size())
 	{
-		//////
-
 		fs::path filePath = fs::temp_directory_path();
 		filePath /= Doppelganger::Util::uuid("DoppelgangerTmpFile-");
 		filePath += ".";
@@ -293,8 +291,8 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 		room->meshes[meshUUID] = mesh;
 
 		// write response/broadcast
-		broadcast["mesh"] = nlohmann::json::object();
-		broadcast.at("mesh")[meshUUID] = mesh->dumpToJson(true);
+		broadcast["meshes"] = nlohmann::json::object();
+		broadcast.at("meshes")[meshUUID] = mesh->dumpToJson(true);
 
 		{
 			// message
@@ -309,10 +307,12 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 			// edit history
 			nlohmann::json diff = nlohmann::json::object();
 			nlohmann::json diffInv = nlohmann::json::object();
-			diff[meshUUID] = mesh->dumpToJson(false);
-			diff[meshUUID]["remove"] = false;
-			diffInv[meshUUID] = {};
-			diffInv[meshUUID]["remove"] = true;
+			diff["meshes"] = nlohmann::json::object();
+			diff["meshes"][meshUUID] = mesh->dumpToJson(false);
+			diff["meshes"][meshUUID]["remove"] = false;
+			diffInv["meshes"] = nlohmann::json::object();
+			diffInv["meshes"][meshUUID] = {};
+			diffInv["meshes"][meshUUID]["remove"] = true;
 			room->storeHistory(diff, diffInv);
 		}
 	}

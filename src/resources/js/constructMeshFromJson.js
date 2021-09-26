@@ -142,7 +142,7 @@ export const constructMeshFromJson = function (json) {
     // create mesh for backface
     {
         // const backFaceMaterial = new THREE.MeshPhongMaterial({ color: 0xf56c0a, flatShading: true, vertexColors: THREE.NoColors, side: THREE.BackSide });
-        const backFaceMaterial = new THREE.MeshBasicMaterial({ color: 0xf56c0a, flatShading: true, vertexColors: THREE.NoColors, side: THREE.BackSide });
+        const backFaceMaterial = new THREE.MeshBasicMaterial({ color: 0xf56c0a, vertexColors: THREE.NoColors, side: THREE.BackSide });
         const backFaceMesh = new THREE.Mesh(mesh.geometry, backFaceMaterial);
         mesh.add(backFaceMesh);
     }
