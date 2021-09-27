@@ -148,12 +148,26 @@ namespace Doppelganger
 #else
 		dllName += ".so";
 #endif
-		// c++ functions
+		// c++ functions (.dll/.so) (if exists)
 		fs::path dllPath(pluginDir);
 		dllPath.append(dllName);
-		if (loadDll(dllPath, "pluginProcess", func))
+		if (fs::exists(dllPath))
 		{
-			// Plugin "<pluginName>" (<Version>) is loaded.
+			if (loadDll(dllPath, "pluginProcess", func))
+			{
+				// Plugin "<pluginName>" (<Version>) is loaded.
+				{
+					std::stringstream ss;
+					ss << "Plugin \"";
+					ss << name;
+					ss << "\" (";
+					ss << installedVersion;
+					ss << ")";
+					ss << " is loaded.";
+					core->logger.log(ss.str(), "SYSTEM");
+				}
+			}
+			else
 			{
 				std::stringstream ss;
 				ss << "Plugin \"";
@@ -161,28 +175,16 @@ namespace Doppelganger
 				ss << "\" (";
 				ss << installedVersion;
 				ss << ")";
-				ss << " is loaded.";
-				core->logger.log(ss.str(), "SYSTEM");
+				ss << " is NOT loaded correctly. (Function pluginProcess not found)";
+				core->logger.log(ss.str(), "ERROR");
 			}
+		}
 
-			// javascript module (if exists)
-			// todo: update
-			std::string moduleName("module.js");
-			fs::path modulePath(pluginDir);
-			modulePath.append(moduleName);
-			hasModuleJS = fs::exists(modulePath);
-		}
-		else
-		{
-			std::stringstream ss;
-			ss << "Plugin \"";
-			ss << name;
-			ss << "\" (";
-			ss << installedVersion;
-			ss << ")";
-			ss << " is NOT loaded correctly. (Function pluginProcess not found)";
-			core->logger.log(ss.str(), "ERROR");
-		}
+		// javascript module (if exists)
+		std::string moduleName("module.js");
+		fs::path modulePath(pluginDir);
+		modulePath.append(moduleName);
+		hasModuleJS = fs::exists(modulePath);
 
 		// update installed plugin list "installed.json"
 		{

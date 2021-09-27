@@ -2,7 +2,6 @@ import * as THREE from 'https://unpkg.com/three@0.126.0/build/three.module.js';
 import { TrackballControls } from 'https://unpkg.com/three@0.126.0/examples/jsm/controls/TrackballControls.js';
 import { RenderPass } from 'https://unpkg.com/three@0.126.0/examples/jsm/postprocessing/RenderPass.js';
 import { EffectComposer } from 'https://unpkg.com/three@0.126.0/examples/jsm/postprocessing/EffectComposer.js';
-import { BufferGeometryUtils } from 'https://unpkg.com/three@0.126.0/examples/jsm/utils/BufferGeometryUtils.js';
 
 import { UI } from './UI.js';
 import { request } from './request.js';
@@ -301,52 +300,6 @@ Canvas.alignCamera = function () {
     //         canvas.camera.up.copy(directions[direction][1]);
     //         canvas.camera.updateProjectionMatrix();
     //         canvas.controls.panSpeed = 100.0;
-
-    //         DoppelCore.strokeTimeStamp = Date.now();
-    //         syncCanvasParameters();
-    //     }
-    // }
-};
-
-Canvas.fitToFrame = function () {
-    // export function fitToFrame() {
-    //     if (canvas.meshGroup.children.filter(function (obj) { return (obj instanceof THREE.Mesh && obj.visible); }).length > 0) {
-    //         var posAttrib = BufferGeometryUtils.mergeBufferAttributes(canvas.meshGroup.children.filter(function (obj) { return (obj instanceof THREE.Mesh && obj.visible); }).map(function (obj) { return obj.geometry.getAttribute("position"); }));
-    //         var geometry = new THREE.BufferGeometry();
-    //         geometry.setAttribute("position", posAttrib);
-    //         geometry.computeBoundingSphere();
-    //         var BSphere = geometry.boundingSphere;
-
-    //         var translateVec = BSphere.center.clone();
-    //         translateVec.sub(canvas.controls.target);
-    //         canvas.camera.position.add(translateVec);
-    //         canvas.controls.target.add(translateVec);
-
-    //         // update pan speed
-    //         var targetToCamera = canvas.camera.position.clone();
-    //         targetToCamera.sub(canvas.controls.target);
-    //         canvas.controls.panSpeed = 100 / targetToCamera.length();
-
-    //         // var raycaster = new THREE.Raycaster();
-    //         // var mouse = new THREE.Vector2();
-    //         // mouse.x = (window.innerWidth > window.innerHeight) ? 0.0 : 1.0;
-    //         // mouse.y = (window.innerWidth > window.innerHeight) ? 1.0 : 0.0;
-    //         // raycaster.setFromCamera(mouse, canvas.camera);
-
-    //         // var theta = raycaster.ray.direction.angleTo(targetToCamera);
-    //         // var distTargetToCamera = BSphere.radius / Math.sin(theta);
-
-    //         // canvas.camera.position.copy(canvas.controls.target);
-    //         // var offset = targetToCamera.multiplyScalar(distTargetToCamera / targetToCamera.length());
-    //         // canvas.camera.position.add(offset);
-
-    //         if (canvas.width > canvas.height) {
-    //             canvas.camera.zoom = (canvas.height / 2) / BSphere.radius;
-    //         } else {
-    //             canvas.camera.zoom = (canvas.width / 2) / BSphere.radius;
-    //         }
-    //         canvas.camera.far = targetToCamera.length() * 2.0;
-    //         canvas.camera.updateProjectionMatrix();
 
     //         DoppelCore.strokeTimeStamp = Date.now();
     //         syncCanvasParameters();

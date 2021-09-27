@@ -132,7 +132,10 @@ const loadPolygonMesh = async function (parameters) {
             }
         }
         if (isFirstMesh) {
-            Canvas.fitToFrame();
+            if(Canvas.fitToFrame){
+                // if user installs plugin "fitToFrame"
+                Canvas.fitToFrame();
+            }
         }
         Canvas.resetCamera(true);
     }
