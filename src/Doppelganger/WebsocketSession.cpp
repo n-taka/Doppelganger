@@ -34,6 +34,25 @@ namespace Doppelganger
 			ss << "WS session \"" << UUID << "\" is closed.";
 			room->logger.log(ss.str(), "SYSTEM");
 		}
+		// remove mouse cursor
+		//   - update parameter on this server
+		//   - broadcast message for remove
+		{
+			room->interfaceParams.cursors.erase(UUID);
+			// parameters = {
+			//  "sessionUUID": sessionUUID string,
+			//  "cursor": {
+			//   "remove": boolean value for removing cursor for no longer connected session
+			//  }
+			// }
+			nlohmann::json response, broadcast;
+			response = nlohmann::json::object();
+			broadcast = nlohmann::json::object();
+			broadcast["sessionUUID"] = UUID;
+			broadcast["cursor"] = nlohmann::json::object();
+			broadcast["cursor"]["remove"] = true;
+			room->broadcastWS("syncCursor", UUID, broadcast, response);
+		}
 		room->leaveWS(UUID);
 
 		// Don't report these
