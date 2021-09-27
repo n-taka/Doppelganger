@@ -126,7 +126,7 @@ const loadPolygonMesh = async function (parameters) {
                 mesh.material.dispose();
             }
             if (!("remove" in parameters["meshes"][meshUUID] && parameters["meshes"][meshUUID]["remove"])) {
-                const updatedMesh = constructMeshFromJson(parameters["meshes"][meshUUID]);
+                const updatedMesh = await constructMeshFromJson(parameters["meshes"][meshUUID]);
                 Canvas.meshGroup.add(updatedMesh);
                 Canvas.UUIDToMesh[meshUUID] = updatedMesh;
             }

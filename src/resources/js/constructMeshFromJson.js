@@ -26,7 +26,7 @@ import { Canvas } from './Canvas.js';
 // [OUT]
 // THREE.Mesh
 
-export const constructMeshFromJson = function (json) {
+export const constructMeshFromJson = async function (json) {
     const geometry = new THREE.BufferGeometry();
     const material = new THREE.MeshPhongMaterial({ color: 0xFFFFFF, flatShading: true, vertexColors: THREE.NoColors });
 
@@ -147,6 +147,13 @@ export const constructMeshFromJson = function (json) {
         mesh.add(backFaceMesh);
     }
 
+    for(let handler of constructMeshFromJson.handlers)
+    {
+        await handler(json, mesh);
+    }
     return mesh;
     // await updateToolElement(mesh, meshJson["remove"]);
 }
+
+// handlers that need to be called when we call constructMeshFromJson
+constructMeshFromJson.handlers = [];
