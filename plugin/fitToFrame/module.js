@@ -1,12 +1,12 @@
-import * as THREE from 'https://unpkg.com/three@0.126.0/build/three.module.js';
-import { BufferGeometryUtils } from 'https://unpkg.com/three@0.126.0/examples/jsm/utils/BufferGeometryUtils.js';
+import * as THREE from 'https://cdn.skypack.dev/three';
+import { mergeBufferAttributes } from 'https://cdn.skypack.dev/three/examples/jsm/utils/BufferGeometryUtils.js';
 import { Canvas } from '../../js/Canvas.js';
 import { MouseKey } from '../../js/MouseKey.js';
 
 const fitToFrame = function () {
     const visibleMeshList = Canvas.meshGroup.children.filter(function (obj) { return (obj instanceof THREE.Mesh && obj.visible); });
     if (visibleMeshList.length > 0) {
-        const posAttrib = BufferGeometryUtils.mergeBufferAttributes(visibleMeshList.map(function (obj) { return obj.geometry.getAttribute("position"); }));
+        const posAttrib = mergeBufferAttributes(visibleMeshList.map(function (obj) { return obj.geometry.getAttribute("position"); }));
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute("position", posAttrib);
         geometry.computeBoundingSphere();

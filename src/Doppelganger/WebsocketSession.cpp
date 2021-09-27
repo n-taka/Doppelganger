@@ -87,7 +87,6 @@ namespace Doppelganger
 		{
 			const std::string payload = boost::beast::buffers_to_string(buffer.data());
 			const nlohmann::json parameters = nlohmann::json::parse(payload);
-
 			const std::string &APIName = parameters.at("API").get<std::string>();
 			const std::string &sourceUUID = parameters.at("sessionUUID").get<std::string>();
 			const Doppelganger::Plugin::API_t &APIFunc = room->core->plugin.at(APIName)->func;
