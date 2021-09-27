@@ -28,21 +28,27 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 	//   "target": {
 	//    "x": x-coordinate,
 	//    "y": y-coordinate,
-	//    "z": z-coordinate
+	//    "z": z-coordinate,
+	//    "timestamp": timestamp
 	//   },
 	//  },
 	//  "camera": {
 	//   "position": {
 	//    "x": x-coordinate,
 	//    "y": y-coordinate,
-	//    "z": z-coordinate
+	//    "z": z-coordinate,
+	//    "timestamp": timestamp
 	//   },
 	//   "up": {
 	//    "x": x-coordinate,
 	//    "y": y-coordinate,
-	//    "z": z-coordinate
+	//    "z": z-coordinate,
+	//    "timestamp": timestamp
 	//   },
-	//   "zoom": zoom parameter
+	//   "zoom": {
+	//    "value": zoom parameter,
+	//    "timestamp": timestamp
+	//   }
 	//  },
 	//  "cursors": {
 	//   "sessionUUID-A": {
@@ -76,6 +82,7 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 			target["x"] = room->interfaceParams.cameraTarget.x();
 			target["y"] = room->interfaceParams.cameraTarget.y();
 			target["z"] = room->interfaceParams.cameraTarget.z();
+			target["timestamp"] = room->interfaceParams.cameraTargetTimestamp;
 			controls["target"] = target;
 		}
 		response["controls"] = controls;
@@ -84,9 +91,10 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 		nlohmann::json camera = nlohmann::json::object();
 		{
 			nlohmann::json position = nlohmann::json::object();
-			position["x"] = room->interfaceParams.cameraPos.x();
-			position["y"] = room->interfaceParams.cameraPos.y();
-			position["z"] = room->interfaceParams.cameraPos.z();
+			position["x"] = room->interfaceParams.cameraPosition.x();
+			position["y"] = room->interfaceParams.cameraPosition.y();
+			position["z"] = room->interfaceParams.cameraPosition.z();
+			position["timestamp"] = room->interfaceParams.cameraPositionTimestamp;
 			camera["position"] = position;
 		}
 		{
@@ -94,10 +102,14 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 			up["x"] = room->interfaceParams.cameraUp.x();
 			up["y"] = room->interfaceParams.cameraUp.y();
 			up["z"] = room->interfaceParams.cameraUp.z();
+			up["timestamp"] = room->interfaceParams.cameraUpTimestamp;
 			camera["up"] = up;
 		}
 		{
-			camera["zoom"] = room->interfaceParams.cameraZoom;
+			nlohmann::json zoom = nlohmann::json::object();
+			zoom["value"] = room->interfaceParams.cameraZoom;
+			zoom["timestamp"] = room->interfaceParams.cameraZoomTimestamp;
+			camera["zoom"] = zoom;
 		}
 		response["camera"] = camera;
 	}

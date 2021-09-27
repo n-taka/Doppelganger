@@ -62,9 +62,9 @@ namespace Doppelganger
 		};
 		struct interfaceParameters
 		{
-			std::int64_t timestamp;
-			Eigen::Matrix<double, 3, 1> cameraTarget, cameraPos, cameraUp;
+			Eigen::Matrix<double, 3, 1> cameraTarget, cameraPosition, cameraUp;
 			double cameraZoom;
+			std::int64_t cameraTargetTimestamp, cameraPositionTimestamp, cameraUpTimestamp, cameraZoomTimestamp;
 			// mouse cursors
 			std::unordered_map<std::string, cursorInfo> cursors;
 			// loading state

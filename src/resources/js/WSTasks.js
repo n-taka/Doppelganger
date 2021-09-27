@@ -1,4 +1,4 @@
-import * as THREE from 'https://unpkg.com/three@0.126.0/build/three.module.js';
+import * as THREE from 'https://cdn.skypack.dev/three';
 import { Core } from './Core.js';
 import { UI } from './UI.js';
 
@@ -157,29 +157,4 @@ async function isServerBusy(parameters) {
 // }
 
 
-
-
-// async function syncParams(j) {
-//     if ("timestamp" in j && j["timestamp"] > DoppelCore.strokeTimeStamp) {
-//         // camera parameter
-//         if ("target" in j) {
-//             canvas.controls.target.set(j["target"].x, j["target"].y, j["target"].z);
-//         }
-//         if ("pos" in j) {
-//             canvas.camera.position.set(j["pos"].x, j["pos"].y, j["pos"].z);
-//             canvas.lastCameraPos = canvas.camera.position.clone();
-//         }
-//         if ("up" in j) {
-//             canvas.camera.up.set(j["up"].x, j["up"].y, j["up"].z);
-//             canvas.lastCameraUp = canvas.camera.up.clone();
-//         }
-//         if ("zoom" in j) {
-//             canvas.camera.zoom = j["zoom"];
-//             canvas.lastCameraZoom = canvas.camera.zoom;
-//         }
-//         canvas.camera.updateProjectionMatrix();
-//         canvas.camera.lookAt(canvas.controls.target.clone());
-//         canvas.camera.updateMatrixWorld(true);
-//     }
-// }
 

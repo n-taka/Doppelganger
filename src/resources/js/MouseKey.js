@@ -1,4 +1,4 @@
-import * as THREE from 'https://unpkg.com/three@0.126.0/build/three.module.js';
+import * as THREE from 'https://cdn.skypack.dev/three';
 import { Core } from './Core.js';
 import { WS } from './WS.js';
 
@@ -18,11 +18,6 @@ MouseKey.init = async function () {
     // canvas.controls.domElement.addEventListener?
     // disable right click
     document.addEventListener("contextmenu", function (e) { e.preventDefault(); });
-    // update strokeTimeStamp on pointerDown
-    document.addEventListener("pointerdown", function (e) {
-        e.preventDefault();
-        MouseKey.strokeTimeStamp = Date.now();
-    });
     // we first updateCursor, then syncCursor
     document.addEventListener("pointermove", function (e) { e.preventDefault(); MouseKey.updateCursor(e) });
     document.addEventListener("pointermove", function (e) { e.preventDefault(); MouseKey.syncCursor() });
@@ -80,7 +75,6 @@ MouseKey.syncCursor = function () {
         MouseKey["prevCursor"] = MouseKey["cursors"][Core["UUID"]]["dir"].clone();
         WS.sendMsg("syncCursor", json);
     }
-
 }
 
 // function customClick(e) {

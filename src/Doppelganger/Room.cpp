@@ -23,9 +23,13 @@ namespace Doppelganger
 		// initialize user interface parameters
 		{
 			interfaceParams.cameraTarget << 0, 0, 0;
-			interfaceParams.cameraPos << -30, 40, 30;
+			interfaceParams.cameraPosition << -30, 40, 30;
 			interfaceParams.cameraUp << 0, 1, 0;
 			interfaceParams.cameraZoom = 1.0;
+			interfaceParams.cameraTargetTimestamp = 0;
+			interfaceParams.cameraPositionTimestamp = 0;
+			interfaceParams.cameraUpTimestamp = 0;
+			interfaceParams.cameraZoomTimestamp = 0;
 		}
 
 		////

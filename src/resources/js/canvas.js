@@ -1,10 +1,12 @@
-import * as THREE from 'https://unpkg.com/three@0.126.0/build/three.module.js';
-import { BufferGeometryUtils } from 'https://unpkg.com/three@0.126.0/examples/jsm/utils/BufferGeometryUtils.js';
-import { TrackballControls } from 'https://unpkg.com/three@0.126.0/examples/jsm/controls/TrackballControls.js';
-import { RenderPass } from 'https://unpkg.com/three@0.126.0/examples/jsm/postprocessing/RenderPass.js';
-import { EffectComposer } from 'https://unpkg.com/three@0.126.0/examples/jsm/postprocessing/EffectComposer.js';
+import * as THREE from 'https://cdn.skypack.dev/three';
+import { TrackballControls } from 'https://cdn.skypack.dev/three/examples/jsm/controls/TrackballControls.js';
+import { mergeBufferAttributes } from 'https://cdn.skypack.dev/three/examples/jsm/utils/BufferGeometryUtils.js';
+import { RenderPass } from 'https://cdn.skypack.dev/three/examples/jsm/postprocessing/RenderPass.js';
+import { EffectComposer } from 'https://cdn.skypack.dev/three/examples/jsm/postprocessing/EffectComposer.js';
 
 import { UI } from './UI.js';
+import { Core } from './Core.js';
+import { WS } from './WS.js';
 import { request } from './request.js';
 import { MouseKey } from './MouseKey.js';
 
@@ -93,6 +95,20 @@ Canvas.init = async function () {
     // bounding sphere (for tweaking camera parameters)
     Canvas.unifiedBSphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), 1.0);
 
+    // parameters for UI
+    Canvas.lastControlTarget = {};
+    Canvas.lastCameraPosition = {};
+    Canvas.lastCameraUp = {};
+    Canvas.lastCameraZoom = {};
+    Canvas.lastControlTarget["value"] = new THREE.Vector3(0, 0, 0);
+    Canvas.lastControlTarget["timestamp"] = -1;
+    Canvas.lastCameraPosition["value"] = new THREE.Vector3(0, 0, 0);
+    Canvas.lastCameraPosition["timestamp"] = -1;
+    Canvas.lastCameraUp["value"] = new THREE.Vector3(0, 0, 0);
+    Canvas.lastCameraUp["timestamp"] = -1;
+    Canvas.lastCameraZoom["value"] = 1.0;
+    Canvas.lastCameraZoom["timestamp"] = -1;
+
     // event listener
     window.addEventListener('resize', function () {
         Canvas.width = UI.webGLDiv.offsetWidth;
@@ -109,7 +125,7 @@ Canvas.init = async function () {
         Canvas.effectComposer.setSize(Canvas.width, Canvas.height);
     });
 
-    await Canvas.pullUpdate();
+    await Canvas.pullCanvasParameters();
 
     Canvas.drawLoop();
     return;
@@ -117,29 +133,31 @@ Canvas.init = async function () {
 
 Canvas.drawLoop = function () {
     Canvas.controls.update();
-    // todo
-    //   canvas.pushUpdate();
+    Canvas.pushCanvasParameters();
     requestAnimationFrame(Canvas.drawLoop);
     Canvas.effectComposer.render();
 };
 
-Canvas.pullUpdate = async function () {
+Canvas.pullCanvasParameters = async function () {
     const response = await request("pullCanvasParameters", {});
     const json = JSON.parse(response);
     Canvas.controls.target.set(json["controls"]["target"].x, json["controls"]["target"].y, json["controls"]["target"].z);
     Canvas.camera.position.set(json["camera"]["position"].x, json["camera"]["position"].y, json["camera"]["position"].z);
     Canvas.camera.up.set(json["camera"]["up"].x, json["camera"]["up"].y, json["camera"]["up"].z);
-    Canvas.camera.zoom = json["camera"]["zoom"];
+    Canvas.camera.zoom = json["camera"]["zoom"]["value"];
     Canvas.camera.updateProjectionMatrix();
     Canvas.camera.lookAt(Canvas.controls.target.clone());
     Canvas.camera.updateMatrixWorld(true);
 
     // for avoiding (semi-)infinite messaging.
-    Canvas.lastControlTarget = Canvas.controls.target.clone();
-    Canvas.lastCameraPos = Canvas.camera.position.clone();
-    Canvas.lastCameraUp = Canvas.camera.up.clone();
-    Canvas.lastCameraZoom = Canvas.camera.zoom;
-    Canvas.lastCursorDir = new THREE.Vector2(0, 0);
+    Canvas.lastControlTarget["value"] = Canvas.controls.target.clone();
+    Canvas.lastControlTarget["timestamp"] = json["controls"]["target"]["timestamp"];
+    Canvas.lastCameraPosition["value"] = Canvas.camera.position.clone();
+    Canvas.lastCameraPosition["timestamp"] = json["camera"]["position"]["timestamp"];
+    Canvas.lastCameraUp["value"] = Canvas.camera.up.clone();
+    Canvas.lastCameraUp["timestamp"] = json["camera"]["up"]["timestamp"];
+    Canvas.lastCameraZoom["value"] = Canvas.camera.zoom;
+    Canvas.lastCameraZoom["timestamp"] = json["camera"]["zoom"]["timestamp"];
 
     // cursor
     for (let sessionUUID in json["cursors"]) {
@@ -164,44 +182,47 @@ Canvas.pullUpdate = async function () {
     }
 };
 
-Canvas.pushUpdate = function () {
-    //     var targetnEq = (canvas.lastControlTarget != null
-    //         && !canvas.lastControlTarget.equals(canvas.controls.target));
-    //     var posnEq = (canvas.lastCameraPos != null
-    //         && !canvas.lastCameraPos.equals(canvas.camera.position));
-    //     var upnEq = (canvas.lastCameraUp != null
-    //         && !canvas.lastCameraUp.equals(canvas.camera.up));
-    //     var zoomnEq = (canvas.lastCameraZoom != null
-    //         && canvas.lastCameraZoom != canvas.camera.zoom);
+Canvas.pushCanvasParameters = async function () {
+    if (Core["UUID"]) {
+        const targetnEq = (!Canvas.lastControlTarget["value"].equals(Canvas.controls.target));
+        const posnEq = (!Canvas.lastCameraPosition["value"].equals(Canvas.camera.position));
+        const upnEq = (!Canvas.lastCameraUp["value"].equals(Canvas.camera.up));
+        const zoomnEq = (Canvas.lastCameraZoom["value"] != Canvas.camera.zoom);
 
-    //     var jsonObj = {
-    //         "sessionId": DoppelCore.sessionId,
-    //         "timestamp": DoppelCore.strokeTimeStamp,
-    //         "task": "syncParams"
-    //     };
-    //     if (targetnEq) {
-    //         jsonObj["target"] = canvas.controls.target;
-    //         canvas.lastControlTarget = canvas.controls.target.clone();
-    //     }
-    //     if (posnEq) {
-    //         jsonObj["pos"] = canvas.camera.position;
-    //         canvas.lastCameraPos = canvas.camera.position.clone();
-    //     }
-    //     if (upnEq) {
-    //         jsonObj["up"] = canvas.camera.up;
-    //         canvas.lastCameraUp = canvas.camera.up.clone();
-    //     }
-    //     if (zoomnEq) {
-    //         jsonObj["zoom"] = canvas.camera.zoom;
-    //         canvas.lastCameraZoom = canvas.camera.zoom;
-    //     }
+        const json = {};
+        if (targetnEq) {
+            json["controls"] = {};
+            Canvas.lastControlTarget["value"] = Canvas.controls.target.clone();
+            Canvas.lastControlTarget["timestamp"] = MouseKey.strokeTimeStamp;
+            json["controls"]["target"] = Canvas.lastControlTarget;
+        }
+        if (posnEq) {
+            json["camera"] = {};
+            Canvas.lastCameraPosition["value"] = Canvas.camera.position.clone();
+            Canvas.lastCameraPosition["timestamp"] = MouseKey.strokeTimeStamp;
+            json["camera"]["position"] = Canvas.lastCameraPosition;
+        }
+        if (upnEq) {
+            if (!json["camera"]) {
+                json["camera"] = {};
+            }
+            Canvas.lastCameraUp["value"] = Canvas.camera.up.clone();
+            Canvas.lastCameraUp["timestamp"] = MouseKey.strokeTimeStamp;
+            json["camera"]["up"] = Canvas.lastCameraUp;
+        }
+        if (zoomnEq) {
+            if (!json["camera"]) {
+                json["camera"] = {};
+            }
+            Canvas.lastCameraZoom["value"] = Canvas.camera.zoom;
+            Canvas.lastCameraZoom["timestamp"] = MouseKey.strokeTimeStamp;
+            json["camera"]["zoom"] = Canvas.lastCameraZoom;
+        }
 
-    //     if (targetnEq || posnEq || upnEq || zoomnEq) {
-    //         // this is redundant, but this improves UX!
-
-    //         var msg = JSON.stringify(jsonObj);
-    //         DoppelWS.sendMsg(msg);
-    //     }
+        if (targetnEq || posnEq || upnEq || zoomnEq) {
+            WS.sendMsg("pushCanvasParameters", json);
+        }
+    }
 };
 
 Canvas.resetCamera = function (refreshBSphere) {
@@ -214,7 +235,7 @@ Canvas.resetCamera = function (refreshBSphere) {
         const clippingFar = 1.01;
 
         if (refreshBSphere) {
-            const posAttrib = BufferGeometryUtils.mergeBufferAttributes(meshList.map(function (obj) { return obj.geometry.getAttribute("position"); }));
+            const posAttrib = mergeBufferAttributes(meshList.map(function (obj) { return obj.geometry.getAttribute("position"); }));
             const geometry = new THREE.BufferGeometry();
             geometry.setAttribute("position", posAttrib);
             geometry.computeBoundingSphere();
