@@ -32,6 +32,8 @@ Core.init = function () {
         MouseKey.init();
         await Plugin.init();
 
+        // todo
+        // pull currentmeshes
 
         // APIcall("GET", "api/serverInfo").then((res) => {
         //     var j = JSON.parse(res);

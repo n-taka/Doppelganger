@@ -31,7 +31,8 @@ const fitToFrame = function () {
         Canvas.camera.updateProjectionMatrix();
 
         MouseKey.strokeTimeStamp = Date.now();
-        Canvas.pushUpdate();
+        // Canvas.pushUpdate() is called within next drawLoop
+        // Canvas.pushUpdate();
     }
 }
 

@@ -1,4 +1,5 @@
 import * as THREE from 'https://unpkg.com/three@0.126.0/build/three.module.js';
+import { BufferGeometryUtils } from 'https://unpkg.com/three@0.126.0/examples/jsm/utils/BufferGeometryUtils.js';
 import { TrackballControls } from 'https://unpkg.com/three@0.126.0/examples/jsm/controls/TrackballControls.js';
 import { RenderPass } from 'https://unpkg.com/three@0.126.0/examples/jsm/postprocessing/RenderPass.js';
 import { EffectComposer } from 'https://unpkg.com/three@0.126.0/examples/jsm/postprocessing/EffectComposer.js';
@@ -105,7 +106,6 @@ Canvas.init = async function () {
         Canvas.effectComposer.setSize(Canvas.width, Canvas.height);
     });
 
-    // todo
     await Canvas.pullUpdate();
 
     Canvas.drawLoop();
@@ -202,55 +202,53 @@ Canvas.pushUpdate = function () {
 };
 
 Canvas.resetCamera = function (refreshBSphere) {
-    // export function resetCamera(refreshBSphere) {
-    //     if (canvas.meshGroup.children.filter(function (obj) { return (obj instanceof THREE.Mesh); }).length > 0) {
-    //         var sliderValue = document.getElementById("clippingSlider").noUiSlider.get();
-    //         var clippingNear = (parseFloat(sliderValue[0]) - 50) / 50;
-    //         var clippingFar = (parseFloat(sliderValue[1]) - 50) / 50;
+    const meshList = Canvas.meshGroup.children.filter(function (obj) { return (obj instanceof THREE.Mesh); });
+    if (meshList.length > 0) {
+        // var sliderValue = document.getElementById("clippingSlider").noUiSlider.get();
+        // var clippingNear = (parseFloat(sliderValue[0]) - 50) / 50;
+        // var clippingFar = (parseFloat(sliderValue[1]) - 50) / 50;
+        const clippingNear = -1.01;
+        const clippingFar = 1.01;
 
-    //         if (refreshBSphere) {
-    //             var posAttrib = BufferGeometryUtils.mergeBufferAttributes(canvas.meshGroup.children.filter(function (obj) { return (obj instanceof THREE.Mesh); }).map(function (obj) { return obj.geometry.getAttribute("position"); }));
-    //             var geometry = new THREE.BufferGeometry();
-    //             geometry.setAttribute("position", posAttrib);
-    //             geometry.computeBoundingSphere();
-    //             canvas.unifiedBSphere = geometry.boundingSphere.clone();
-    //             geometry.dispose();
-    //         }
+        if (refreshBSphere) {
+            const posAttrib = BufferGeometryUtils.mergeBufferAttributes(meshList.map(function (obj) { return obj.geometry.getAttribute("position"); }));
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute("position", posAttrib);
+            geometry.computeBoundingSphere();
+            Canvas.unifiedBSphere = geometry.boundingSphere.clone();
+            geometry.dispose();
+        }
 
-    //         var targetToCamera = canvas.camera.position.clone();
-    //         targetToCamera.sub(canvas.controls.target);
-    //         targetToCamera.normalize();
+        // the procedure below also handles the case "controls.target != BSphere.center"
+        const targetToCamera = Canvas.camera.position.clone();
+        targetToCamera.sub(Canvas.controls.target);
+        targetToCamera.normalize();
 
-    //         var targetToBCenter = canvas.unifiedBSphere.center.clone();
-    //         targetToBCenter.sub(canvas.controls.target);
-    //         var shift = targetToBCenter.length();
-    //         shift += canvas.unifiedBSphere.radius;
-    //         // for safety
-    //         shift *= 1.01;
-    //         var cameraPos = canvas.controls.target.clone();
-    //         targetToCamera.multiplyScalar(shift);
-    //         cameraPos.add(targetToCamera);
-    //         canvas.camera.position.copy(cameraPos);
+        const targetToBCenter = Canvas.unifiedBSphere.center.clone();
+        targetToBCenter.sub(Canvas.controls.target);
+        const shift = (targetToBCenter.length() + Canvas.unifiedBSphere.radius) * 1.01;
+        const cameraPos = Canvas.controls.target.clone();
+        targetToCamera.multiplyScalar(shift);
+        cameraPos.add(targetToCamera);
+        Canvas.camera.position.copy(cameraPos);
 
-    //         // update pan speed
-    //         targetToCamera = canvas.camera.position.clone();
-    //         targetToCamera.sub(canvas.controls.target);
-    //         canvas.controls.panSpeed = 100.0 / targetToCamera.length();
+        // update pan speed
+        Canvas.controls.panSpeed = 100.0 / targetToCamera.length();
 
-    //         // update near/far clip
-    //         var cameraToBCenter = canvas.unifiedBSphere.center.clone();
-    //         cameraToBCenter.sub(canvas.camera.position);
-    //         var cameraToTarget = canvas.controls.target.clone();
-    //         cameraToTarget.sub(canvas.camera.position);
-    //         cameraToTarget.normalize();
-    //         canvas.camera.near = cameraToBCenter.dot(cameraToTarget) + canvas.unifiedBSphere.radius * clippingNear
-    //         canvas.camera.far = cameraToBCenter.dot(cameraToTarget) + canvas.unifiedBSphere.radius * clippingFar
-    //         canvas.camera.updateProjectionMatrix();
+        // update near/far clip
+        const cameraToBCenter = Canvas.unifiedBSphere.center.clone();
+        cameraToBCenter.sub(Canvas.camera.position);
+        const cameraToTarget = Canvas.controls.target.clone();
+        cameraToTarget.sub(Canvas.camera.position);
+        cameraToTarget.normalize();
+        Canvas.camera.near = cameraToBCenter.dot(cameraToTarget) + Canvas.unifiedBSphere.radius * clippingNear
+        Canvas.camera.far = cameraToBCenter.dot(cameraToTarget) + Canvas.unifiedBSphere.radius * clippingFar
+        Canvas.camera.updateProjectionMatrix();
 
-    //         DoppelCore.strokeTimeStamp = Date.now();
-    //         syncCanvasParameters();
-    //     }
-    // }
+        MouseKey.strokeTimeStamp = Date.now();
+        // Canvas.pushUpdate() is called within next drawLoop
+        // Canvas.pushUpdate();
+    }
 };
 
 Canvas.alignCamera = function () {

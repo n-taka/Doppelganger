@@ -131,13 +131,13 @@ const loadPolygonMesh = async function (parameters) {
                 Canvas.UUIDToMesh[meshUUID] = updatedMesh;
             }
         }
+        Canvas.resetCamera(true);
         if (isFirstMesh) {
             if(Canvas.fitToFrame){
                 // if user installs plugin "fitToFrame"
                 Canvas.fitToFrame();
             }
         }
-        Canvas.resetCamera(true);
     }
 }
 
