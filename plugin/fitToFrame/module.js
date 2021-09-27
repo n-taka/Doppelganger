@@ -41,7 +41,7 @@ export const init = async function () {
 
     // keyboard event
     document.addEventListener("keyup", (function (e) {
-        var keycode = e.code;
+        const keycode = e.code;
         if (keycode == 'KeyF') {
             // fitToFrame() updates MouseKey.strokeTimeStamp
             fitToFrame();

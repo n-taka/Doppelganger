@@ -90,6 +90,9 @@ Canvas.init = async function () {
         Canvas.controls.panSpeed = 0.3 * 5;
     }
 
+    // bounding sphere (for tweaking camera parameters)
+    Canvas.unifiedBSphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), 1.0);
+
     // event listener
     window.addEventListener('resize', function () {
         Canvas.width = UI.webGLDiv.offsetWidth;
@@ -249,58 +252,4 @@ Canvas.resetCamera = function (refreshBSphere) {
         // Canvas.pushUpdate() is called within next drawLoop
         // Canvas.pushUpdate();
     }
-};
-
-Canvas.alignCamera = function () {
-    // export function alignCamera(direction) {
-    //     // directions[X][0]: camera position based from the origin
-    //     // directions[X][1]: camera up direction
-    //     var directions = [
-    //         [new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 1, 0)],
-    //         [new THREE.Vector3(-1, 0, 0), new THREE.Vector3(0, 1, 0)],
-    //         [new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, -1)],
-    //         [new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 1, 0)],
-    //         [new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 1, 0)],
-    //         [new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, 1)]
-    //     ];
-
-    //     if (canvas.meshGroup.children.filter(function (obj) { return (obj instanceof THREE.Mesh); }).length > 0) {
-    //         var posAttrib = BufferGeometryUtils.mergeBufferAttributes(canvas.meshGroup.children.filter(function (obj) { return (obj instanceof THREE.Mesh); }).map(function (obj) { return obj.geometry.getAttribute("position"); }));
-    //         var geometry = new THREE.BufferGeometry();
-    //         geometry.setAttribute("position", posAttrib);
-    //         geometry.computeBoundingSphere();
-    //         var BSphere = geometry.boundingSphere;
-
-    //         canvas.controls.target.copy(BSphere.center);
-
-    //         var targetToCamera = directions[direction][0].clone();
-    //         targetToCamera.multiplyScalar(BSphere.radius * 1.05);
-
-    //         canvas.camera.position.copy(targetToCamera);
-    //         canvas.camera.position.add(canvas.controls.target);
-    //         canvas.camera.far = targetToCamera.length() * 2.0;
-
-    //         canvas.camera.up.copy(directions[direction][1]);
-
-    //         // update pan speed
-    //         targetToCamera = canvas.camera.position.clone();
-    //         targetToCamera.sub(canvas.controls.target);
-    //         canvas.controls.panSpeed = 100.0 / targetToCamera.length();
-
-    //         canvas.camera.far = targetToCamera.length() * 2.0;
-    //         canvas.camera.updateProjectionMatrix();
-
-    //         DoppelCore.strokeTimeStamp = Date.now();
-    //         syncCanvasParameters();
-    //     } else {
-    //         canvas.controls.target.copy(new THREE.Vector3(0, 0, 0));
-    //         canvas.camera.position.copy(directions[direction][0]);
-    //         canvas.camera.up.copy(directions[direction][1]);
-    //         canvas.camera.updateProjectionMatrix();
-    //         canvas.controls.panSpeed = 100.0;
-
-    //         DoppelCore.strokeTimeStamp = Date.now();
-    //         syncCanvasParameters();
-    //     }
-    // }
 };

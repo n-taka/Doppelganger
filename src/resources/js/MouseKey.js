@@ -30,29 +30,6 @@ MouseKey.init = async function () {
     MouseKey["cursors"] = {};
     MouseKey["prevCursor"] = new THREE.Vector2(-1.0, -1.0);
 
-    ////
-    // keyboard events
-    document.addEventListener("keyup", (function (e) {
-        MouseKey.strokeTimeStamp = Date.now();
-        var keycode = e.code;
-        if (keycode == 'KeyF') {
-            // 'f' key
-            // fitToFrame();
-        }
-        else if (keycode == 'Digit0' || keycode == 'NumPad0') {
-            // alignCamera(0 + ((e.altKey) ? 3 : 0));
-        }
-        else if (keycode == 'Digit1' || keycode == 'NumPad1') {
-            // alignCamera(1 + ((e.altKey) ? 3 : 0));
-        }
-        else if (keycode == 'Digit2' || keycode == 'NumPad2') {
-            // alignCamera(2 + ((e.altKey) ? 3 : 0));
-        }
-        else {
-            // currently, other keyboard shortcut is not implemented.
-        }
-    }));
-
     return;
 };
 
