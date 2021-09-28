@@ -128,7 +128,7 @@ export const constructMeshLiFromJson = async function (json) {
         // mesh title
         const spanTitle = document.createElement("span");
         spanTitle.setAttribute("class", "title");
-        // spanTitle.setAttribute("id", "title" + json["UUID"]);
+        // spanTitle.setAttribute("id", "title_" + json["UUID"]);
         spanTitle.innerText = json["name"];
         liRoot.appendChild(spanTitle)
     }
@@ -137,13 +137,13 @@ export const constructMeshLiFromJson = async function (json) {
         const aNotify = document.createElement("a");
         aNotify.setAttribute("class", "secondary-content");
         aNotify.setAttribute("style", "user-select: none;");
-        // aNotify.setAttribute("id", "notify" + json["UUID"]);
+        // aNotify.setAttribute("id", "notify_" + json["UUID"]);
         liRoot.appendChild(aNotify);
     }
     {
         // meta information
         const divMetaInfo = document.createElement("div");
-        // divMetaInfo.setAttribute("id", "metaInfo" + json["UUID"]);
+        // divMetaInfo.setAttribute("id", "metaInfo_" + json["UUID"]);
 
         // for empty content, we add <br> for better layout
         const pDummy = document.createElement("p");
@@ -156,7 +156,7 @@ export const constructMeshLiFromJson = async function (json) {
         // buttons
         const pButtons = document.createElement("p");
         pButtons.setAttribute("style", "text-align: right; user-select: none;");
-        // pButtons.setAttribute("id", "buttons" + json["UUID"]);
+        pButtons.setAttribute("id", "buttons_" + json["UUID"]);
         liRoot.appendChild(pButtons);
     }
 
