@@ -3,6 +3,79 @@ import { Canvas } from './Canvas.js';
 
 ////
 // [IN]
+// parameters = {
+//  "meshes": {
+//   "<UUID>": {
+//    "UUID": UUID of this mesh,
+//    "remove" (optional): boolean flag for mesh remove,
+//    "name": name of this mesh,
+//    "visibility": visibility of this mesh,
+//    "V": base64-encoded vertices (#V),
+//    "F": base64-encoded facets (#F),
+//    "VC": base64-encoded vertex colors (#V),
+//    "TC": base64-encoded texture coordinates (#V),
+//    "FC": base64-encoded vertices (#F, only for edit history),
+//    "FTC": base64-encoded vertices (#F, only for edit history),
+//    "textures": [
+//     {
+//      "name": original filename for this texture
+//      "width" = width of this texture
+//      "height" = height of this texture
+//      "texData" = base64-encoded texture data
+//     }
+//    ]
+//   },
+//   ...
+//  }
+// }
+// 
+// [OUT]
+// nothing
+//
+export const constructMeshFromParameters = async function (parameters) {
+    if (!Canvas.UUIDToMesh) {
+        Canvas.UUIDToMesh = {};
+    }
+    const isFirstMesh = (Canvas.meshGroup.children.length == 0);
+    if ("meshes" in parameters) {
+        for (let meshUUID in parameters["meshes"]) {
+            // erase old mesh (not optimal...)
+            if (meshUUID in Canvas.UUIDToMesh) {
+                const mesh = Canvas.UUIDToMesh[meshUUID];
+                // remove from scene
+                Canvas.meshGroup.remove(mesh);
+                // remove from map
+                delete Canvas.UUIDToMesh[meshUUID];
+                // dispose geometry/material
+                //   children[0]: backFaceMesh, geometry is shared
+                mesh.children[0].material.dispose();
+                mesh.geometry.dispose();
+                mesh.material.dispose();
+            }
+            if (!parameters["meshes"][meshUUID]["remove"]) {
+                const updatedMesh = await constructMeshFromJson(parameters["meshes"][meshUUID]);
+                Canvas.meshGroup.add(updatedMesh);
+                Canvas.UUIDToMesh[meshUUID] = updatedMesh;
+            }
+        }
+        Canvas.resetCamera(true);
+        if (isFirstMesh) {
+            if (Canvas.fitToFrame) {
+                // if user installs plugin "fitToFrame"
+                Canvas.fitToFrame();
+            }
+        }
+    }
+    for (let handler of constructMeshFromParameters.handlers) {
+        await handler();
+    }
+}
+// handlers that need to be called when we call constructMeshFromParameters
+// function (void) { ... }
+constructMeshFromParameters.handlers = [];
+
+////
+// [IN]
 // json = {
 //  "UUID": UUID of this mesh,
 //  "name": name of this mesh,
@@ -25,7 +98,7 @@ import { Canvas } from './Canvas.js';
 // 
 // [OUT]
 // THREE.Mesh
-
+//
 export const constructMeshFromJson = async function (json) {
     const geometry = new THREE.BufferGeometry();
     const material = new THREE.MeshPhongMaterial({ color: 0xFFFFFF, flatShading: true, vertexColors: THREE.NoColors });
@@ -147,13 +220,12 @@ export const constructMeshFromJson = async function (json) {
         mesh.add(backFaceMesh);
     }
 
-    for(let handler of constructMeshFromJson.handlers)
-    {
+    for (let handler of constructMeshFromJson.handlers) {
         await handler(json, mesh);
     }
     return mesh;
     // await updateToolElement(mesh, meshJson["remove"]);
 }
-
 // handlers that need to be called when we call constructMeshFromJson
+// function (json, mesh) { ... }
 constructMeshFromJson.handlers = [];

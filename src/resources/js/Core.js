@@ -14,7 +14,7 @@ Core.init = function () {
     // unique ID for websocket connection
     Core.UUID = null;
 
-    Core.selectedMeshUUID = [];
+    // Core.selectedMeshUUID = [];
 
     Core.language = (window.navigator.languages && window.navigator.languages[0]) ||
         window.navigator.language ||
