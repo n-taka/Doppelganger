@@ -10,6 +10,9 @@ import { WS } from './WS.js';
 import { request } from './request.js';
 import { MouseKey } from './MouseKey.js';
 
+import { constructMeshFromParameters } from './constructMeshFrom.js';
+import { constructMeshLiFromParameters } from './constructMeshLiFrom.js';
+
 ////
 // [note]
 // The parameters are tweaked to work well
@@ -109,6 +112,9 @@ Canvas.init = async function () {
     Canvas.lastCameraZoom["value"] = 1.0;
     Canvas.lastCameraZoom["timestamp"] = -1;
 
+    // parameter for mesh
+    Canvas.UUIDToMesh = {};
+
     // event listener
     window.addEventListener('resize', function () {
         Canvas.width = UI.webGLDiv.offsetWidth;
@@ -139,8 +145,7 @@ Canvas.drawLoop = function () {
 };
 
 Canvas.pullCanvasParameters = async function () {
-    const response = await request("pullCanvasParameters", {});
-    const json = JSON.parse(response);
+    const json = JSON.parse(await request("pullCanvasParameters", {}));
     Canvas.controls.target.set(json["controls"]["target"].x, json["controls"]["target"].y, json["controls"]["target"].z);
     Canvas.camera.position.set(json["camera"]["position"].x, json["camera"]["position"].y, json["camera"]["position"].z);
     Canvas.camera.up.set(json["camera"]["up"].x, json["camera"]["up"].y, json["camera"]["up"].z);
@@ -224,6 +229,12 @@ Canvas.pushCanvasParameters = async function () {
         }
     }
 };
+
+Canvas.pullCurrentMeshes = async function () {
+    const parameters = JSON.parse(await request("pullCurrentMeshes"));
+    constructMeshFromParameters(parameters);
+    constructMeshLiFromParameters(parameters);
+}
 
 Canvas.resetCamera = function (refreshBSphere) {
     const meshList = Canvas.meshGroup.children.filter(function (obj) { return (obj instanceof THREE.Mesh); });

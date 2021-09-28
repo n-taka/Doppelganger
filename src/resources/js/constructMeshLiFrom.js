@@ -1,12 +1,6 @@
 import { UI } from './UI.js';
 
 ////
-// initialize...
-if (!UI.UUIDToMeshLi) {
-    UI.UUIDToMeshLi = {};
-}
-
-////
 // [IN]
 // parameters = {
 //  "meshes": {

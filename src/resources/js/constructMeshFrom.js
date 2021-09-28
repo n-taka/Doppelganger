@@ -2,12 +2,6 @@ import * as THREE from 'https://cdn.skypack.dev/three';
 import { Canvas } from './Canvas.js';
 
 ////
-// initialize...
-if (!Canvas.UUIDToMesh) {
-    Canvas.UUIDToMesh = {};
-}
-
-////
 // [IN]
 // parameters = {
 //  "meshes": {

@@ -25,42 +25,14 @@ Core.init = function () {
 
     window.onload = async function () {
         // initialize
-        await UI.init();
+        UI.init();
         Modal.init();
         Canvas.init();
         WS.init();
         MouseKey.init();
         await Plugin.init();
-
-        // todo
-        // pull currentmeshes
-
-        // APIcall("GET", "api/serverInfo").then((res) => {
-        //     var j = JSON.parse(res);
-        //     DoppelCore.hostOS = j["hostOS"];
-        //     DoppelCore.ChromeInstalled = j["ChromeInstalled"];
-        //     DoppelCore.FreeCADInstalled = j["FreeCADInstalled"];
-
-        //     return DoppelCore.loadPlugins();
-        // }).then(() => {
-        //     DoppelCore.toolHandler.push(async function (meshCollectionFrag, doppelId) {
-        //         var iIcon = meshCollectionFrag.getElementById("icon" + doppelId);
-        //         if (iIcon.innerText == "") {
-        //             iIcon.innerText += "check";
-        //             iIcon.classList.add("teal");
-        //         } else {
-        //             iIcon.classList.add("orange");
-        //         }
-        //     });
-
-        //     modal.generate();
-        //     modal.init();
-
-        //     if (!DoppelCore.ChromeInstalled) {
-        //         // open modal for telling the our suggested browser is Chrome
-        //         var elem = document.getElementById("ChromeInstallModal");
-        //         var instance = M.Modal.getInstance(elem); instance.open();
-        //     }
+        
+        await Canvas.pullCurrentMeshes();
 
         //     // slider
         //     var slider = document.getElementById('clippingSlider');
@@ -82,16 +54,6 @@ Core.init = function () {
         //     slider.noUiSlider.on('end', function () {
         //         document.body.style.cursor = "url(../icon/cursorIcon" + (DoppelCore.sessionId % 10) + ".png) 16 16 , default"
         //     });
-
-        //     APIcall("GET", "api/currentMeshes").then((res) => {
-        //         var j = JSON.parse(res);
-        //         syncMeshes({ "meshes": j });
-        //     });
-        // });
-
-        // setInterval(function () {
-        //     DoppelCore.periodicHandler.forEach((handler) => handler());
-        // }, 1000);
     };
     return;
 };
