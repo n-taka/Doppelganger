@@ -25,11 +25,11 @@ const generateUI = async function () {
             a.setAttribute("class", "tooltipped");
             a.setAttribute("data-position", "bottom");
             a.setAttribute("data-tooltip", getText(text, "Import polygon"));
-            a.innerHTML = getText(text, "Polygon");
+            a.innerText = getText(text, "Polygon");
 
             {
                 const i = document.createElement("i");
-                i.innerHTML = "add";
+                i.innerText = "add";
                 i.setAttribute("class", "material-icons left");
                 a.appendChild(i);
             }

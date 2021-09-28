@@ -26,7 +26,7 @@ const generateUI = async function () {
             a.setAttribute("data-tooltip", getText(text, "Undo"));
             {
                 const i = document.createElement("i");
-                i.innerHTML = "undo";
+                i.innerText = "undo";
                 i.setAttribute("class", "material-icons");
                 a.appendChild(i);
             }

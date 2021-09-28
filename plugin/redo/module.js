@@ -26,7 +26,7 @@ const generateUI = async function () {
             a.setAttribute("data-tooltip", getText(text, "Redo"));
             {
                 const i = document.createElement("i");
-                i.innerHTML = "redo";
+                i.innerText = "redo";
                 i.setAttribute("class", "material-icons");
                 a.appendChild(i);
             }

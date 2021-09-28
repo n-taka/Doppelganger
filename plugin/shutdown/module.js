@@ -71,13 +71,13 @@ const generateUI = async function () {
             a.setAttribute("data-tooltip", getText(text, "Shutdown"));
             {
                 const i = document.createElement("i");
-                i.innerHTML = "power_settings_new";
+                i.innerText = "power_settings_new";
                 i.setAttribute("class", "material-icons");
                 a.appendChild(i);
             }
             li.appendChild(a);
         }
-        UI.bottomMenuLeftUl.appendChild(li);
+        UI.bottomMenuRightUl.appendChild(li);
     }
 };
 

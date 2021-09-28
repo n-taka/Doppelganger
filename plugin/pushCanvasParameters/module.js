@@ -99,7 +99,7 @@ export const init = async function () {
         Canvas.lastCameraZoom["timestamp"] = MouseKey.strokeTimeStamp;
     });
     document.addEventListener("wheel", function(e){
-        e.preventDefault();
+        // e.preventDefault();
         MouseKey.strokeTimeStamp = Date.now();
         Canvas.lastControlTarget["timestamp"] = MouseKey.strokeTimeStamp;
         Canvas.lastCameraPosition["timestamp"] = MouseKey.strokeTimeStamp;

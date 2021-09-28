@@ -232,12 +232,12 @@ const generateUI = async function () {
             {
                 const i = document.createElement("i");
                 a.appendChild(i);
-                i.innerHTML = "build";
+                i.innerText = "build";
                 i.setAttribute("class", "material-icons");
             }
             li.appendChild(a);
         }
-        UI.bottomMenuLeftUl.appendChild(li);
+        UI.bottomMenuRightUl.appendChild(li);
     }
 };
 
