@@ -1,6 +1,12 @@
 import { UI } from './UI.js';
 
 ////
+// initialize...
+if (!UI.UUIDToMeshLi) {
+    UI.UUIDToMeshLi = {};
+}
+
+////
 // [IN]
 // parameters = {
 //  "meshes": {
@@ -32,9 +38,6 @@ import { UI } from './UI.js';
 // nothing
 
 export const constructMeshLiFromParameters = async function (parameters) {
-    if (!UI.UUIDToMeshLi) {
-        UI.UUIDToMeshLi = {};
-    }
     if ("meshes" in parameters) {
         // use document fragment to optimize the performance
         const collectionFrag = document.createDocumentFragment();
@@ -171,7 +174,7 @@ export const constructMeshLiFromJson = async function (json) {
     return liRoot;
 }
 // handlers that need to be called when we call constructMeshLiFromJson
-// function (json, liRoom) { ... }
+// function (json, liRoot) { ... }
 constructMeshLiFromJson.handlers = [];
 
 // handler example...

@@ -2,6 +2,12 @@ import * as THREE from 'https://cdn.skypack.dev/three';
 import { Canvas } from './Canvas.js';
 
 ////
+// initialize...
+if (!Canvas.UUIDToMesh) {
+    Canvas.UUIDToMesh = {};
+}
+
+////
 // [IN]
 // parameters = {
 //  "meshes": {
@@ -33,9 +39,6 @@ import { Canvas } from './Canvas.js';
 // nothing
 //
 export const constructMeshFromParameters = async function (parameters) {
-    if (!Canvas.UUIDToMesh) {
-        Canvas.UUIDToMesh = {};
-    }
     const isFirstMesh = (Canvas.meshGroup.children.length == 0);
     if ("meshes" in parameters) {
         for (let meshUUID in parameters["meshes"]) {
