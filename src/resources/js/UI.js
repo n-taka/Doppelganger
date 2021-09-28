@@ -116,6 +116,7 @@ UI.init = async function () {
                     UI.meshCollectionUl = document.createElement('ul');
                     UI.meshCollectionUl.setAttribute('class', 'collection');
                     UI.meshCollectionUl.setAttribute('style', 'max-height: calc(100% - 192px); height: calc(100% - 192px); overflow-y: scroll; margin: 0%; border:0px;');
+                    UI.sideNavDiv.appendChild(UI.meshCollectionUl);
                 }
 
                 UI.rootDiv.appendChild(UI.sideNavDiv);

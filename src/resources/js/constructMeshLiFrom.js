@@ -37,7 +37,7 @@ export const constructMeshLiFromParameters = async function (parameters) {
     }
     if ("meshes" in parameters) {
         // use document fragment to optimize the performance
-        const collectionFrag = docuemnt.createDocumentFragment();
+        const collectionFrag = document.createDocumentFragment();
         for (let meshUUID in parameters["meshes"]) {
             // erase old meshLi (not optimal...)
             if (meshUUID in UI.UUIDToMeshLi) {
@@ -47,9 +47,11 @@ export const constructMeshLiFromParameters = async function (parameters) {
                 // remove from map
                 delete UI.UUIDToMeshLi[meshUUID];
                 // explicitly destroy tooltip (for avoiding zombie elements)
-                // todo...?
-                const tooltipInstance = M.Tooltip.getInstance(meshLi);
-                tooltipInstance.destroy();
+                const tooltippedElements = meshLi.querySelectorAll('.tooltipped');
+                for (let element of tooltippedElements) {
+                    const tooltipInstance = M.Tooltip.getInstance(element);
+                    tooltipInstance.destroy();
+                }
             }
             if (!parameters["meshes"][meshUUID]["remove"]) {
                 const updatedMeshLi = await constructMeshLiFromJson(parameters["meshes"][meshUUID]);

@@ -3,6 +3,7 @@ import { UI } from '../../js/UI.js';
 import { getText } from '../../js/Text.js';
 import { request } from '../../js/request.js';
 import { constructMeshFromParameters } from '../../js/constructMeshFrom.js';
+import { constructMeshLiFromParameters } from '../../js/constructMeshLiFrom.js';
 
 const text = {
     "Polygon": { "en": "Polygon", "ja": "ポリゴン" },
@@ -106,6 +107,7 @@ const loadMesh = async function (file) {
 // WS API
 const loadPolygonMesh = async function (parameters) {
     constructMeshFromParameters(parameters);
+    constructMeshLiFromParameters(parameters);
 }
 
 export const init = async function () {
