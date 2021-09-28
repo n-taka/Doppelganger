@@ -153,21 +153,7 @@ namespace Doppelganger
 		dllPath.append(dllName);
 		if (fs::exists(dllPath))
 		{
-			if (loadDll(dllPath, "pluginProcess", func))
-			{
-				// Plugin "<pluginName>" (<Version>) is loaded.
-				{
-					std::stringstream ss;
-					ss << "Plugin \"";
-					ss << name;
-					ss << "\" (";
-					ss << installedVersion;
-					ss << ")";
-					ss << " is loaded.";
-					core->logger.log(ss.str(), "SYSTEM");
-				}
-			}
-			else
+			if (!loadDll(dllPath, "pluginProcess", func))
 			{
 				std::stringstream ss;
 				ss << "Plugin \"";
@@ -177,6 +163,7 @@ namespace Doppelganger
 				ss << ")";
 				ss << " is NOT loaded correctly. (Function pluginProcess not found)";
 				core->logger.log(ss.str(), "ERROR");
+				return;
 			}
 		}
 
@@ -185,6 +172,18 @@ namespace Doppelganger
 		fs::path modulePath(pluginDir);
 		modulePath.append(moduleName);
 		hasModuleJS = fs::exists(modulePath);
+
+		// Plugin "<pluginName>" (<Version>) is loaded.
+		{
+			std::stringstream ss;
+			ss << "Plugin \"";
+			ss << name;
+			ss << "\" (";
+			ss << installedVersion;
+			ss << ")";
+			ss << " is loaded.";
+			core->logger.log(ss.str(), "SYSTEM");
+		}
 
 		// update installed plugin list "installed.json"
 		{
