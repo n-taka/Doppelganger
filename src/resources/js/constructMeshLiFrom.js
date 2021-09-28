@@ -114,7 +114,7 @@ export const constructMeshLiFromJson = async function (json) {
     // using document fragment to optimize the performance
     const liRoot = document.createElement("li");
     liRoot.setAttribute("class", "collection-item avatar");
-    // liRoot.setAttribute("id", "mesh_" + json["UUID"]);
+    liRoot.setAttribute("id", "mesh_" + json["UUID"]);
     {
         // icon (empty)
         const iIcon = document.createElement("i");

@@ -23,6 +23,11 @@ UI.init = function () {
             UI.modalDiv = document.createElement('div');
             document.body.appendChild(UI.modalDiv);
         }
+        // dropdown
+        {
+            UI.dropdownDiv = document.createElement('div');
+            document.body.appendChild(UI.dropdownDiv);
+        }
         // canvas + sidebar
         {
             UI.rootDiv = document.createElement('div');
