@@ -14,25 +14,18 @@ const alignCamera = function (direction) {
         [new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, 1)]
     ];
 
-    MouseKey.strokeTimeStamp = Date.now();
-
-    const BSphere = Canvas.unifiedBSphere;
-    Canvas.controls.target.copy(BSphere.center);
-
+    // for updating Canvas.unifiedBSphere
+    Canvas.resetCamera(true);
+    // change camera position, up, zoom
+    Canvas.controls.target.copy(Canvas.unifiedBSphere.center);
     const targetToCamera = directions[direction][0].clone();
-    targetToCamera.multiplyScalar(BSphere.radius * 1.01);
-
+    targetToCamera.multiplyScalar(Canvas.unifiedBSphere.radius * 1.01);
     Canvas.camera.position.copy(targetToCamera);
     Canvas.camera.position.add(Canvas.controls.target);
-    Canvas.camera.near = 0.0;
-    Canvas.camera.far = targetToCamera.length() * 2.0;
-
     Canvas.camera.up.copy(directions[direction][1]);
 
-    // update pan speed
-    Canvas.controls.panSpeed = 100.0 / targetToCamera.length();
-
-    Canvas.camera.updateProjectionMatrix();
+    // for updating camera.clippingNear, clippingFar, making sure that whole of the mesh is visible
+    Canvas.resetCamera(false);
 }
 
 export const init = async function () {

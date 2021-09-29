@@ -276,8 +276,8 @@ Canvas.resetCamera = function (refreshBSphere) {
         const cameraToTarget = Canvas.controls.target.clone();
         cameraToTarget.sub(Canvas.camera.position);
         cameraToTarget.normalize();
-        Canvas.camera.near = cameraToBCenter.dot(cameraToTarget) + Canvas.unifiedBSphere.radius * clippingNear
-        Canvas.camera.far = cameraToBCenter.dot(cameraToTarget) + Canvas.unifiedBSphere.radius * clippingFar
+        Canvas.camera.near = cameraToBCenter.dot(cameraToTarget) + Canvas.unifiedBSphere.radius * clippingNear;
+        Canvas.camera.far = cameraToBCenter.dot(cameraToTarget) + Canvas.unifiedBSphere.radius * clippingFar;
         Canvas.camera.updateProjectionMatrix();
 
         MouseKey.strokeTimeStamp = Date.now();

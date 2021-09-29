@@ -6,31 +6,20 @@ import { MouseKey } from '../../js/MouseKey.js';
 const fitToFrame = function () {
     const visibleMeshList = Canvas.meshGroup.children.filter(function (obj) { return (obj instanceof THREE.Mesh && obj.visible); });
     if (visibleMeshList.length > 0) {
-        const posAttrib = mergeBufferAttributes(visibleMeshList.map(function (obj) { return obj.geometry.getAttribute("position"); }));
-        const geometry = new THREE.BufferGeometry();
-        geometry.setAttribute("position", posAttrib);
-        geometry.computeBoundingSphere();
-        const BSphere = geometry.boundingSphere;
-
-        const translateVec = BSphere.center.clone();
+        // for updating Canvas.unifiedBSphere
+        Canvas.resetCamera(true);
+        // change camera position, zoom
+        const translateVec = Canvas.unifiedBSphere.center.clone();
         translateVec.sub(Canvas.controls.target);
         Canvas.camera.position.add(translateVec);
         Canvas.controls.target.add(translateVec);
-
-        // update pan speed
-        const targetToCamera = Canvas.camera.position.clone();
-        targetToCamera.sub(Canvas.controls.target);
-        Canvas.controls.panSpeed = 100 / targetToCamera.length();
-
         if (Canvas.width > Canvas.height) {
-            Canvas.camera.zoom = (Canvas.height * 0.5) / BSphere.radius;
+            Canvas.camera.zoom = (Canvas.height * 0.5) / Canvas.unifiedBSphere.radius;
         } else {
-            Canvas.camera.zoom = (Canvas.width * 0.5) / BSphere.radius;
+            Canvas.camera.zoom = (Canvas.width * 0.5) / Canvas.unifiedBSphere.radius;
         }
-        Canvas.camera.far = targetToCamera.length() * 2.0;
-        Canvas.camera.updateProjectionMatrix();
-
-        MouseKey.strokeTimeStamp = Date.now();
+        // for updating camera.clippingNear, clippingFar, making sure that whole of the mesh is visible
+        Canvas.resetCamera(false);
         // Canvas.pushUpdate() is called within next drawLoop
         // Canvas.pushUpdate();
     }

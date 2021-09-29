@@ -311,7 +311,7 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 			diff["meshes"][meshUUID] = mesh->dumpToJson(false);
 			diff["meshes"][meshUUID]["remove"] = false;
 			diffInv["meshes"] = nlohmann::json::object();
-			diffInv["meshes"][meshUUID] = {};
+			diffInv["meshes"][meshUUID] = nlohmann::json::object();
 			diffInv["meshes"][meshUUID]["remove"] = true;
 			room->storeHistory(diff, diffInv);
 		}
