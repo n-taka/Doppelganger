@@ -1,7 +1,6 @@
 import * as THREE from 'https://cdn.skypack.dev/three';
-import { mergeBufferAttributes } from 'https://cdn.skypack.dev/three/examples/jsm/utils/BufferGeometryUtils.js';
 import { Canvas } from '../../js/Canvas.js';
-import { MouseKey } from '../../js/MouseKey.js';
+import { UI } from '../../js/UI.js';
 
 const fitToFrame = function () {
     const visibleMeshList = Canvas.meshGroup.children.filter(function (obj) { return (obj instanceof THREE.Mesh && obj.visible); });
@@ -30,6 +29,12 @@ export const init = async function () {
 
     // keyboard event
     document.addEventListener("keyup", (function (e) {
+        for (let modal of UI.modalDiv.children) {
+            const instance = M.Modal.getInstance(modal);
+            if(instance.isOpen){
+                return;
+            }
+        }
         const keycode = e.code;
         if (keycode == 'KeyF') {
             // fitToFrame() updates MouseKey.strokeTimeStamp

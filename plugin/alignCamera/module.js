@@ -1,6 +1,6 @@
 import * as THREE from 'https://cdn.skypack.dev/three';
 import { Canvas } from '../../js/Canvas.js';
-import { MouseKey } from '../../js/MouseKey.js';
+import { UI } from '../../js/UI.js';
 
 const alignCamera = function (direction) {
     // directions[X][0]: camera position based from the origin
@@ -33,6 +33,12 @@ export const init = async function () {
 
     // keyboard event
     document.addEventListener("keyup", (function (e) {
+        for (let modal of UI.modalDiv.children) {
+            const instance = M.Modal.getInstance(modal);
+            if(instance.isOpen){
+                return;
+            }
+        }
         const keycode = e.code;
         if (keycode == 'Digit0' || keycode == 'NumPad0') {
             alignCamera(0 + ((e.altKey) ? 3 : 0));

@@ -50,7 +50,13 @@ export const init = async function () {
 
     // keyboard event
     document.addEventListener("keydown", (function (e) {
-        var keycode = e.code;
+        for (let modal of UI.modalDiv.children) {
+            const instance = M.Modal.getInstance(modal);
+            if(instance.isOpen){
+                return;
+            }
+        }
+        const keycode = e.code;
         if (keycode == 'KeyZ') {
             // 'z' key
             if (((e.ctrlKey && !e.metaKey) || (!e.ctrlKey && e.metaKey)) && !e.shiftKey) {
