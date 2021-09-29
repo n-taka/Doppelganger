@@ -61,8 +61,7 @@ export const init = async function () {
         Canvas.effectComposer.addPass(Canvas.outlinePass);
     }
 
-    // Canvas.controls.domElement.addEventListener("pointerdown", function (e) {
-    document.addEventListener("pointerdown", function (e) {
+    Canvas.controls.domElement.addEventListener("pointerdown", function (e) {
         const closestMeshUUID = findClosestMesh(e);
         colorizeActiveMesh(closestMeshUUID);
     });
