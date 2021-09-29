@@ -342,7 +342,7 @@ namespace
 
 								nlohmann::json broadcast = nlohmann::json::object();
 								nlohmann::json response = nlohmann::json::object();
-								broadcast["isBudy"] = (room->interfaceParams.taskUUIDInProgress.size() > 0);
+								broadcast["isBusy"] = (room->interfaceParams.taskUUIDInProgress.size() > 0);
 								room->broadcastWS("isServerBusy", std::string(""), broadcast, response);
 							}
 
@@ -378,7 +378,7 @@ namespace
 
 								nlohmann::json broadcast = nlohmann::json::object();
 								nlohmann::json response = nlohmann::json::object();
-								broadcast["isBudy"] = (room->interfaceParams.taskUUIDInProgress.size() > 0);
+								broadcast["isBusy"] = (room->interfaceParams.taskUUIDInProgress.size() > 0);
 								room->broadcastWS("isServerBusy", std::string(""), broadcast, response);
 							}
 
