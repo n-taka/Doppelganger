@@ -1,5 +1,5 @@
-#ifndef UNDO_CPP
-#define UNDO_CPP
+#ifndef REDO_CPP
+#define REDO_CPP
 
 #include "../pluginHeader.h"
 #include "Doppelganger/Room.h"

@@ -1,5 +1,5 @@
-#ifndef TOGGLEMESHVISIBILITY_CPP
-#define TOGGLEMESHVISIBILITY_CPP
+#ifndef REMOVEMESH_CPP
+#define REMOVEMESH_CPP
 
 #include "../pluginHeader.h"
 #include "Doppelganger/Room.h"
