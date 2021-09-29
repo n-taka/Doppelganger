@@ -106,8 +106,8 @@ const loadMesh = async function (file) {
 ////
 // WS API
 const loadPolygonMesh = async function (parameters) {
-    constructMeshFromParameters(parameters);
-    constructMeshLiFromParameters(parameters);
+    await constructMeshFromParameters(parameters);
+    await constructMeshLiFromParameters(parameters);
 }
 
 export const init = async function () {

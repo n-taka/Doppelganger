@@ -39,8 +39,8 @@ const generateUI = async function () {
 ////
 // WS API
 const undo = async function (parameters) {
-    constructMeshFromParameters(parameters);
-    constructMeshLiFromParameters(parameters);
+    await constructMeshFromParameters(parameters);
+    await constructMeshLiFromParameters(parameters);
 }
 
 export const init = async function () {

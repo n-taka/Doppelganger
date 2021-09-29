@@ -232,8 +232,8 @@ Canvas.pushCanvasParameters = async function () {
 
 Canvas.pullCurrentMeshes = async function () {
     const parameters = JSON.parse(await request("pullCurrentMeshes"));
-    constructMeshFromParameters(parameters);
-    constructMeshLiFromParameters(parameters);
+    await constructMeshFromParameters(parameters);
+    await constructMeshLiFromParameters(parameters);
 }
 
 Canvas.resetCamera = function (refreshBSphere) {
