@@ -42,10 +42,10 @@ const generateUI = async function () {
                         pSize.appendChild(x);
                     }
                     {
-                        const xSize = document.createElement("span");
-                        xSize.setAttribute("style", "background: linear-gradient(transparent 75%, #80ff80 75%);");
-                        xSize.innerText = XYZSize.y.toFixed(2);
-                        pSize.appendChild(xSize);
+                        const ySize = document.createElement("span");
+                        ySize.setAttribute("style", "background: linear-gradient(transparent 75%, #80ff80 75%);");
+                        ySize.innerText = XYZSize.y.toFixed(2);
+                        pSize.appendChild(ySize);
                     }
                     {
                         const x = document.createElement("span");
@@ -53,10 +53,10 @@ const generateUI = async function () {
                         pSize.appendChild(x);
                     }
                     {
-                        const xSize = document.createElement("span");
-                        xSize.setAttribute("style", "background: linear-gradient(transparent 75%, #8080ff 75%);");
-                        xSize.innerText = XYZSize.z.toFixed(2);
-                        pSize.appendChild(xSize);
+                        const zSize = document.createElement("span");
+                        zSize.setAttribute("style", "background: linear-gradient(transparent 75%, #8080ff 75%);");
+                        zSize.innerText = XYZSize.z.toFixed(2);
+                        pSize.appendChild(zSize);
                     }
 
                     divMetaInfo.appendChild(pSize);
