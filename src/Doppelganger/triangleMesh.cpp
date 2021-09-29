@@ -5,6 +5,15 @@
 
 #include <boost/beast/core/detail/base64.hpp>
 
+#include "igl/barycenter.h"
+#include "igl/signed_distance.h"
+#include "igl/barycentric_coordinates.h"
+#include "igl/per_face_normals.h"
+#include "igl/barycentric_interpolation.h"
+#include "igl/per_vertex_normals.h"
+#include "igl/triangle_triangle_adjacency.h"
+#include "igl/vertex_triangle_adjacency.h"
+
 namespace
 {
 	// matrix => json
@@ -280,6 +289,142 @@ namespace Doppelganger
 			}
 		}
 	}
+
+	void triangleMesh::projectMeshAttirbutes(const std::shared_ptr<triangleMesh> &source)
+	{
+		// we assume that two meshes have (almost) identical shape
+		// [vertex attributes]
+		// - vertex color
+		// - vertex normal (re-calculate)
+		// - texture coordinates
+		// [face attributes]
+		// - face color
+		// - face normal (re-calculate)
+		// - face texture coordinates
+		// - face group
+		// [misc]
+		// - halfedge data structure
+		// - AABB
+
+		{
+			// face/vertex correspondence
+			Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> q;
+			{
+				q.resize(V.rows() + F.rows(), V.cols());
+				q.block(0, 0, V.rows(), V.cols()) = V;
+				Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> BC;
+				igl::barycenter(V, F, BC);
+				q.block(V.rows(), 0, F.rows(), V.cols()) = BC;
+			}
+
+			Eigen::Matrix<int, Eigen::Dynamic, 1> vertCorrespondingFace;
+			Eigen::Matrix<int, Eigen::Dynamic, 1> faceCorrespondingFace;
+			Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> vertPointsOnMesh;
+			Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> facePointsOnMesh;
+			{
+				Eigen::Matrix<int, Eigen::Dynamic, 1> correspondingFace;
+				Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> pointsOnMesh;
+				Eigen::Matrix<double, Eigen::Dynamic, 1> S;
+				Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> N;
+				igl::signed_distance(q, source->V, source->F, igl::SIGNED_DISTANCE_TYPE_FAST_WINDING_NUMBER, S, correspondingFace, pointsOnMesh, N);
+				vertCorrespondingFace = correspondingFace.block(0, 0,V.rows(), 1);
+				faceCorrespondingFace = correspondingFace.block(V.rows(), 0, F.rows(), 1);
+				vertPointsOnMesh = pointsOnMesh.block(0, 0, V.rows(), V.cols());
+				facePointsOnMesh = pointsOnMesh.block(V.rows(), 0, F.rows(), V.cols());
+			}
+
+			// barycentric coordinate (only for vertices)
+			Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> L;
+			{
+				Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> A, B, C;
+				A.resize(vertPointsOnMesh.rows(), 3);
+				B.resize(vertPointsOnMesh.rows(), 3);
+				C.resize(vertPointsOnMesh.rows(), 3);
+				for (int vIdx = 0; vIdx < vertPointsOnMesh.rows(); ++vIdx)
+				{
+					const int &vertCorrespondingFaceIdx = vertCorrespondingFace(vIdx, 0);
+					A.row(vIdx) = source->V.row(source->F(vertCorrespondingFaceIdx, 0));
+					B.row(vIdx) = source->V.row(source->F(vertCorrespondingFaceIdx, 1));
+					C.row(vIdx) = source->V.row(source->F(vertCorrespondingFaceIdx, 2));
+				}
+				igl::barycentric_coordinates(vertPointsOnMesh, A, B, C, L);
+			}
+
+			// face attributes
+			{
+				// face color (FC)
+				if (source->FC.rows() == source->F.rows())
+				{
+					FC.resize(F.rows(), source->FC.cols());
+					for (int f = 0; f < F.rows(); ++f)
+					{
+						FC.row(f) = source->FC.row(faceCorrespondingFace(f, 0));
+					}
+				}
+
+				// face normal (FN, re-calculate)
+				igl::per_face_normals(V, F, FN);
+
+				// face group (FG)
+				if (source->FG.rows() == source->F.rows())
+				{
+					FG.resize(F.rows(), 1);
+					for (int f = 0; f < F.rows(); ++f)
+					{
+						FG(f, 0) = source->FG(faceCorrespondingFace(f, 0), 0);
+					}
+				}
+			}
+
+			// vertex attributes
+			{
+				// vertex color (VC)
+				if (source->VC.rows() == source->V.rows())
+				{
+					igl::barycentric_interpolation(source->VC, source->F, L, vertCorrespondingFace, VC);
+				}
+
+				// vertex normal (VN, re-calculate)
+				igl::per_vertex_normals(V, F, FN, VN);
+			}
+
+			// texture
+			{
+				// face texture coordinates (FTC)
+				// this implementation is not perfect ...
+				if (source->FTC.rows() == source->F.rows())
+				{
+					TC.resize(source->V.rows(), 2);
+					for (int f = 0; f < source->F.rows(); ++f)
+					{
+						for (int fv = 0; fv < source->F.cols(); ++fv)
+						{
+							TC.row(source->F(f, fv)) = source->TC.row(source->FTC(f, fv));
+						}
+					}
+					FTC = F;
+				}
+				else if (source->TC.rows() == source->V.rows())
+				{
+					igl::barycentric_interpolation(source->TC, source->F, L, vertCorrespondingFace, TC);
+				}
+			}
+
+			// misc
+			{
+				igl::triangle_triangle_adjacency(F, TT, TTi);
+				igl::vertex_triangle_adjacency(V, F, VF, VFi);
+				AABB.init(V, F);
+				principalComponent.resize(0, V.cols());
+				PD1.resize(0, V.cols());
+				PD2.resize(0, V.cols());
+				PV1.resize(0, 1);
+				PV2.resize(0, 1);
+				K.resize(0, 1);
+			}
+		}
+	}
+
 }
 
 #endif

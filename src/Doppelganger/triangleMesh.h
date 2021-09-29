@@ -31,6 +31,7 @@ namespace Doppelganger
 		// dump to json
 		nlohmann::json dumpToJson(const bool &sendToClient) const;
 		void restoreFromJson(const nlohmann::json& json);
+		void projectMeshAttirbutes(const std::shared_ptr<triangleMesh>& source);
 
 	public:
 		std::string name;
