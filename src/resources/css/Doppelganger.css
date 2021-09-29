@@ -2,16 +2,12 @@ body {
     margin: 0;
     overflow: hidden;
     /* cursor: none; */
-    cursor: url("../icon/cursorIcon.png") 16 16 , default;
+    /* cursor: url("../icon/cursorIcon.png") 16 16 , default; */
 }
 
 .fullheight {
     margin: 0 auto;
     height: 100vh;
-}
-
-.no-select {
-    user-select: none;
 }
 
 .z-1 {
@@ -26,12 +22,6 @@ body {
 
 .thumb {
     display: none;
-}
-
-#WebGL-output {
-    position: absolute;
-    top: 0px;
-    left: 0px;
 }
 
 .taskState{

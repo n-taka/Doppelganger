@@ -17,10 +17,10 @@ MouseKey.init = async function () {
     // pointer event
     // canvas.controls.domElement.addEventListener?
     // disable right click
-    document.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+    document.addEventListener("contextmenu", function (e) { });
     // we first updateCursor, then syncCursor
-    document.addEventListener("pointermove", function (e) { e.preventDefault(); MouseKey.updateCursor(e) });
-    document.addEventListener("pointermove", function (e) { e.preventDefault(); MouseKey.syncCursor() });
+    document.addEventListener("pointermove", function (e) { MouseKey.updateCursor(e) });
+    document.addEventListener("pointermove", function (e) { MouseKey.syncCursor() });
     // document.addEventListener("pointerup", customClick);
     MouseKey["cursors"] = {};
     MouseKey["prevCursor"] = new THREE.Vector2(-1.0, -1.0);
@@ -78,7 +78,6 @@ MouseKey.syncCursor = function () {
 }
 
 // function customClick(e) {
-//     e.preventDefault();
 //     if (e.button > 0) {
 //         var mouse = new THREE.Vector2();
 //         var clientX = e.clientX;

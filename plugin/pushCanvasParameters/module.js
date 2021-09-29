@@ -91,7 +91,6 @@ const pushCanvasParameters = function (parameters) {
 export const init = async function () {
     // update strokeTimeStamp on pointerDown
     document.addEventListener("pointerdown", function (e) {
-        e.preventDefault();
         MouseKey.strokeTimeStamp = Date.now();
         Canvas.lastControlTarget["timestamp"] = MouseKey.strokeTimeStamp;
         Canvas.lastCameraPosition["timestamp"] = MouseKey.strokeTimeStamp;
@@ -99,7 +98,6 @@ export const init = async function () {
         Canvas.lastCameraZoom["timestamp"] = MouseKey.strokeTimeStamp;
     });
     document.addEventListener("wheel", function(e){
-        // e.preventDefault();
         MouseKey.strokeTimeStamp = Date.now();
         Canvas.lastControlTarget["timestamp"] = MouseKey.strokeTimeStamp;
         Canvas.lastCameraPosition["timestamp"] = MouseKey.strokeTimeStamp;

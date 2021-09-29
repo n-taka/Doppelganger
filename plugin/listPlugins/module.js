@@ -40,6 +40,7 @@ const generateUI = async function () {
                 table.setAttribute("style", "table-layout: fixed;");
                 {
                     const thead = document.createElement("thead");
+                    thead.setAttribute("style", "user-select: none;");
                     {
                         const tr = document.createElement("tr");
                         {

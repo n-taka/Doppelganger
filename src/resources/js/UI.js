@@ -74,7 +74,8 @@ UI.init = function () {
                 {
                     UI.summaryNavBar = document.createElement('nav');
                     UI.summaryNavBar.setAttribute('class', 'nav teal lighten-2 z-depth-0');
-                    UI.summaryNavBar.setAttribute('style', 'position: absolute; bottom: 64px; user-select: none;');
+                    UI.summaryNavBar.setAttribute('style', 'position: absolute; bottom: 64px;');
+                    // UI.summaryNavBar.setAttribute('style', 'position: absolute; bottom: 64px; user-select: none;');
                     {
                         UI.summaryNavWrapper = document.createElement('div');
                         UI.summaryNavWrapper.setAttribute('class', 'nav-wrapper');
@@ -136,7 +137,7 @@ UI.init = function () {
             {
                 UI.busyIconA = document.createElement('a');
                 UI.busyIconA.setAttribute('class', 'taskStateText');
-                UI.busyIconA.setAttribute('style', 'pointer-events: none;');
+                UI.busyIconA.setAttribute('style', 'user-select: none;');
                 {
                     UI.busyIconI = document.createElement('i');
                     UI.busyIconI.setAttribute('class', 'material-icons');
