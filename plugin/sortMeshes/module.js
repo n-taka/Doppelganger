@@ -4,9 +4,9 @@ import { getText } from '../../js/Text.js';
 import { constructMeshLiFromParameters } from '../../js/constructMeshLiFrom.js';
 
 var text = {
-    "Sort": { "default": "Sort", "ja": "並べ替え" },
-    "Name": { "default": "Name", "ja": "名前" },
-    "#Triangle": { "default": "#Triangle", "ja": "ポリゴン数" }
+    "Sort": { "en": "Sort", "ja": "並べ替え" },
+    "Name": { "en": "Name", "ja": "名前" },
+    "#Triangle": { "en": "#Triangle", "ja": "ポリゴン数" }
 };
 
 const generateUI = function () {

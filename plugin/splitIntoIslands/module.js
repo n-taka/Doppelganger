@@ -5,7 +5,7 @@ import { constructMeshFromParameters } from '../../js/constructMeshFrom.js';
 import { constructMeshLiFromParameters, constructMeshLiFromJson } from '../../js/constructMeshLiFrom.js';
 
 const text = {
-    "Split into islands": { "default": "Split into islands", "ja": "アイランドに分割" }
+    "Split into islands": { "en": "Split into islands", "ja": "アイランドに分割" }
 };
 
 ////

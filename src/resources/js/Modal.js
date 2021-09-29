@@ -43,7 +43,7 @@ Modal.init = async function () {
     this.generateModal();
 
     const modal_elems = document.querySelectorAll('.modal');
-    const modal_instances = M.Modal.init(modal_elems, {});
+    M.Modal.init(modal_elems, {});
     return;
 
 };

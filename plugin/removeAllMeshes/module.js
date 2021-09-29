@@ -7,7 +7,7 @@ import { constructMeshFromParameters } from '../../js/constructMeshFrom.js';
 import { constructMeshLiFromParameters } from '../../js/constructMeshLiFrom.js';
 
 const text = {
-    "Remove All": { "default": "Remove All", "ja": "すべて削除" }
+    "Remove All": { "en": "Remove All", "ja": "すべて削除" }
 };
 
 ////

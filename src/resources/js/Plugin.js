@@ -21,9 +21,10 @@ Plugin.init = async function () {
 
     // we take care of UI components that plugins generated.
     const modal_elems = document.querySelectorAll('.modal');
-    const modal_instances = M.Modal.init(modal_elems, {});
+    M.Modal.init(modal_elems, {});
     const dropdown_elems = document.querySelectorAll('.dropdown-trigger');
-    const dropdown_instances = M.Dropdown.init(dropdown_elems, {});
+    M.Dropdown.init(dropdown_elems, {});
     const tooltip_elems = document.querySelectorAll('.tooltipped');
-    const tooltip_instances = M.Tooltip.init(tooltip_elems, {});
+    M.Tooltip.init(tooltip_elems, {});
+    M.updateTextFields();
 };

@@ -5,7 +5,7 @@ import { constructMeshFromParameters } from '../../js/constructMeshFrom.js';
 import { constructMeshLiFromParameters, constructMeshLiFromJson } from '../../js/constructMeshLiFrom.js';
 
 const text = {
-    "Remove": { "default": "Remove", "ja": "削除" }
+    "Remove": { "en": "Remove", "ja": "削除" }
 };
 
 ////

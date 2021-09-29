@@ -4,17 +4,12 @@ import { WS } from './WS.js';
 import { MouseKey } from './MouseKey.js';
 import { Modal } from './Modal.js';
 import { Plugin } from './Plugin.js';
-import { request } from './request.js';
-
-// import { syncMeshes } from './websocketCallBackFuncs.js';
 
 export const Core = {};
 
 Core.init = function () {
     // unique ID for websocket connection
     Core.UUID = null;
-
-    // Core.selectedMeshUUID = [];
 
     Core.language = (window.navigator.languages && window.navigator.languages[0]) ||
         window.navigator.language ||

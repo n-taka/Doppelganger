@@ -5,7 +5,7 @@ import { constructMeshFromParameters } from '../../js/constructMeshFrom.js';
 import { constructMeshLiFromParameters, constructMeshLiFromJson } from '../../js/constructMeshLiFrom.js';
 
 const text = {
-    "Toggle visibility": { "default": "Toggle visibility", "ja": "表示/非表示" }
+    "Toggle visibility": { "en": "Toggle visibility", "ja": "表示/非表示" }
 };
 
 ////

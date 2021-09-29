@@ -3,7 +3,7 @@ import { getText } from '../../js/Text.js';
 import { constructMeshLiFromJson } from '../../js/constructMeshLiFrom.js';
 
 const text = {
-    "#Triangle": { "default": "#Triangle", "ja": "ポリゴン数" }
+    "#Triangle": { "en": "#Triangle", "ja": "ポリゴン数" }
 };
 
 ////

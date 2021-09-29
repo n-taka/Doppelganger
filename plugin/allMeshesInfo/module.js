@@ -6,7 +6,7 @@ import * as THREE from 'https://cdn.skypack.dev/three';
 import { mergeBufferGeometries } from 'https://cdn.skypack.dev/three/examples/jsm/utils/BufferGeometryUtils.js';
 
 const text = {
-    "#Triangle": { "default": "#Triangle", "ja": "ポリゴン数" }
+    "#Triangle": { "en": "#Triangle", "ja": "ポリゴン数" }
 };
 
 ////
