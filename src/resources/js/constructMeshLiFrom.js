@@ -143,7 +143,7 @@ export const constructMeshLiFromJson = async function (json) {
     {
         // meta information
         const divMetaInfo = document.createElement("div");
-        // divMetaInfo.setAttribute("id", "metaInfo_" + json["UUID"]);
+        divMetaInfo.setAttribute("id", "metaInfo_" + json["UUID"]);
 
         // for empty content, we add <br> for better layout
         const pDummy = document.createElement("p");
