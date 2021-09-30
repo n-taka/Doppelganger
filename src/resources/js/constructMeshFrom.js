@@ -164,7 +164,6 @@ export const constructMeshFromJson = async function (json) {
     // Tex, 8 bit (1 byte) uint in the client
     //   Currently, we only support single texture
     if ("textures" in json && json["textures"].length > 0) {
-        const tex = textures[0];
         const array = base64DecToArr(json["textures"][0]["texData"], 1);
         material.map = new THREE.DataTexture(new Uint8Array(array.buffer), json["textures"][0]["width"], json["textures"][0]["height"], THREE.RGBAFormat);
         material.map.needsUpdate = true;

@@ -176,7 +176,7 @@ namespace Doppelganger
 				}
 			}
 
-			writeToJson(VDup, FDup, VCDup, FC, TC, FTC, sendToClient, response);
+			writeToJson(VDup, FDup, VCDup, FC, TCDup, FTC, sendToClient, response);
 		}
 		else
 		{
@@ -184,18 +184,15 @@ namespace Doppelganger
 		}
 
 		// textures
-		if (textures.size() > 0)
+		response["textures"] = nlohmann::json::array();
+		for (const auto &texture : textures)
 		{
-			response["textures"] = nlohmann::json::array();
-			for (const auto &texture : textures)
-			{
-				nlohmann::json texJson = nlohmann::json::object();
-				texJson["name"] = texture.fileName;
-				texJson["width"] = texture.texData.cols();
-				texJson["height"] = texture.texData.rows();
-				texJson["texData"] = encodeEigenMatrixToBase64(texture.texData);
-				response.at("textures").push_back(texJson);
-			}
+			nlohmann::json texJson = nlohmann::json::object();
+			texJson["name"] = texture.fileName;
+			texJson["width"] = texture.texData.cols();
+			texJson["height"] = texture.texData.rows();
+			texJson["texData"] = encodeEigenMatrixToBase64(texture.texData);
+			response.at("textures").push_back(texJson);
 		}
 		return response;
 	}
