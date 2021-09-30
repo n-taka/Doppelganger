@@ -26,12 +26,13 @@ namespace Doppelganger
 			RGBA(0, 2) = static_cast<double>(69.0 / 255.0);
 			RGBA(0, 3) = static_cast<double>(1.0);
 		};
+		triangleMesh() : triangleMesh(std::string("")){};
 		~triangleMesh(){};
 
 		// dump to json
 		nlohmann::json dumpToJson(const bool &sendToClient) const;
-		void restoreFromJson(const nlohmann::json& json);
-		void projectMeshAttirbutes(const std::shared_ptr<triangleMesh>& source);
+		void restoreFromJson(const nlohmann::json &json);
+		void projectMeshAttributes(const std::shared_ptr<triangleMesh> &source);
 
 	public:
 		std::string name;
@@ -52,7 +53,8 @@ namespace Doppelganger
 		Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> TC;
 		Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> FTC;
 		std::vector<std::string> mtlFileName;
-		typedef struct Texture_ {
+		typedef struct Texture_
+		{
 			std::string fileName;
 			Eigen::Matrix<uint32_t, Eigen::Dynamic, Eigen::Dynamic> texData;
 		} Texture;

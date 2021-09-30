@@ -290,7 +290,7 @@ namespace Doppelganger
 		}
 	}
 
-	void triangleMesh::projectMeshAttirbutes(const std::shared_ptr<triangleMesh> &source)
+	void triangleMesh::projectMeshAttributes(const std::shared_ptr<triangleMesh> &source)
 	{
 		// we assume that two meshes have (almost) identical shape
 		// [vertex attributes]
@@ -327,7 +327,7 @@ namespace Doppelganger
 				Eigen::Matrix<double, Eigen::Dynamic, 1> S;
 				Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> N;
 				igl::signed_distance(q, source->V, source->F, igl::SIGNED_DISTANCE_TYPE_FAST_WINDING_NUMBER, S, correspondingFace, pointsOnMesh, N);
-				vertCorrespondingFace = correspondingFace.block(0, 0,V.rows(), 1);
+				vertCorrespondingFace = correspondingFace.block(0, 0, V.rows(), 1);
 				faceCorrespondingFace = correspondingFace.block(V.rows(), 0, F.rows(), 1);
 				vertPointsOnMesh = pointsOnMesh.block(0, 0, V.rows(), V.cols());
 				facePointsOnMesh = pointsOnMesh.block(V.rows(), 0, F.rows(), V.cols());
@@ -394,14 +394,7 @@ namespace Doppelganger
 				// this implementation is not perfect ...
 				if (source->FTC.rows() == source->F.rows())
 				{
-					TC.resize(source->V.rows(), 2);
-					for (int f = 0; f < source->F.rows(); ++f)
-					{
-						for (int fv = 0; fv < source->F.cols(); ++fv)
-						{
-							TC.row(source->F(f, fv)) = source->TC.row(source->FTC(f, fv));
-						}
-					}
+					igl::barycentric_interpolation(source->TC, source->F, L, vertCorrespondingFace, TC);
 					FTC = F;
 				}
 				else if (source->TC.rows() == source->V.rows())

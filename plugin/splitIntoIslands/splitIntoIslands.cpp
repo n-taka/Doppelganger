@@ -102,7 +102,7 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 				// project attributes
 				// for better performance, we should NOT use this and use result of remove_unreferenced (i.e. Matrix I, J)
 				//   (projectMeshAttributes uses signed distance and its slow...)
-				componentMesh->projectMeshAttirbutes(mesh);
+				componentMesh->projectMeshAttributes(mesh);
 
 				room->meshes[componentUUID] = componentMesh;
 				broadcast["meshes"][componentUUID] = componentMesh->dumpToJson(true);

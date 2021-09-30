@@ -62,7 +62,7 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 				std::shared_ptr<Doppelganger::triangleMesh> mesh = std::make_shared<Doppelganger::triangleMesh>(meshUUID);
 				mesh->restoreFromJson(meshJson);
 				room->meshes[meshUUID] = mesh;
-				// this dumpToJson looks stupid, but mandatory. 
+				// this dumpToJson looks stupid, but mandatory.
 				//   Because our editHistory uses double, but the clients use float for save the amount of communication.
 				//   In addition, this conversion is needed to handle faceColors
 				meshJson = mesh->dumpToJson(true);
