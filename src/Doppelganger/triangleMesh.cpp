@@ -2,8 +2,8 @@
 #define TRIANGLEMESH_CPP
 
 #include "Doppelganger/triangleMesh.h"
-
-#include <boost/beast/core/detail/base64.hpp>
+#include "Util/encodeEigenMatrixToBase64.h"
+#include "Util/decodeBase64ToEigenMatrix.h"
 
 #include "igl/barycenter.h"
 #include "igl/signed_distance.h"
@@ -16,20 +16,6 @@
 
 namespace
 {
-	// matrix => json
-	template <typename Derived>
-	std::string encodeEigenMatrixToBase64(const Eigen::MatrixBase<Derived> &mat)
-	{
-		// enforce RowMajor
-		const Eigen::Matrix<typename Derived::Scalar, Derived::RowsAtCompileTime, Derived::ColsAtCompileTime, Eigen::RowMajor> matRowMajor = mat;
-		const size_t binDataBytes = matRowMajor.size() * sizeof(typename Derived::Scalar);
-		const size_t len = boost::beast::detail::base64::encoded_size(binDataBytes);
-		std::vector<unsigned char> destVec;
-		destVec.resize(len);
-		const size_t lenWritten = boost::beast::detail::base64::encode(&(destVec[0]), matRowMajor.data(), binDataBytes);
-		return std::string(destVec.begin(), destVec.begin() + lenWritten);
-	}
-
 	template <typename DerivedV, typename DerivedF, typename DerivedVC, typename DerivedFC, typename DerivedTC, typename DerivedFTC>
 	void writeToJson(
 		const Eigen::MatrixBase<DerivedV> &Vertices,
@@ -53,46 +39,30 @@ namespace
 			TCf = TexCoords.template cast<float>();
 
 			// vertex
-			json["V"] = encodeEigenMatrixToBase64(Vf);
+			json["V"] = Doppelganger::Util::encodeEigenMatrixToBase64(Vf);
 			// face
-			json["F"] = encodeEigenMatrixToBase64(Fuint);
+			json["F"] = Doppelganger::Util::encodeEigenMatrixToBase64(Fuint);
 			// color
-			json["VC"] = encodeEigenMatrixToBase64(VCf);
+			json["VC"] = Doppelganger::Util::encodeEigenMatrixToBase64(VCf);
 			// uv
-			json["TC"] = encodeEigenMatrixToBase64(TCf);
+			json["TC"] = Doppelganger::Util::encodeEigenMatrixToBase64(TCf);
 		}
 		else
 		{
 			// vertex
-			json["V"] = encodeEigenMatrixToBase64(Vertices);
+			json["V"] = Doppelganger::Util::encodeEigenMatrixToBase64(Vertices);
 			// face
-			json["F"] = encodeEigenMatrixToBase64(Facets);
+			json["F"] = Doppelganger::Util::encodeEigenMatrixToBase64(Facets);
 			// color
-			json["VC"] = encodeEigenMatrixToBase64(VertexColors);
+			json["VC"] = Doppelganger::Util::encodeEigenMatrixToBase64(VertexColors);
 			// uv
-			json["TC"] = encodeEigenMatrixToBase64(TexCoords);
+			json["TC"] = Doppelganger::Util::encodeEigenMatrixToBase64(TexCoords);
 			// for correctly store edit history
 			// face color
-			json["FC"] = encodeEigenMatrixToBase64(FacetColors);
-			json["FTC"] = encodeEigenMatrixToBase64(FacetTexCoords);
+			json["FC"] = Doppelganger::Util::encodeEigenMatrixToBase64(FacetColors);
+			json["FTC"] = Doppelganger::Util::encodeEigenMatrixToBase64(FacetTexCoords);
 		}
 	};
-
-	// json => matrix
-	template <typename Derived>
-	void decodeBase64ToEigenMatrix(const std::string &base64, const int &cols, Eigen::MatrixBase<Derived> &mat)
-	{
-		std::vector<unsigned char> binData;
-		const size_t len = boost::beast::detail::base64::decoded_size(base64.size());
-		binData.resize(len);
-		const std::pair<size_t, size_t> lenWrittenRead = boost::beast::detail::base64::decode(&(binData[0]), base64.data(), base64.size());
-
-		Eigen::Matrix<typename Derived::Scalar, Derived::RowsAtCompileTime, Derived::ColsAtCompileTime, Eigen::RowMajor> matRowMajor;
-		matRowMajor.resize(lenWrittenRead.first / (sizeof(typename Derived::Scalar) * cols), cols);
-		memmove(matRowMajor.data(), &(binData[0]), binData.size());
-		mat = matRowMajor;
-	}
-
 }
 
 namespace Doppelganger
@@ -120,6 +90,7 @@ namespace Doppelganger
 		//  "textures": [
 		//   {
 		// 	  "name": original filename for this texture
+		// 	  "fileFormat": original file format for this texture
 		// 	  "width" = width of this texture
 		// 	  "height" = height of this texture
 		// 	  "texData" = base64-encoded texture data
@@ -189,9 +160,10 @@ namespace Doppelganger
 		{
 			nlohmann::json texJson = nlohmann::json::object();
 			texJson["name"] = texture.fileName;
+			texJson["fileFormat"] = texture.fileFormat;
 			texJson["width"] = texture.texData.cols();
 			texJson["height"] = texture.texData.rows();
-			texJson["texData"] = encodeEigenMatrixToBase64(texture.texData);
+			texJson["texData"] = Doppelganger::Util::encodeEigenMatrixToBase64(texture.texData);
 			response.at("textures").push_back(texJson);
 		}
 		return response;
@@ -242,32 +214,32 @@ namespace Doppelganger
 		// V
 		if (json.contains("V"))
 		{
-			decodeBase64ToEigenMatrix(json.at("V").get<std::string>(), 3, V);
+			Doppelganger::Util::decodeBase64ToEigenMatrix(json.at("V").get<std::string>(), 3, V);
 		}
 		// F
 		if (json.contains("F"))
 		{
-			decodeBase64ToEigenMatrix(json.at("F").get<std::string>(), 3, F);
+			Doppelganger::Util::decodeBase64ToEigenMatrix(json.at("F").get<std::string>(), 3, F);
 		}
 		// VC
 		if (json.contains("VC"))
 		{
-			decodeBase64ToEigenMatrix(json.at("VC").get<std::string>(), 3, VC);
+			Doppelganger::Util::decodeBase64ToEigenMatrix(json.at("VC").get<std::string>(), 3, VC);
 		}
 		// TC
 		if (json.contains("TC"))
 		{
-			decodeBase64ToEigenMatrix(json.at("TC").get<std::string>(), 2, TC);
+			Doppelganger::Util::decodeBase64ToEigenMatrix(json.at("TC").get<std::string>(), 2, TC);
 		}
 		// FC
 		if (json.contains("FC"))
 		{
-			decodeBase64ToEigenMatrix(json.at("FC").get<std::string>(), 3, FC);
+			Doppelganger::Util::decodeBase64ToEigenMatrix(json.at("FC").get<std::string>(), 3, FC);
 		}
 		// FTC
 		if (json.contains("FTC"))
 		{
-			decodeBase64ToEigenMatrix(json.at("FTC").get<std::string>(), 3, FTC);
+			Doppelganger::Util::decodeBase64ToEigenMatrix(json.at("FTC").get<std::string>(), 3, FTC);
 		}
 		// textures
 		if (json.contains("textures"))
@@ -280,9 +252,9 @@ namespace Doppelganger
 				Texture &texture = textures.at(texIdx);
 
 				texture.fileName = textureJson.at("name").get<std::string>();
+				texture.fileFormat = textureJson.at("fileFormat").get<std::string>();
 				texture.texData.resize(textureJson.at("height").get<int>(), textureJson.at("width").get<int>());
-				// todo check...
-				decodeBase64ToEigenMatrix(textureJson.at("texData").get<std::string>(), texture.texData.cols(), texture.texData);
+				Doppelganger::Util::decodeBase64ToEigenMatrix(textureJson.at("texData").get<std::string>(), texture.texData.cols(), texture.texData);
 			}
 		}
 	}

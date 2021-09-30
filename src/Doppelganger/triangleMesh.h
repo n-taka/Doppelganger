@@ -56,6 +56,7 @@ namespace Doppelganger
 		typedef struct Texture_
 		{
 			std::string fileName;
+			std::string fileFormat;
 			Eigen::Matrix<uint32_t, Eigen::Dynamic, Eigen::Dynamic> texData;
 		} Texture;
 		std::vector<Texture> textures;

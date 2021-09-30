@@ -129,6 +129,7 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 		Doppelganger::triangleMesh::Texture texture;
 		{
 			texture.fileName = parameters.at("texture").at("name").get<std::string>();
+			texture.fileFormat = fileType;
 
 			int width, height, channels;
 			// first pixel corresponds to the lower left corner
