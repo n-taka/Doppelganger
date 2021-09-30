@@ -3,7 +3,7 @@ import { Canvas } from '../../js/Canvas.js';
 import { getText } from '../../js/Text.js';
 import { constructMeshLiFromParameters } from '../../js/constructMeshLiFrom.js';
 import * as THREE from 'https://cdn.skypack.dev/three';
-import { mergeBufferGeometries } from 'https://cdn.skypack.dev/three/examples/jsm/utils/BufferGeometryUtils.js';
+import { mergeBufferAttributes } from 'https://cdn.skypack.dev/three/examples/jsm/utils/BufferGeometryUtils.js';
 
 const text = {
     "#Triangle": { "en": "#Triangle", "ja": "ポリゴン数" }
@@ -83,13 +83,17 @@ const generateUI = async function () {
 
             const meshList = Canvas.meshGroup.children.filter(function (obj) { return (obj instanceof THREE.Mesh); });
             if (meshList.length > 0) {
-                const geometry = mergeBufferGeometries(meshList.map(function (obj) { return obj.geometry }));
+                const posAttrib = mergeBufferAttributes(meshList.map(function (obj) { return obj.geometry.getAttribute("position"); }));
+                const geometry = new THREE.BufferGeometry();
+                geometry.setAttribute("position", posAttrib);
                 geometry.computeBoundingBox();
                 const BBox = geometry.boundingBox;
                 const XYZSize = BBox.max.clone();
                 XYZSize.sub(BBox.min);
-                updateText(XYZSize.x.toFixed(2), XYZSize.y.toFixed(2), XYZSize.z.toFixed(2), (geometry.index ? geometry.index.count / 3 : 0));
                 geometry.dispose();
+                const triCount = meshList.reduce(function (sum, obj) { return sum + (obj.geometry.index.count ? obj.geometry.index.count / 3 : 0); }, 0);
+
+                updateText(XYZSize.x.toFixed(2), XYZSize.y.toFixed(2), XYZSize.z.toFixed(2), triCount);
             } else {
                 updateText("0.00", "0.00", "0.00", 0);
             }
