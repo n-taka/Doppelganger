@@ -137,7 +137,7 @@ export const constructMeshLiFromJson = async function (json) {
         const aNotify = document.createElement("a");
         aNotify.setAttribute("class", "secondary-content");
         aNotify.setAttribute("style", "user-select: none;");
-        // aNotify.setAttribute("id", "notify_" + json["UUID"]);
+        aNotify.setAttribute("id", "notify_" + json["UUID"]);
         liRoot.appendChild(aNotify);
     }
     {
@@ -170,27 +170,3 @@ export const constructMeshLiFromJson = async function (json) {
 // handlers that need to be called when we call constructMeshLiFromJson
 // function (json, liRoot) { ... }
 constructMeshLiFromJson.handlers = [];
-
-// handler example...
-// DoppelCore.toolHandlerGenerator.forEach((generator) => {
-//     var aPlugin = document.createElement("a");
-//     var iPlugin = document.createElement("i");
-//     iPlugin.setAttribute("class", "material-icons teal-text text-lighten-2");
-//     iPlugin.innerHTML = generator.icon;
-//     if (generator.hasOwnProperty("id")) {
-//         aPlugin.setAttribute("id", "a" + generator.id + doppelId);
-//         iPlugin.setAttribute("id", "i" + generator.id + doppelId);
-//     }
-//     aPlugin.appendChild(iPlugin);
-//     aPlugin.onclick = function () {
-//         DoppelCore.selectedDoppelId = [doppelId];
-//         generator.handler();
-//     };
-//     if (generator.hasOwnProperty("tooltip")) {
-//         aPlugin.setAttribute("class", "tooltipped");
-//         aPlugin.setAttribute("data-position", "top");
-//         aPlugin.setAttribute("data-tooltip", generator["tooltip"]);
-//     }
-
-//     pButtons.appendChild(aPlugin);
-// });
