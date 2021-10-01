@@ -1,5 +1,3 @@
-import { Modal } from './Modal.js';
-
 export const UI = {};
 
 UI.init = function () {

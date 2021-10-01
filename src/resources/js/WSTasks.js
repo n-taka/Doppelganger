@@ -1,4 +1,3 @@
-import * as THREE from 'https://cdn.skypack.dev/three';
 import { Core } from './Core.js';
 import { UI } from './UI.js';
 

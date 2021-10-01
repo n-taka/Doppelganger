@@ -1,4 +1,4 @@
-import * as THREE from 'https://cdn.skypack.dev/three';
+import * as THREE from 'https://cdn.skypack.dev/three@v0.132';
 import { WSTasks } from '../../js/WSTasks.js';
 import { MouseKey } from '../../js/MouseKey.js';
 

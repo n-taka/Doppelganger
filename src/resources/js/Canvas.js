@@ -1,8 +1,8 @@
-import * as THREE from 'https://cdn.skypack.dev/three';
-import { TrackballControls } from 'https://cdn.skypack.dev/three/examples/jsm/controls/TrackballControls.js';
-import { mergeBufferAttributes } from 'https://cdn.skypack.dev/three/examples/jsm/utils/BufferGeometryUtils.js';
-import { RenderPass } from 'https://cdn.skypack.dev/three/examples/jsm/postprocessing/RenderPass.js';
-import { EffectComposer } from 'https://cdn.skypack.dev/three/examples/jsm/postprocessing/EffectComposer.js';
+import * as THREE from 'https://cdn.skypack.dev/three@v0.132';
+import { TrackballControls } from 'https://cdn.skypack.dev/three@v0.132/examples/jsm/controls/TrackballControls.js';
+import { mergeBufferAttributes } from 'https://cdn.skypack.dev/three@v0.132/examples/jsm/utils/BufferGeometryUtils.js';
+import { RenderPass } from 'https://cdn.skypack.dev/three@v0.132/examples/jsm/postprocessing/RenderPass.js';
+import { EffectComposer } from 'https://cdn.skypack.dev/three@v0.132/examples/jsm/postprocessing/EffectComposer.js';
 
 import { UI } from './UI.js';
 import { Core } from './Core.js';

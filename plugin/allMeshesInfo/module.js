@@ -2,8 +2,8 @@ import { UI } from '../../js/UI.js';
 import { Canvas } from '../../js/Canvas.js';
 import { getText } from '../../js/Text.js';
 import { constructMeshLiFromParameters } from '../../js/constructMeshLiFrom.js';
-import * as THREE from 'https://cdn.skypack.dev/three';
-import { mergeBufferAttributes } from 'https://cdn.skypack.dev/three/examples/jsm/utils/BufferGeometryUtils.js';
+import * as THREE from 'https://cdn.skypack.dev/three@v0.132';
+import { mergeBufferAttributes } from 'https://cdn.skypack.dev/three@v0.132/examples/jsm/utils/BufferGeometryUtils.js';
 
 const text = {
     "#Triangle": { "en": "#Triangle", "ja": "ポリゴン数" }

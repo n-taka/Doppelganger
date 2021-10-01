@@ -1,4 +1,4 @@
-import * as THREE from 'https://cdn.skypack.dev/three';
+import * as THREE from 'https://cdn.skypack.dev/three@v0.132';
 import { Canvas } from '../../js/Canvas.js';
 import { UI } from '../../js/UI.js';
 import { getText } from '../../js/Text.js';

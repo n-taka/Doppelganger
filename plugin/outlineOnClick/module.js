@@ -1,5 +1,5 @@
-import * as THREE from 'https://cdn.skypack.dev/three';
-import { OutlinePass } from 'https://cdn.skypack.dev/three/examples/jsm/postprocessing/OutlinePass.js';
+import * as THREE from 'https://cdn.skypack.dev/three@v0.132';
+import { OutlinePass } from 'https://cdn.skypack.dev/three@v0.132/examples/jsm/postprocessing/OutlinePass.js';
 import { Canvas } from '../../js/Canvas.js';
 import { UI } from '../../js/UI.js';
 import { constructMeshLiFromJson } from '../../js/constructMeshLiFrom.js';
