@@ -1,5 +1,5 @@
-#ifndef SAVESCREENSHOT_CPP
-#define SAVESCREENSHOT_CPP
+#ifndef SAVESCREENSHOTALL_CPP
+#define SAVESCREENSHOTALL_CPP
 
 #include "../pluginHeader.h"
 #include "Doppelganger/Room.h"
