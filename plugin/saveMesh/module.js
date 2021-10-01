@@ -46,7 +46,6 @@ const generateUI = async function () {
                                 parameters["format"] = "obj";
                                 request("saveMesh", parameters).then((response) => {
                                     const responseJson = JSON.parse(response);
-                                    console.log(responseJson);
                                     saveMesh(responseJson);
                                 });
                             });
@@ -64,7 +63,6 @@ const generateUI = async function () {
                                 parameters["format"] = "ply";
                                 request("saveMesh", parameters).then((response) => {
                                     const responseJson = JSON.parse(response);
-                                    console.log(responseJson);
                                     saveMesh(responseJson);
                                 });
                             });
@@ -82,7 +80,6 @@ const generateUI = async function () {
                                 parameters["format"] = "stl";
                                 request("saveMesh", parameters).then((response) => {
                                     const responseJson = JSON.parse(response);
-                                    console.log(responseJson);
                                     saveMesh(responseJson);
                                 });
                             });
@@ -100,7 +97,6 @@ const generateUI = async function () {
                                 parameters["format"] = "wrl";
                                 request("saveMesh", parameters).then((response) => {
                                     const responseJson = JSON.parse(response);
-                                    console.log(responseJson);
                                     saveMesh(responseJson);
                                 });
                             });
