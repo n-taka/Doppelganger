@@ -1,5 +1,5 @@
-#ifndef SAVEMESH_CPP
-#define SAVEMESH_CPP
+#ifndef SAVEALLMESHES_CPP
+#define SAVEALLMESHES_CPP
 
 #include "../pluginHeader.h"
 #include "Doppelganger/Room.h"
@@ -137,6 +137,7 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 
 	// create empty response/broadcast
 	response = nlohmann::json::object();
+	response["meshes"] = nlohmann::json::object();
 	broadcast = nlohmann::json::object();
 
 	const bool saveToLocal = (room->core->config.at("output").at("type").get<std::string>() == "local");
@@ -341,7 +342,6 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 					}
 				}
 
-				response["meshes"] = nlohmann::json::object();
 				response["meshes"][meshUUID] = meshJson;
 			}
 		}
