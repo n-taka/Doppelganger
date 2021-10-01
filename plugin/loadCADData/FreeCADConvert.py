@@ -25,18 +25,18 @@ dirPath = filePath+".dump"
 
 os.makedirs(dirPath, exist_ok=True)
 
-# Import.open(filePath) : name of parts are kept, but conversion to mesh fails
+# Import.open(filePath) : name of parts are NOT kept (from 0.19?), but conversion to mesh fails
 # Part.open(filePath)   : name of parts are NOT kept, but conversion to mesh works
 # Part.insert(filePath) : name of parts are NOT kept, but conversion to mesh works
 
 meshNameList = []
 
 # names of the meshes
-if not merge:
-    Import.open(filePath)
-    objects = FreeCAD.ActiveDocument.Objects
-    meshNameList = list(map((lambda x: x.Label), filter(
-        (lambda x: type(x) == Part.Feature), objects)))
+# if not merge:
+#     Import.open(filePath)
+#     objects = FreeCAD.ActiveDocument.Objects
+#     meshNameList = list(map((lambda x: x.Label), filter(
+#         (lambda x: type(x) == Part.Feature), objects)))
 
 # re-open for export
 Part.open(filePath)
@@ -44,7 +44,7 @@ objects = FreeCAD.ActiveDocument.Objects
 
 # if len(nameList) != len(objects), we use sequential number
 if (len(meshNameList) != len(objects)):
-    meshNameList = list(map((lambda x: meshName+str(x)), range(len(objects))))
+    meshNameList = list(map((lambda x: meshName+"_"+str(x)), range(len(objects))))
 
 if merge:
     Mesh.export(objects, dirPath+"/"+meshName+".ply", tolerance=maxTolerance)

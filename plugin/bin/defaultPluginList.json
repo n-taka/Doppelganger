@@ -7,7 +7,7 @@
         "optional": false,
         "latest": "1.0.0",
         "versions": {
-            "1.0.0": "https://n-taka.info/nextcloud/s/RTpw8YjeQ5bWcyt/download/listPlugins.zip"
+            "1.0.0": "https://n-taka.info/nextcloud/s/Ldx79s2j6n9aCRF/download/listPlugins.zip"
         }
     },
     "updatePlugins": {
@@ -18,7 +18,7 @@
         "optional": false,
         "latest": "1.0.0",
         "versions": {
-            "1.0.0": "https://n-taka.info/nextcloud/s/58FYFkzySW9pkeP/download/updatePlugins.zip"
+            "1.0.0": "https://n-taka.info/nextcloud/s/etJPfQXmTjZ688f/download/updatePlugins.zip"
         }
     },
     "shutdown": {
@@ -29,7 +29,7 @@
         "optional": false,
         "latest": "1.0.0",
         "versions": {
-            "1.0.0": "https://n-taka.info/nextcloud/s/iijmmJ33ZxFBPCy/download/shutdown.zip"
+            "1.0.0": "https://n-taka.info/nextcloud/s/HCp8KfKjxiwTtxP/download/shutdown.zip"
         }
     },
     "pullCurrentMeshes": {
@@ -37,10 +37,10 @@
             "en": "Get already loaded meshes on startup.",
             "ja": "接続時にすでに読み込まれているメッシュを取得します。"
         },
-        "optional": true,
+        "optional": false,
         "latest": "1.0.0",
         "versions": {
-            "1.0.0": "/download/pullCurrentMeshes.zip"
+            "1.0.0": "https://n-taka.info/nextcloud/s/4QbxA9tHmi534sm/download/pullCurrentMeshes.zip"
         }
     },
     "pullCanvasParameters": {
@@ -51,216 +51,18 @@
         "optional": false,
         "latest": "1.0.0",
         "versions": {
-            "1.0.0": "https://n-taka.info/nextcloud/s/jbYggixKLM9bp86/download/pullCanvasParameters.zip"
+            "1.0.0": "https://n-taka.info/nextcloud/s/KRiFNweA4Pa7DsA/download/pullCanvasParameters.zip"
         }
     },
-    "loadPolygonMesh": {
+    "pushCanvasParameters": {
         "description": {
-            "en": "Load polygon mesh (OBJ, PLY, STL, VRML).",
-            "ja": "ポリゴンメッシュを読み込みます(OBJ, PLY, STL, VRML)。"
+            "en": "Synchronize parameters for camera across clients.",
+            "ja": "全クライアント間でカメラのパラメタを共有します。"
         },
-        "optional": true,
+        "optional": false,
         "latest": "1.0.0",
         "versions": {
-            "1.0.0": "https://n-taka.info/nextcloud/s/tADcEFkyqpiPZRZ/download/loadPolygonMesh.zip"
-        }
-    },
-    "loadCADData": {
-        "description": {
-            "en": "Load CAD data (iges, step).",
-            "ja": "CADデータを読み込みます(iges, step)。"
-        },
-        "optional": true,
-        "latest": "1.0.0",
-        "versions": {
-            "1.0.0": "/download/loadCADData.zip"
-        }
-    },
-    "loadTexture": {
-        "description": {
-            "en": "Load texture.",
-            "ja": "テクスチャを読み込みます。"
-        },
-        "optional": true,
-        "latest": "1.0.0",
-        "versions": {
-            "1.0.0": "/download/loadTexture.zip"
-        }
-    },
-    "toggleMeshVisibility": {
-        "description": {
-            "en": "Toggle mesh visibility.",
-            "ja": "メッシュの表示/非表示を切り替えます。"
-        },
-        "optional": true,
-        "latest": "1.0.0",
-        "versions": {
-            "1.0.0": "/download/toggleMeshVisibility.zip"
-        }
-    },
-    "meshErrorInfo": {
-        "description": {
-            "en": "Display mesh errors (e.g. holes, non-manifold).",
-            "ja": "メッシュのエラーを表示します (穴など)。"
-        },
-        "optional": true,
-        "latest": "1.0.0",
-        "versions": {
-            "1.0.0": "/download/meshErrorInfo.zip"
-        }
-    },
-    "hollowMesh": {
-        "description": {
-            "en": "Hollow single mesh.",
-            "ja": "メッシュを中空にします。"
-        },
-        "optional": true,
-        "latest": "1.0.0",
-        "versions": {
-            "1.0.0": "/download/hollowMesh.zip"
-        }
-    },
-    "splitIntoIslands": {
-        "description": {
-            "en": "Split a mesh into connected components.",
-            "ja": "メッシュをアイランド単位に分離します。"
-        },
-        "optional": true,
-        "latest": "1.0.0",
-        "versions": {
-            "1.0.0": "/download/splitIntoIslands.zip"
-        }
-    },
-    "repairMesh": {
-        "description": {
-            "en": "Repair single mesh.",
-            "ja": "単一のメッシュのエラーを修正します。"
-        },
-        "optional": true,
-        "latest": "MeshFix",
-        "versions": {
-            "MeshFix": "/download/repairMesh.zip"
-        }
-    },
-    "repairAllMeshes": {
-        "description": {
-            "en": "Repair all meshes.",
-            "ja": "すべてのメッシュのエラーを修正します。"
-        },
-        "optional": true,
-        "latest": "MeshFix",
-        "versions": {
-            "MeshFix": "/download/repairAllMeshes.zip"
-        }
-    },
-    "saveMesh": {
-        "description": {
-            "en": "Save single mesh.",
-            "ja": "単一のメッシュを保存します。"
-        },
-        "optional": true,
-        "latest": "1.0.0",
-        "versions": {
-            "1.0.0": "/download/saveMesh.zip"
-        }
-    },
-    "saveAllMeshes": {
-        "description": {
-            "en": "Save all meshes.",
-            "ja": "すべてのメッシュを保存します。"
-        },
-        "optional": true,
-        "latest": "1.0.0",
-        "versions": {
-            "1.0.0": "/download/saveAllMeshes.zip"
-        }
-    },
-    "removeMesh": {
-        "description": {
-            "en": "Remove single mesh.",
-            "ja": "メッシュを一つ削除します。"
-        },
-        "optional": true,
-        "latest": "1.0.0",
-        "versions": {
-            "1.0.0": "/download/removeMesh.zip"
-        }
-    },
-    "removeAllMeshes": {
-        "description": {
-            "en": "Remove all meshes.",
-            "ja": "すべてのメッシュを削除します。"
-        },
-        "optional": true,
-        "latest": "1.0.0",
-        "versions": {
-            "1.0.0": "/download/removeAllMeshes.zip"
-        }
-    },
-    "undo": {
-        "description": {
-            "en": "Undo function.",
-            "ja": "Undo機能です。"
-        },
-        "optional": true,
-        "latest": "1.0.0",
-        "versions": {
-            "1.0.0": "/download/undo.zip"
-        }
-    },
-    "redo": {
-        "description": {
-            "en": "Redo function.",
-            "ja": "Redo機能です。"
-        },
-        "optional": true,
-        "latest": "1.0.0",
-        "versions": {
-            "1.0.0": "/download/redo.zip"
-        }
-    },
-    "meshInfo": {
-        "description": {
-            "en": "Display mesh info (e.g. XYZ size).",
-            "ja": "メッシュの情報を表示します (サイズなど)。"
-        },
-        "optional": true,
-        "latest": "1.0.0",
-        "versions": {
-            "1.0.0": "/download/meshInfo.zip"
-        }
-    },
-    "outlineOnClick": {
-        "description": {
-            "en": "Visualize outline when a mesh is clicked.",
-            "ja": "メッシュをクリック時に輪郭線を表示します。"
-        },
-        "optional": true,
-        "latest": "1.0.0",
-        "versions": {
-            "1.0.0": "/download/outlineOnClick.zip"
-        }
-    },
-    "saveScreenshot": {
-        "description": {
-            "en": "Save a screenshot of a mesh.",
-            "ja": "単一メッシュの画像を保存します。"
-        },
-        "optional": true,
-        "latest": "1.0.0",
-        "versions": {
-            "1.0.0": "/download/saveScreenshot.zip"
-        }
-    },
-    "saveScreenshotAll": {
-        "description": {
-            "en": "Save a screenshot of current view.",
-            "ja": "現在のビューの画像を保存します。"
-        },
-        "optional": true,
-        "latest": "1.0.0",
-        "versions": {
-            "1.0.0": "/download/saveScreenshotAll.zip"
+            "1.0.0": "https://n-taka.info/nextcloud/s/aoGtEY3kwBWBXkx/download/pushCanvasParameters.zip"
         }
     },
     "sortMeshes": {
@@ -268,21 +70,10 @@
             "en": "Sort meshes based on name or #triangles.",
             "ja": "名前もしくはポリゴン数でメッシュをソートします。"
         },
-        "optional": true,
+        "optional": false,
         "latest": "1.0.0",
         "versions": {
-            "1.0.0": "/download/sortMeshes.zip"
-        }
-    },
-    "showAxes": {
-        "description": {
-            "en": "Show XYZ axes in the view.",
-            "ja": "ビューにXYZ座標軸を表示します。"
-        },
-        "optional": true,
-        "latest": "1.0.0",
-        "versions": {
-            "1.0.0": "/download/showAxes.zip"
+            "1.0.0": "https://n-taka.info/nextcloud/s/GyXLdxHrkaM2L8Y/download/sortMeshes.zip"
         }
     },
     "syncCursor": {
@@ -293,29 +84,260 @@
         "optional": false,
         "latest": "1.0.0",
         "versions": {
-            "1.0.0": "https://n-taka.info/nextcloud/s/Zk9LL6WgB5d62mX/download/syncCursor.zip"
+            "1.0.0": "https://n-taka.info/nextcloud/s/99k4ZX9tLoPMWZ3/download/syncCursor.zip"
         }
     },
-    "syncCanvasParameters": {
+    "loadPolygonMesh": {
         "description": {
-            "en": "Synchronize parameters for camera across clients.",
-            "ja": "全クライアント間でカメラのパラメタを共有します。"
+            "en": "Load polygon mesh (OBJ, PLY, STL, VRML).",
+            "ja": "ポリゴンメッシュを読み込みます(OBJ, PLY, STL, VRML)。"
         },
         "optional": true,
         "latest": "1.0.0",
         "versions": {
-            "1.0.0": "/download/syncCanvasParameters.zip"
+            "1.0.0": "https://n-taka.info/nextcloud/s/stKP6LGJ77yYq7Z/download/loadPolygonMesh.zip"
         }
     },
-    "example": {
+    "loadCADData": {
         "description": {
-            "en": "Dummy entry for development.",
-            "ja": "開発用のダミーです。"
+            "en": "Load CAD data (iges, step).",
+            "ja": "CADデータを読み込みます(iges, step)。"
         },
         "optional": true,
         "latest": "1.0.0",
         "versions": {
-            "1.0.0": "https://example.com/"
+            "1.0.0": "https://n-taka.info/nextcloud/s/PHdXCzpntpJiJeP/download/loadCADData.zip"
+        }
+    },
+    "loadTexture": {
+        "description": {
+            "en": "Load texture.",
+            "ja": "テクスチャを読み込みます。"
+        },
+        "optional": true,
+        "latest": "1.0.0",
+        "versions": {
+            "1.0.0": "https://n-taka.info/nextcloud/s/72HstHweFMrAHLb/download/loadTexture.zip"
+        }
+    },
+    "toggleMeshVisibility": {
+        "description": {
+            "en": "Toggle mesh visibility.",
+            "ja": "メッシュの表示/非表示を切り替えます。"
+        },
+        "optional": true,
+        "latest": "1.0.0",
+        "versions": {
+            "1.0.0": "https://n-taka.info/nextcloud/s/wRmZk7gaqBPnJbL/download/toggleMeshVisibility.zip"
+        }
+    },
+    "meshErrorInfo": {
+        "description": {
+            "en": "Display mesh errors (e.g. holes, non-manifold).",
+            "ja": "メッシュのエラーを表示します (穴など)。"
+        },
+        "optional": true,
+        "latest": "1.0.0",
+        "versions": {
+            "1.0.0": "https://n-taka.info/nextcloud/s/86n7e6Wmy6Pj6aE/download/meshErrorInfo.zip"
+        }
+    },
+    "hollowMesh": {
+        "description": {
+            "en": "Hollow single mesh.",
+            "ja": "メッシュを中空にします。"
+        },
+        "optional": true,
+        "latest": "1.0.0",
+        "versions": {
+            "1.0.0": "https://n-taka.info/nextcloud/s/6gBdtpTLqLiSLBL/download/hollowMesh.zip"
+        }
+    },
+    "splitIntoIslands": {
+        "description": {
+            "en": "Split a mesh into connected components.",
+            "ja": "メッシュをアイランド単位に分離します。"
+        },
+        "optional": true,
+        "latest": "1.0.0",
+        "versions": {
+            "1.0.0": "https://n-taka.info/nextcloud/s/ctHpiH9KRKWSPA3/download/splitIntoIslands.zip"
+        }
+    },
+    "repairMesh": {
+        "description": {
+            "en": "Repair single mesh.",
+            "ja": "単一のメッシュのエラーを修正します。"
+        },
+        "optional": true,
+        "latest": "MeshFix",
+        "versions": {
+            "MeshFix": "https://n-taka.info/nextcloud/s/CYxYHSmmqp6W9sG/download/repairMesh.zip"
+        }
+    },
+    "repairAllMeshes": {
+        "description": {
+            "en": "Repair all meshes.",
+            "ja": "すべてのメッシュのエラーを修正します。"
+        },
+        "optional": true,
+        "latest": "MeshFix",
+        "versions": {
+            "MeshFix": "https://n-taka.info/nextcloud/s/mxZcjG83fXJciYf/download/repairAllMeshes.zip"
+        }
+    },
+    "saveMesh": {
+        "description": {
+            "en": "Save single mesh.",
+            "ja": "単一のメッシュを保存します。"
+        },
+        "optional": true,
+        "latest": "1.0.0",
+        "versions": {
+            "1.0.0": "https://n-taka.info/nextcloud/s/yk7ayTgdC5RnxnH/download/saveMesh.zip"
+        }
+    },
+    "saveAllMeshes": {
+        "description": {
+            "en": "Save all meshes.",
+            "ja": "すべてのメッシュを保存します。"
+        },
+        "optional": true,
+        "latest": "1.0.0",
+        "versions": {
+            "1.0.0": "https://n-taka.info/nextcloud/s/PW6i5MSabPoZPxP/download/saveAllMeshes.zip"
+        }
+    },
+    "removeMesh": {
+        "description": {
+            "en": "Remove single mesh.",
+            "ja": "メッシュを一つ削除します。"
+        },
+        "optional": true,
+        "latest": "1.0.0",
+        "versions": {
+            "1.0.0": "https://n-taka.info/nextcloud/s/TCEeYC4TtJjFNH3/download/removeMesh.zip"
+        }
+    },
+    "removeAllMeshes": {
+        "description": {
+            "en": "Remove all meshes.",
+            "ja": "すべてのメッシュを削除します。"
+        },
+        "optional": true,
+        "latest": "1.0.0",
+        "versions": {
+            "1.0.0": "https://n-taka.info/nextcloud/s/qmDMLMgD2acnZtB/download/removeAllMeshes.zip"
+        }
+    },
+    "undo": {
+        "description": {
+            "en": "Undo function.",
+            "ja": "Undo機能です。"
+        },
+        "optional": true,
+        "latest": "1.0.0",
+        "versions": {
+            "1.0.0": "https://n-taka.info/nextcloud/s/wpcmwk9bbi3NJRg/download/undo.zip"
+        }
+    },
+    "redo": {
+        "description": {
+            "en": "Redo function.",
+            "ja": "Redo機能です。"
+        },
+        "optional": true,
+        "latest": "1.0.0",
+        "versions": {
+            "1.0.0": "https://n-taka.info/nextcloud/s/cD59sJH3syfX4yK/download/redo.zip"
+        }
+    },
+    "meshInfo": {
+        "description": {
+            "en": "Display mesh info (e.g. XYZ size).",
+            "ja": "メッシュの情報を表示します (サイズなど)。"
+        },
+        "optional": true,
+        "latest": "1.0.0",
+        "versions": {
+            "1.0.0": "https://n-taka.info/nextcloud/s/Qgw28bPWXRTSSkk/download/meshInfo.zip"
+        }
+    },
+    "allMeshesInfo": {
+        "description": {
+            "en": "Display meshes info (e.g. XYZ size).",
+            "ja": "読み込まれたメッシュの情報を表示します (サイズなど)。"
+        },
+        "optional": true,
+        "latest": "1.0.0",
+        "versions": {
+            "1.0.0": "https://n-taka.info/nextcloud/s/t5Tfs45aBszGkj7/download/allMeshesInfo.zip"
+        }
+    },
+    "outlineOnClick": {
+        "description": {
+            "en": "Visualize outline when a mesh is clicked.",
+            "ja": "メッシュをクリック時に輪郭線を表示します。"
+        },
+        "optional": true,
+        "latest": "1.0.0",
+        "versions": {
+            "1.0.0": "https://n-taka.info/nextcloud/s/XDgAsqbk7zxGHTj/download/outlineOnClick.zip"
+        }
+    },
+    "saveScreenshot": {
+        "description": {
+            "en": "Save a screenshot of a mesh.",
+            "ja": "単一メッシュの画像を保存します。"
+        },
+        "optional": true,
+        "latest": "1.0.0",
+        "versions": {
+            "1.0.0": "https://n-taka.info/nextcloud/s/HdpBeNzZkrasaAT/download/saveScreenshot.zip"
+        }
+    },
+    "saveScreenshotAll": {
+        "description": {
+            "en": "Save a screenshot of current view.",
+            "ja": "現在のビューの画像を保存します。"
+        },
+        "optional": true,
+        "latest": "1.0.0",
+        "versions": {
+            "1.0.0": "https://n-taka.info/nextcloud/s/tsw7K3M9DBFySDZ/download/saveScreenshotAll.zip"
+        }
+    },
+    "toggleAxesVisibility": {
+        "description": {
+            "en": "Show or hide XYZ axes in the view.",
+            "ja": "ビュー上のXYZ座標軸の表示/表示を切り替えます。"
+        },
+        "optional": true,
+        "latest": "1.0.0",
+        "versions": {
+            "1.0.0": "https://n-taka.info/nextcloud/s/LnqwGpJeQ4eDLR3/download/toggleAxesVisibility.zip"
+        }
+    },
+    "fitToFrame": {
+        "description": {
+            "en": "Reset the camera so that the visible meshes fits to the current view.",
+            "ja": "表示状態のメッシュがビュー全体に一致するようにカメラをリセットします。"
+        },
+        "optional": true,
+        "latest": "1.0.0",
+        "versions": {
+            "1.0.0": "https://n-taka.info/nextcloud/s/mHg9KPqDsJJaCjn/download/fitToFrame.zip"
+        }
+    },
+    "alignCamera": {
+        "description": {
+            "en": "Reset the camera so that the view direction aligns with an axis.",
+            "ja": "座標軸に沿ったビューになるようにカメラをリセットします。"
+        },
+        "optional": true,
+        "latest": "1.0.0",
+        "versions": {
+            "1.0.0": "https://n-taka.info/nextcloud/s/qjza8qYFyDYd3Db/download/alignCamera.zip"
         }
     }
 }

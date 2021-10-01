@@ -3,11 +3,9 @@ cmake_minimum_required(VERSION 3.15)
 set(PROJECT DoppelgangerPlugin)
 project(${PROJECT})
 
-# debugging ...
-# add_subdirectory(loadCADData)
-
 # top menu
 add_subdirectory(loadPolygonMesh)
+add_subdirectory(loadCADData)
 add_subdirectory(undo)
 add_subdirectory(redo)
 add_subdirectory(sortMeshes)
