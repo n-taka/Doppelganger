@@ -40,7 +40,7 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 	broadcast = parameters;
 
 	{
-		std::lock_guard<std::mutex> lock(room->interfaceParams.mutexInterfaceParams);
+		std::lock_guard<std::mutex> lock(room->interfaceParams.mutex);
 		// todo support delete operation
 
 		std::unordered_map<std::string, Doppelganger::Room::cursorInfo> &cursors = room->interfaceParams.cursors;

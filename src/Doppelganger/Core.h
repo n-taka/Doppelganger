@@ -38,7 +38,7 @@ namespace Doppelganger
 			fs::path resourceDir;
 			// read write (logs, outputs, plugins)
 			fs::path workingDir;
-			std::mutex mutexSystemParams;
+			std::mutex mutex;
 		};
 		systemParameters systemParams;
 

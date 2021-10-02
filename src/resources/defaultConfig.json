@@ -21,9 +21,7 @@
     },
     "output": {
         "type": "local",
-        "local": {
-            "dir": ""
-        }
+        "dir": ""
     },
     "plugin": {
         "dir": "",

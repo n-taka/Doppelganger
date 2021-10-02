@@ -54,7 +54,7 @@ namespace Doppelganger
 			tmp << UUID;
 			const std::string timestampAndUUID = tmp.str();
 
-			outputDir = core->config.at("output").at("local").at("dir").get<std::string>();
+			outputDir = core->config.at("output").at("dir").get<std::string>();
 			outputDir.append(timestampAndUUID);
 			outputDir.make_preferred();
 			fs::create_directories(outputDir);
@@ -63,13 +63,13 @@ namespace Doppelganger
 
 	void Room::joinWS(const std::shared_ptr<WebsocketSession> &session)
 	{
-		std::lock_guard<std::mutex> lock(serverParams.mutexServerParams);
+		std::lock_guard<std::mutex> lock(serverParams.mutex);
 		serverParams.websocketSessions[session->UUID] = session;
 	}
 
 	void Room::leaveWS(const std::string &sessionUUID)
 	{
-		std::lock_guard<std::mutex> lock(serverParams.mutexServerParams);
+		std::lock_guard<std::mutex> lock(serverParams.mutex);
 		serverParams.websocketSessions.erase(sessionUUID);
 		// todo
 		// update cursors
@@ -77,7 +77,7 @@ namespace Doppelganger
 
 	void Room::broadcastWS(const std::string &APIName, const std::string &sourceUUID, const nlohmann::json &broadcast, const nlohmann::json &response)
 	{
-		std::lock_guard<std::mutex> lock(serverParams.mutexServerParams);
+		std::lock_guard<std::mutex> lock(serverParams.mutex);
 		nlohmann::json broadcastJson = nlohmann::json::object();
 		nlohmann::json responseJson = nlohmann::json::object();
 		if (!broadcast.empty())

@@ -44,7 +44,7 @@ namespace Doppelganger
 		struct serverParameters
 		{
 			std::unordered_map<std::string, std::shared_ptr<WebsocketSession>> websocketSessions;
-			std::mutex mutexServerParams;
+			std::mutex mutex;
 		};
 		serverParameters serverParams;
 		void joinWS(const std::shared_ptr<WebsocketSession> &session);
@@ -69,7 +69,7 @@ namespace Doppelganger
 			std::unordered_map<std::string, cursorInfo> cursors;
 			// loading state
 			std::unordered_set<std::string> taskUUIDInProgress;
-			std::mutex mutexInterfaceParams;
+			std::mutex mutex;
 		};
 		interfaceParameters interfaceParams;
 

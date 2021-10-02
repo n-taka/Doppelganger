@@ -336,7 +336,7 @@ namespace
 						{
 							std::string taskUUID;
 							{
-								std::lock_guard<std::mutex> lock(room->interfaceParams.mutexInterfaceParams);
+								std::lock_guard<std::mutex> lock(room->interfaceParams.mutex);
 								taskUUID = Doppelganger::Util::uuid("task-");
 								room->interfaceParams.taskUUIDInProgress.insert(taskUUID);
 
@@ -373,7 +373,7 @@ namespace
 							APIFunc(room, parameters.at("parameters"), response, broadcast);
 
 							{
-								std::lock_guard<std::mutex> lock(room->interfaceParams.mutexInterfaceParams);
+								std::lock_guard<std::mutex> lock(room->interfaceParams.mutex);
 								room->interfaceParams.taskUUIDInProgress.erase(taskUUID);
 
 								nlohmann::json broadcast = nlohmann::json::object();
