@@ -101,7 +101,7 @@ const generateUI = async function () {
             });
             a.setAttribute("class", "tooltipped");
             a.setAttribute("data-position", "top");
-            a.setAttribute("data-tooltip", getText(text, "Save All"));
+            a.setAttribute("data-tooltip", getText(text, "Save screenshot"));
             {
                 const i = document.createElement("i");
                 i.innerText = "photo_camera";
