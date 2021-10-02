@@ -32,16 +32,9 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 	response = nlohmann::json::object();
 	broadcast = nlohmann::json::object();
 
-	// we remove log directory (graceful shutdown)
-	if (room->core->config.contains("output"))
-	{
-		const nlohmann::json &outputJson = room->core->config.at("output");
-		if (outputJson.contains("type") && outputJson.at("type").get<std::string>() == "local")
-		{
-			const nlohmann::json &outputLocalJson = outputJson.at("local");
-			fs::remove_all(outputLocalJson.at("dir").get<std::string>());
-		}
-	}
+	// we remove logs directory (graceful shutdown)
+	//   by removing this directory, we can easily erase log by core and all rooms
+	fs::remove_all(room->core->config.at("log").at("dir").get<std::string>());
 
 	// graceful shutdown
 	room->core->ioc.stop();
