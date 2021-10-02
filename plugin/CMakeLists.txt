@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 3.15)
 set(PROJECT DoppelgangerPlugin)
 project(${PROJECT})
 
+# debug
+# add_subdirectory(configEditor)
+
 # top menu
 add_subdirectory(loadPolygonMesh)
 add_subdirectory(loadCADData)
@@ -28,6 +31,7 @@ add_subdirectory(removeAllMeshes)
 add_subdirectory(saveAllMeshes)
 add_subdirectory(saveScreenshotAll)
 add_subdirectory(toggleAxesVisibility)
+add_subdirectory(configEditor)
 add_subdirectory(listPlugins)
 add_subdirectory(shutdown)
 # others
