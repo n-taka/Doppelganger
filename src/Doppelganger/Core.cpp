@@ -162,13 +162,19 @@ namespace Doppelganger
 				const nlohmann::json installedPluginJson = nlohmann::json::parse(ifs);
 				ifs.close();
 
-				for (const auto &pluginToBeInstalled : installedPluginJson.items())
-				{
-					const std::string &name = pluginToBeInstalled.key();
-					const nlohmann::json &pluginInfo = pluginToBeInstalled.value();
-					const std::string &version = pluginInfo.at("version").get<std::string>();
+				// we erase previous installed plugin array.
+				// following Doppelganger::Plugin::install updates intalled.json
+				const nlohmann::json emptyArray = nlohmann::json::array();
+				std::ofstream ofs(installedPluginJsonPath);
+				ofs << emptyArray.dump(4);
+				ofs.close();
 
-					if (plugin.find(name) != plugin.end())
+				for (const auto &pluginToBeInstalled : installedPluginJson)
+				{
+					const std::string &name = pluginToBeInstalled.at("name").get<std::string>();
+					const std::string &version = pluginToBeInstalled.at("version").get<std::string>();
+
+					if (plugin.find(name) != plugin.end() && version.size() > 0)
 					{
 						plugin.at(name)->install(version);
 					}
@@ -187,9 +193,9 @@ namespace Doppelganger
 			}
 			else
 			{
-				const nlohmann::json emptyObject = nlohmann::json::object();
+				const nlohmann::json emptyArray = nlohmann::json::array();
 				std::ofstream ofs(installedPluginJsonPath);
-				ofs << emptyObject.dump(4);
+				ofs << emptyArray.dump(4);
 				ofs.close();
 			}
 

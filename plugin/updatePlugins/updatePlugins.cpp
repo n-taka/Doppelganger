@@ -22,11 +22,17 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 {
 	////
 	// [IN]
-	// parameters = {
-	//  "pluginNameA": "new version",
-	//  "pluginNameB": "new version",
+	// parameters = [
+	//  {
+	//   "name": "pluginName-A",
+	//   "version": "new version"
+	//  },
+	//  {
+	//   "name": "pluginName-B",
+	//   "version": "" (empty string indicates this plugin is not installed)
+	//  },
 	//  ...
-	// }
+	// ]
 
 	// [OUT]
 	// response = {
@@ -41,70 +47,57 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 	// this plugin updates installed.json
 	// actual update is performed on the next boot
 
-	fs::path installedPluginJsonPath(room->core->config.at("plugin").at("dir").get<std::string>());
-	installedPluginJsonPath.append("installed.json");
-	if (fs::exists(installedPluginJsonPath))
+	// validate the parameters
+	nlohmann::json installedArray = nlohmann::json::array();
+	for (const auto &entry : parameters)
 	{
-		// read current installed.json
-		std::ifstream ifs(installedPluginJsonPath);
-		nlohmann::json installedPluginJson = nlohmann::json::parse(ifs);
-		ifs.close();
+		const std::string &name = entry.at("name").get<std::string>();
+		const std::string &version = entry.at("version").get<std::string>();
 
-		const std::unordered_map<std::string, std::shared_ptr<Doppelganger::Plugin>> &plugins = room->core->plugin;
-		for (const auto &pluginToBeUpdated : parameters.items())
+		if (room->core->plugin.find(name) != room->core->plugin.end())
 		{
-			const std::string &name = pluginToBeUpdated.key();
-			const std::string &newVersion = pluginToBeUpdated.value().get<std::string>();
-			std::string versionToBeInstall = newVersion;
-			if (plugins.find(name) != plugins.end())
+			const std::shared_ptr<Doppelganger::Plugin> &plugin = room->core->plugin.at(name);
+			if (version.size() > 0)
 			{
-				installedPluginJson.erase(name);
-				if (newVersion != "Uninstall")
+				const nlohmann::json &pluginParameters = plugin->parameters;
+				std::string versionToBeInstall = version;
+				if (version == "latest")
 				{
-					const std::shared_ptr<Doppelganger::Plugin> &pluginPtr = plugins.at(name);
-					const nlohmann::json &pluginParameters = pluginPtr->parameters;
-					if (versionToBeInstall == "latest")
-					{
-						versionToBeInstall = pluginParameters.at("latest").get<std::string>();
-					}
-					if (pluginParameters.at("versions").contains(versionToBeInstall))
-					{
-						nlohmann::json pluginJson = nlohmann::json::object();
-						pluginJson["version"] = newVersion;
-						installedPluginJson[name] = pluginJson;
-					}
-					else
-					{
-						std::stringstream ss;
-						ss << "Plugin \"";
-						ss << name;
-						ss << "\" invalid version \"";
-						ss << newVersion;
-						ss << "\" is specified.";
-						room->core->logger.log(ss.str(), "ERROR");
-					}
+					versionToBeInstall = pluginParameters.at("latest").get<std::string>();
+				}
+				if (pluginParameters.at("versions").contains(versionToBeInstall))
+				{
+					installedArray.push_back(entry);
+				}
+				else
+				{
+					std::stringstream ss;
+					ss << "Plugin \"";
+					ss << name;
+					ss << "\" invalid version \"";
+					ss << version;
+					ss << "\" is specified.";
+					room->core->logger.log(ss.str(), "ERROR");
 				}
 			}
-			else
-			{
-				std::stringstream ss;
-				ss << "Unknown plugin \"";
-				ss << name;
-				ss << "\" is specified.";
-				room->core->logger.log(ss.str(), "ERROR");
-			}
 		}
-		// write to file
-		std::ofstream ofs(installedPluginJsonPath);
-		ofs << installedPluginJson.dump(4);
-		ofs.close();
+		else
+		{
+			std::stringstream ss;
+			ss << "Unknown plugin \"";
+			ss << name;
+			ss << "\" is specified.";
+			room->core->logger.log(ss.str(), "ERROR");
+		}
 	}
-	else
-	{
-		std::stringstream ss;
-		ss << "\"installed.json\" is not found.";
-		room->core->logger.log(ss.str(), "ERROR");
-	}
+
+	fs::path installedPluginJsonPath(room->core->config.at("plugin").at("dir").get<std::string>());
+	installedPluginJsonPath.append("installed.json");
+
+	// write to file
+	std::ofstream ofs(installedPluginJsonPath);
+	ofs << installedArray.dump(4);
+	ofs.close();
 }
 
 #endif

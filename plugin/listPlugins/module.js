@@ -17,8 +17,6 @@ const text = {
     "Don't install": { "en": "Don't install", "ja": "インストールしない" }
 };
 
-const update = {};
-
 const generateUI = async function () {
     ////
     // modal
@@ -48,7 +46,7 @@ const generateUI = async function () {
                             thName.setAttribute("style", "width: 15%;");
                             {
                                 const spanName = document.createElement("span");
-                                spanName.setAttribute("class", "truncate");
+                                spanName.setAttribute("class", "center-align truncate");
                                 spanName.innerText = getText(text, "Name");
                                 thName.appendChild(spanName);
                             }
@@ -59,7 +57,7 @@ const generateUI = async function () {
                             thCurrent.setAttribute("style", "width: 15%;");
                             {
                                 const spanCurrent = document.createElement("span");
-                                spanCurrent.setAttribute("class", "truncate");
+                                spanCurrent.setAttribute("class", "center-align truncate");
                                 spanCurrent.innerText = getText(text, "Current");
                                 thCurrent.appendChild(spanCurrent);
                             }
@@ -70,7 +68,7 @@ const generateUI = async function () {
                             thAction.setAttribute("style", "width: 20%;");
                             {
                                 const spanAction = document.createElement("span");
-                                spanAction.setAttribute("class", "truncate");
+                                spanAction.setAttribute("class", "center-align truncate");
                                 spanAction.innerText = getText(text, "Change to...");
                                 thAction.appendChild(spanAction);
                             }
@@ -78,14 +76,28 @@ const generateUI = async function () {
                         }
                         {
                             const thDescription = document.createElement("th");
-                            thDescription.setAttribute("style", "width: 50%;");
+                            thDescription.setAttribute("style", "width: 40%;");
                             {
                                 const spanDescription = document.createElement("span");
-                                spanDescription.setAttribute("class", "truncate");
+                                spanDescription.setAttribute("class", "center-align truncate");
                                 spanDescription.innerText = getText(text, "Description");
                                 thDescription.appendChild(spanDescription);
                             }
                             tr.appendChild(thDescription);
+                        }
+                        {
+                            const thBlank = document.createElement("th");
+                            thBlank.setAttribute("style", "width: 5%;");
+                            {
+                            }
+                            tr.appendChild(thBlank);
+                        }
+                        {
+                            const thBlank = document.createElement("th");
+                            thBlank.setAttribute("style", "width: 5%;");
+                            {
+                            }
+                            tr.appendChild(thBlank);
                         }
                         thead.appendChild(tr);
                     }
@@ -95,17 +107,17 @@ const generateUI = async function () {
                     const tbody = document.createElement("tbody");
                     {
                         // see: https://materializecss.com/table.html
-                        // see: https://materializecss.com/dropdown.html#!
+                        //      https://materializecss.github.io/materialize/select.html
+                        // because we modify the content, we perform deep-copy here
                         const pluginList = JSON.parse(JSON.stringify(Plugin.pluginList));
-                        for (let name in pluginList) {
-                            const plugin = pluginList[name];
+                        for (let plugin of pluginList) {
                             const tr = document.createElement("tr");
                             {
                                 const tdName = document.createElement("td");
                                 {
                                     const spanName = document.createElement("span");
-                                    spanName.setAttribute("class", "truncate");
-                                    spanName.innerText = name;
+                                    spanName.setAttribute("class", "center-align truncate");
+                                    spanName.innerText = plugin["name"];
                                     tdName.appendChild(spanName);
                                 }
                                 tr.appendChild(tdName);
@@ -114,7 +126,7 @@ const generateUI = async function () {
                                 const tdCurrent = document.createElement("td");
                                 {
                                     const spanCurrent = document.createElement("span");
-                                    spanCurrent.setAttribute("class", "truncate");
+                                    spanCurrent.setAttribute("class", "center-align truncate");
                                     spanCurrent.innerText = plugin["installedVersion"];
                                     tdCurrent.appendChild(spanCurrent);
                                 }
@@ -122,54 +134,25 @@ const generateUI = async function () {
                             }
                             {
                                 const tdVersion = document.createElement("td");
-                                // text of the dropdownA need to be accessible from dropdown elements
-                                const dropdownSpan = document.createElement("span");
-                                {
-                                    const dropdownA = document.createElement("a");
-                                    dropdownA.setAttribute("class", "dropdown-trigger btn-flat");
-                                    dropdownA.setAttribute("style", "width: 100%; text-transform: none; text-overflow: ellipsis;");
-                                    dropdownA.setAttribute("href", "#");
-                                    dropdownA.setAttribute("data-target", "versionDropdown" + name);
-                                    {
-                                        const dropdownI = document.createElement("i");
-                                        dropdownI.setAttribute("class", "material-icons right");
-                                        dropdownI.innerText = "arrow_drop_down";
-                                        dropdownA.appendChild(dropdownI);
-                                    }
-                                    {
-                                        dropdownSpan.setAttribute("class", "truncate");
-                                        dropdownSpan.setAttribute("style", "width: calc(100% - 40px);");
-                                        dropdownSpan.innerText = (plugin["installedVersion"].length > 0) ? plugin["installedVersion"] : getText(text, "Don't install");
-                                        dropdownA.appendChild(dropdownSpan);
-                                    }
-                                    tdVersion.appendChild(dropdownA);
+
+                                // we add special entry "uninstall" or "Don't install" if we already installed this plugin
+                                if (plugin["optional"]) {
+                                    plugin["versions"].push("");
                                 }
                                 {
-                                    const dropdownUl = document.createElement("ul");
-                                    dropdownUl.setAttribute("id", "versionDropdown" + name);
-                                    dropdownUl.setAttribute("class", "dropdown-content");
-                                    // we add special entry "uninstall" or "Don't install" if we already installed this plugin
-                                    if (plugin["optional"]) {
-                                        plugin["versions"].push((plugin["installedVersion"].length > 0) ? "Uninstall" : "Don't install");
-                                    }
+                                    const select = document.createElement('select');
+                                    select.setAttribute("data-plugin-name", plugin["name"]);
+
                                     for (let version of plugin["versions"]) {
-                                        const versionLi = document.createElement("li");
-                                        {
-                                            const versionA = document.createElement("a");
-                                            versionA.setAttribute("href", "#!");
-                                            versionA.innerText = (version == "Uninstall" || version == "Don't install") ? getText(text, version) : version;
-                                            versionA.addEventListener("click", function () {
-                                                dropdownSpan.innerText = (version == "Uninstall" || version == "Don't install") ? getText(text, version) : version;
-                                                delete update[name];
-                                                if (plugin["installedVersion"] != version && version != "Don't install") {
-                                                    update[name] = version;
-                                                }
-                                            });
-                                            versionLi.appendChild(versionA);
+                                        const option = document.createElement('option');
+                                        option.setAttribute('value', version);
+                                        if ((plugin["installedVersion"].length > 0) ? (version == plugin["installedVersion"]) : (version == "")) {
+                                            option.setAttribute('selected', "");
                                         }
-                                        dropdownUl.appendChild(versionLi);
+                                        option.innerText = ((version == "") ? getText(text, ((plugin["installedVersion"].length > 0) ? "Uninstall" : "Don't install")) : version);
+                                        select.appendChild(option);
                                     }
-                                    tdVersion.appendChild(dropdownUl);
+                                    tdVersion.appendChild(select);
                                 }
                                 tr.appendChild(tdVersion);
                             }
@@ -181,6 +164,46 @@ const generateUI = async function () {
                                     tdDescription.innerText = plugin["description"]["en"];
                                 }
                                 tr.appendChild(tdDescription);
+                            }
+                            {
+                                const tdUp = document.createElement("td");
+                                {
+                                    const a = document.createElement("a");
+                                    a.addEventListener('click', function () {
+                                        const prevTr = tr.previousElementSibling;
+                                        if(prevTr){
+                                            tbody.insertBefore(tr, prevTr);
+                                        }
+                                    });
+                                    {
+                                        const i = document.createElement("i");
+                                        i.innerText = "arrow_upward";
+                                        i.setAttribute("class", "material-icons");
+                                        a.appendChild(i);
+                                    }
+                                    tdUp.appendChild(a);
+                                }
+                                tr.appendChild(tdUp);
+                            }
+                            {
+                                const tdDown = document.createElement("td");
+                                {
+                                    const a = document.createElement("a");
+                                    a.addEventListener('click', function () {
+                                        const nextTr = tr.nextElementSibling;
+                                        if(nextTr){
+                                            tbody.insertBefore(tr, nextTr.nextElementSibling);
+                                        }
+                                    });
+                                    {
+                                        const i = document.createElement("i");
+                                        i.innerText = "arrow_downward";
+                                        i.setAttribute("class", "material-icons");
+                                        a.appendChild(i);
+                                    }
+                                    tdDown.appendChild(a);
+                                }
+                                tr.appendChild(tdDown);
                             }
                             tbody.appendChild(tr);
                         }
@@ -201,6 +224,16 @@ const generateUI = async function () {
                 modalFooterApplyA.setAttribute("href", "#!");
                 modalFooterApplyA.innerHTML = getText(text, "Apply & Shutdown");
                 modalFooterApplyA.addEventListener("click", async function () {
+                    const update = [];
+                    // iterate over table and construct update
+                    const selectElems = modal.querySelectorAll('select');
+                    for (let selectElem of selectElems) {
+                        const instance = M.FormSelect.getInstance(selectElem);
+                        const json = {};
+                        json["name"] = selectElem.getAttribute("data-plugin-name");;
+                        json["version"] = instance.getSelectedValues()[0];
+                        update.push(json);
+                    }
                     await request("updatePlugins", update);
                     await request("shutdown", {});
                 });

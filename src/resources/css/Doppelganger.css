@@ -24,6 +24,14 @@ body {
     display: none;
 }
 
+.select-dropdown{
+    text-align: center;
+    text-overflow: ellipsis;
+}
+ul.select-dropdown > li {
+    text-align: center;
+}
+
 .taskState{
     position: absolute;
     left: 0; top: 0;

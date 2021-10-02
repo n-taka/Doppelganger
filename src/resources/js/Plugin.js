@@ -11,11 +11,10 @@ Plugin.loadPlugin = async function (name, version) {
 
 Plugin.init = async function () {
     Plugin.pluginList = JSON.parse(await request("listPlugins", {}));
-    for (let name in Plugin.pluginList) {
-        const plugin = Plugin.pluginList[name];
+    for (let plugin of Plugin.pluginList) {
         if (plugin["installedVersion"].length > 0 && plugin["hasModuleJS"]) {
             // we explicitly load plugin sequentially
-            await Plugin.loadPlugin(name, plugin["installedVersion"] == "latest" ? plugin["latest"] : plugin["installedVersion"]);
+            await Plugin.loadPlugin(plugin["name"], plugin["installedVersion"] == "latest" ? plugin["latest"] : plugin["installedVersion"]);
         }
     }
 
@@ -26,5 +25,7 @@ Plugin.init = async function () {
     M.Dropdown.init(dropdown_elems, {});
     const tooltip_elems = document.querySelectorAll('.tooltipped');
     M.Tooltip.init(tooltip_elems, {});
+    const select_elems = document.querySelectorAll('select');
+    M.FormSelect.init(select_elems, {});
     M.updateTextFields();
 };

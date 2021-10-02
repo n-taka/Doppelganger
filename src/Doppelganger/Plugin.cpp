@@ -197,8 +197,9 @@ namespace Doppelganger
 			ifs.close();
 
 			nlohmann::json pluginInfo = nlohmann::json::object();
+			pluginInfo["name"] = name;
 			pluginInfo["version"] = installedVersion;
-			installedPluginJson[name] = pluginInfo;
+			installedPluginJson.push_back(pluginInfo);
 
 			std::ofstream ofs(installedPluginJsonPath);
 			ofs << installedPluginJson.dump(4);
