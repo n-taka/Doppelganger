@@ -110,18 +110,25 @@ namespace Doppelganger
 				// This buffer is used for reading and must be persisted
 				beast::flat_buffer buffer;
 
-				// Declare a container to hold the response
-				http::response<http::dynamic_body> res;
+				// https://github.com/boostorg/beast/issues/1588
+				// https://stackoverflow.com/questions/50348516/boost-beast-message-with-body-limit
+				// // Declare a container to hold the response
+				// http::response<http::dynamic_body> res;
+				// // Receive the HTTP response
+				// http::read(stream, buffer, res);
+				// std::ofstream destFile(destPath, std::ios::binary);
+				// const std::string content = boost::beast::buffers_to_string(res.body().data());
+				// destFile.write(content.c_str(), content.size());
+				// destFile.close();
 
-				// Receive the HTTP response
-				http::read(stream, buffer, res);
-
-				// Write the message to standard out
-				// std::cout << res << std::endl;
+				http::response_parser<http::dynamic_body> parser;
+				// Allow for an unlimited body size
+				parser.body_limit((std::numeric_limits<std::uint64_t>::max)());
+				http::read(stream, buffer, parser);
 
 				// write to file
 				std::ofstream destFile(destPath, std::ios::binary);
-				const std::string content = boost::beast::buffers_to_string(res.body().data());
+				const std::string content = boost::beast::buffers_to_string(parser.get().body().data());
 				destFile.write(content.c_str(), content.size());
 				destFile.close();
 
