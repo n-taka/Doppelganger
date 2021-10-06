@@ -116,8 +116,7 @@ const generateUI = async function () {
                                     const input = document.createElement('input');
                                     input.setAttribute('type', 'number');
                                     input.setAttribute('id', 'port');
-                                    input.setAttribute('value', (configJson["server"] && configJson["server"]["port"]) ? configJson["server"]["port"] : 0);
-                                    input.setAttribute('value', 0);
+                                    input.setAttribute('value', (configJson["server"] && configJson["server"]["port"]) ? configJson["server"]["port"] : '0');
                                     input.setAttribute('class', 'validate');
                                     input.setAttribute('min', '0');
                                     input.setAttribute('max', '65535');
