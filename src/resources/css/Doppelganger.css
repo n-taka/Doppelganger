@@ -55,3 +55,8 @@ ul.select-dropdown > li {
     background: rgba(100, 100, 100, .8);
     z-index: 2147483646;
 }
+
+.collection .collection-item.avatar i.circle {
+    font-size: 36px;
+    background: rgba(255, 255, 255, 1);
+}

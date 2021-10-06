@@ -121,7 +121,7 @@ export const constructMeshLiFromJson = async function (json) {
         iIcon.setAttribute("class", "material-icons circle lighten-2");
         iIcon.setAttribute("style", "user-select: none;");
         iIcon.innerText = "";
-        // iIcon.setAttribute("id", "icon_" + json["UUID"]);
+        iIcon.setAttribute("id", "icon_" + json["UUID"]);
         liRoot.appendChild(iIcon);
     }
     {
