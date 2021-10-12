@@ -1,12 +1,26 @@
 {
+    "configEditor": {
+        "description": {
+            "en": "Edit config file.",
+            "ja": "設定ファイルを編集します。"
+        },
+        "optional": false,
+        "UIPosition": "bottomRight",
+        "latest": "1.0.0",
+        "versions": {
+            "1.0.0": "https://n-taka.info/nextcloud/s/FyToz3HeiWL7t7a/download/configEditor.zip"
+        }
+    },
     "listPlugins": {
         "description": {
             "en": "List all available plugins.",
             "ja": "利用できるプラグインをリストアップします。"
         },
         "optional": false,
-        "latest": "1.0.0",
+        "UIPosition": "bottomRight",
+        "latest": "1.1.0",
         "versions": {
+            "1.1.0": "https://n-taka.info/nextcloud/s/R7rpYE29MPXTW2X/download/listPlugins.zip",
             "1.0.0": "https://n-taka.info/nextcloud/s/Ldx79s2j6n9aCRF/download/listPlugins.zip"
         }
     },
@@ -16,6 +30,7 @@
             "ja": "プラグインの更新を行います。"
         },
         "optional": false,
+        "UIPosition": "none",
         "latest": "1.0.0",
         "versions": {
             "1.0.0": "https://n-taka.info/nextcloud/s/etJPfQXmTjZ688f/download/updatePlugins.zip"
@@ -27,6 +42,7 @@
             "ja": "正常終了を行います。"
         },
         "optional": false,
+        "UIPosition": "bottomRight",
         "latest": "1.0.0",
         "versions": {
             "1.0.0": "https://n-taka.info/nextcloud/s/HCp8KfKjxiwTtxP/download/shutdown.zip"
@@ -38,6 +54,7 @@
             "ja": "接続時にすでに読み込まれているメッシュを取得します。"
         },
         "optional": false,
+        "UIPosition": "none",
         "latest": "1.0.0",
         "versions": {
             "1.0.0": "https://n-taka.info/nextcloud/s/4QbxA9tHmi534sm/download/pullCurrentMeshes.zip"
@@ -49,6 +66,7 @@
             "ja": "接続時にカメラのパラメタを取得します。"
         },
         "optional": false,
+        "UIPosition": "none",
         "latest": "1.0.0",
         "versions": {
             "1.0.0": "https://n-taka.info/nextcloud/s/KRiFNweA4Pa7DsA/download/pullCanvasParameters.zip"
@@ -60,6 +78,7 @@
             "ja": "全クライアント間でカメラのパラメタを共有します。"
         },
         "optional": false,
+        "UIPosition": "none",
         "latest": "1.0.0",
         "versions": {
             "1.0.0": "https://n-taka.info/nextcloud/s/aoGtEY3kwBWBXkx/download/pushCanvasParameters.zip"
@@ -71,6 +90,7 @@
             "ja": "名前もしくはポリゴン数でメッシュをソートします。"
         },
         "optional": false,
+        "UIPosition": "topRight",
         "latest": "1.0.0",
         "versions": {
             "1.0.0": "https://n-taka.info/nextcloud/s/GyXLdxHrkaM2L8Y/download/sortMeshes.zip"
@@ -82,6 +102,7 @@
             "ja": "全クライアント間でカーソル位置を共有します。"
         },
         "optional": false,
+        "UIPosition": "none",
         "latest": "1.0.0",
         "versions": {
             "1.0.0": "https://n-taka.info/nextcloud/s/99k4ZX9tLoPMWZ3/download/syncCursor.zip"
@@ -93,6 +114,7 @@
             "ja": "ポリゴンメッシュを読み込みます(OBJ, PLY, STL, VRML)。"
         },
         "optional": true,
+        "UIPosition": "topLeft",
         "latest": "1.0.0",
         "versions": {
             "1.0.0": "https://n-taka.info/nextcloud/s/stKP6LGJ77yYq7Z/download/loadPolygonMesh.zip"
@@ -104,6 +126,7 @@
             "ja": "CADデータを読み込みます(iges, step)。"
         },
         "optional": true,
+        "UIPosition": "topLeft",
         "latest": "1.0.0",
         "versions": {
             "1.0.0": "https://n-taka.info/nextcloud/s/PHdXCzpntpJiJeP/download/loadCADData.zip"
@@ -115,6 +138,7 @@
             "ja": "テクスチャを読み込みます。"
         },
         "optional": true,
+        "UIPosition": "mesh",
         "latest": "1.0.0",
         "versions": {
             "1.0.0": "https://n-taka.info/nextcloud/s/72HstHweFMrAHLb/download/loadTexture.zip"
@@ -126,6 +150,7 @@
             "ja": "メッシュの表示/非表示を切り替えます。"
         },
         "optional": true,
+        "UIPosition": "mesh",
         "latest": "1.0.0",
         "versions": {
             "1.0.0": "https://n-taka.info/nextcloud/s/wRmZk7gaqBPnJbL/download/toggleMeshVisibility.zip"
@@ -137,8 +162,10 @@
             "ja": "メッシュのエラーを表示します (穴など)。"
         },
         "optional": true,
-        "latest": "1.0.0",
+        "UIPosition": "mesh",
+        "latest": "1.1.0",
         "versions": {
+            "1.1.0": "https://n-taka.info/nextcloud/s/fNEBGCTaqo6NBo3/download/meshErrorInfo.zip",
             "1.0.0": "https://n-taka.info/nextcloud/s/86n7e6Wmy6Pj6aE/download/meshErrorInfo.zip"
         }
     },
@@ -148,6 +175,7 @@
             "ja": "メッシュを中空にします。"
         },
         "optional": true,
+        "UIPosition": "mesh",
         "latest": "1.0.0",
         "versions": {
             "1.0.0": "https://n-taka.info/nextcloud/s/6gBdtpTLqLiSLBL/download/hollowMesh.zip"
@@ -159,6 +187,7 @@
             "ja": "メッシュをアイランド単位に分離します。"
         },
         "optional": true,
+        "UIPosition": "mesh",
         "latest": "1.0.0",
         "versions": {
             "1.0.0": "https://n-taka.info/nextcloud/s/ctHpiH9KRKWSPA3/download/splitIntoIslands.zip"
@@ -170,9 +199,10 @@
             "ja": "単一のメッシュのエラーを修正します。"
         },
         "optional": true,
-        "latest": "MeshFix",
+        "UIPosition": "mesh",
+        "latest": "1.0.0.MeshFix",
         "versions": {
-            "MeshFix": "https://n-taka.info/nextcloud/s/CYxYHSmmqp6W9sG/download/repairMesh.zip"
+            "1.0.0.MeshFix": "https://n-taka.info/nextcloud/s/CYxYHSmmqp6W9sG/download/repairMesh.zip"
         }
     },
     "repairAllMeshes": {
@@ -181,9 +211,10 @@
             "ja": "すべてのメッシュのエラーを修正します。"
         },
         "optional": true,
-        "latest": "MeshFix",
+        "UIPosition": "bottomLeft",
+        "latest": "1.0.0.MeshFix",
         "versions": {
-            "MeshFix": "https://n-taka.info/nextcloud/s/mxZcjG83fXJciYf/download/repairAllMeshes.zip"
+            "1.0.0.MeshFix": "https://n-taka.info/nextcloud/s/mxZcjG83fXJciYf/download/repairAllMeshes.zip"
         }
     },
     "saveMesh": {
@@ -192,6 +223,7 @@
             "ja": "単一のメッシュを保存します。"
         },
         "optional": true,
+        "UIPosition": "mesh",
         "latest": "1.0.0",
         "versions": {
             "1.0.0": "https://n-taka.info/nextcloud/s/yk7ayTgdC5RnxnH/download/saveMesh.zip"
@@ -203,6 +235,7 @@
             "ja": "すべてのメッシュを保存します。"
         },
         "optional": true,
+        "UIPosition": "bottomLeft",
         "latest": "1.0.0",
         "versions": {
             "1.0.0": "https://n-taka.info/nextcloud/s/PW6i5MSabPoZPxP/download/saveAllMeshes.zip"
@@ -214,6 +247,7 @@
             "ja": "メッシュを一つ削除します。"
         },
         "optional": true,
+        "UIPosition": "mesh",
         "latest": "1.0.0",
         "versions": {
             "1.0.0": "https://n-taka.info/nextcloud/s/TCEeYC4TtJjFNH3/download/removeMesh.zip"
@@ -225,6 +259,7 @@
             "ja": "すべてのメッシュを削除します。"
         },
         "optional": true,
+        "UIPosition": "bottomLeft",
         "latest": "1.0.0",
         "versions": {
             "1.0.0": "https://n-taka.info/nextcloud/s/qmDMLMgD2acnZtB/download/removeAllMeshes.zip"
@@ -236,6 +271,7 @@
             "ja": "Undo機能です。"
         },
         "optional": true,
+        "UIPosition": "topRight",
         "latest": "1.0.0",
         "versions": {
             "1.0.0": "https://n-taka.info/nextcloud/s/wpcmwk9bbi3NJRg/download/undo.zip"
@@ -247,6 +283,7 @@
             "ja": "Redo機能です。"
         },
         "optional": true,
+        "UIPosition": "topRight",
         "latest": "1.0.0",
         "versions": {
             "1.0.0": "https://n-taka.info/nextcloud/s/cD59sJH3syfX4yK/download/redo.zip"
@@ -258,6 +295,7 @@
             "ja": "メッシュの情報を表示します (サイズなど)。"
         },
         "optional": true,
+        "UIPosition": "mesh",
         "latest": "1.0.0",
         "versions": {
             "1.0.0": "https://n-taka.info/nextcloud/s/Qgw28bPWXRTSSkk/download/meshInfo.zip"
@@ -269,6 +307,7 @@
             "ja": "読み込まれたメッシュの情報を表示します (サイズなど)。"
         },
         "optional": true,
+        "UIPosition": "bottomInfo",
         "latest": "1.0.0",
         "versions": {
             "1.0.0": "https://n-taka.info/nextcloud/s/t5Tfs45aBszGkj7/download/allMeshesInfo.zip"
@@ -280,6 +319,7 @@
             "ja": "メッシュをクリック時に輪郭線を表示します。"
         },
         "optional": true,
+        "UIPosition": "none",
         "latest": "1.0.0",
         "versions": {
             "1.0.0": "https://n-taka.info/nextcloud/s/XDgAsqbk7zxGHTj/download/outlineOnClick.zip"
@@ -291,6 +331,7 @@
             "ja": "単一メッシュの画像を保存します。"
         },
         "optional": true,
+        "UIPosition": "mesh",
         "latest": "1.0.0",
         "versions": {
             "1.0.0": "https://n-taka.info/nextcloud/s/HdpBeNzZkrasaAT/download/saveScreenshot.zip"
@@ -302,8 +343,10 @@
             "ja": "現在のビューの画像を保存します。"
         },
         "optional": true,
-        "latest": "1.0.0",
+        "UIPosition": "bottomLeft",
+        "latest": "1.1.0",
         "versions": {
+            "1.1.0": "https://n-taka.info/nextcloud/s/Ee92EPHSySKHDyD/download/saveScreenshotAll.zip",
             "1.0.0": "https://n-taka.info/nextcloud/s/tsw7K3M9DBFySDZ/download/saveScreenshotAll.zip"
         }
     },
@@ -313,6 +356,7 @@
             "ja": "ビュー上のXYZ座標軸の表示/表示を切り替えます。"
         },
         "optional": true,
+        "UIPosition": "bottomLeft",
         "latest": "1.0.0",
         "versions": {
             "1.0.0": "https://n-taka.info/nextcloud/s/LnqwGpJeQ4eDLR3/download/toggleAxesVisibility.zip"
@@ -324,6 +368,7 @@
             "ja": "表示状態のメッシュがビュー全体に一致するようにカメラをリセットします。"
         },
         "optional": true,
+        "UIPosition": "none",
         "latest": "1.0.0",
         "versions": {
             "1.0.0": "https://n-taka.info/nextcloud/s/mHg9KPqDsJJaCjn/download/fitToFrame.zip"
@@ -335,6 +380,7 @@
             "ja": "座標軸に沿ったビューになるようにカメラをリセットします。"
         },
         "optional": true,
+        "UIPosition": "none",
         "latest": "1.0.0",
         "versions": {
             "1.0.0": "https://n-taka.info/nextcloud/s/qjza8qYFyDYd3Db/download/alignCamera.zip"
