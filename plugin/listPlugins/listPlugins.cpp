@@ -36,6 +36,7 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 	//    "ja": "description text for this plugin in ja",
 	//    ...
 	//   },
+	//   "UIPosition": "topLeft"|"topRight"|"mesh"|"bottomSummary"|"bottomLeft"|"bottomRight",
 	//   "optional": true|false,
 	//   "hasModuleJS": true|false
 	//  },
@@ -49,6 +50,7 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 	//    "ja": "description text for this plugin in ja",
 	//    ...
 	//   },
+	//   "UIPosition": "topLeft"|"topRight"|"mesh"|"bottomSummary"|"bottomLeft"|"bottomRight",
 	//   "optional": true|false,
 	//   "hasModuleJS": true|false
 	//  },
@@ -86,6 +88,7 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 		pluginInfo["versions"] = versionList;
 		pluginInfo["latest"] = plugin->parameters.at("latest");
 		pluginInfo["description"] = plugin->parameters.at("description");
+		pluginInfo["UIPosition"] = plugin->parameters.at("UIPosition");
 		pluginInfo["optional"] = plugin->parameters.at("optional");
 		pluginInfo["hasModuleJS"] = plugin->hasModuleJS;
 
@@ -113,6 +116,7 @@ extern "C" DLLEXPORT void pluginProcess(const std::shared_ptr<Doppelganger::Room
 			pluginInfo["versions"] = versionList;
 			pluginInfo["latest"] = plugin->parameters.at("latest");
 			pluginInfo["description"] = plugin->parameters.at("description");
+			pluginInfo["UIPosition"] = plugin->parameters.at("UIPosition");
 			pluginInfo["optional"] = plugin->parameters.at("optional");
 			pluginInfo["hasModuleJS"] = plugin->hasModuleJS;
 
