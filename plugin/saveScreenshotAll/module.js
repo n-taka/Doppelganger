@@ -6,10 +6,9 @@ import { request } from '../../js/request.js';
 const text = {
     "Choose file format to save": { "en": "Choose file format to save", "ja": "保存するフォーマットを選んでください" },
     "Cancel": { "en": "Cancel", "ja": "キャンセル" },
+    "Save a screenshot per mesh.": { "en": "Save a screenshot per mesh.", "ja": "各メッシュについて個別の画像として保存" },
     "Save screenshot": { "en": "Save screenshot", "ja": "スクリーンショットを保存" }
 };
-
-const parameters = {};
 
 ////
 // UI
@@ -43,8 +42,21 @@ const generateUI = async function () {
                             jpegBtn.setAttribute("style", "width: 100%;");
                             jpegBtn.innerText = "JPEG (.jpeg)";
                             jpegBtn.addEventListener('click', function () {
-                                parameters["format"] = "jpeg";
-                                saveScreenshot(parameters);
+                                if (document.getElementById('savePerMesh').checked) {
+                                    // save a screenshot per mesh
+                                    for (let meshUUID of Object.keys(Canvas.UUIDToMesh)) {
+                                        saveScreenshot([meshUUID], "jpeg");
+                                    }
+                                } else {
+                                    // save the current view as-is
+                                    const meshUUIDToBeRendered = [];
+                                    for (let meshUUID of Object.keys(Canvas.UUIDToMesh)) {
+                                        if (Canvas.UUIDToMesh[meshUUID].visible) {
+                                            meshUUIDToBeRendered.push(meshUUID);
+                                        }
+                                        saveScreenshot(meshUUIDToBeRendered, "jpeg");
+                                    }
+                                }
                             });
                             jpegDiv.appendChild(jpegBtn);
                             divRow.appendChild(jpegDiv);
@@ -57,8 +69,21 @@ const generateUI = async function () {
                             pngBtn.setAttribute("style", "width: 100%;");
                             pngBtn.innerText = "PNG (.png)";
                             pngBtn.addEventListener('click', function () {
-                                parameters["format"] = "png";
-                                saveScreenshot(parameters);
+                                if (document.getElementById('savePerMesh').checked) {
+                                    // save a screenshot per mesh
+                                    for (let meshUUID of Object.keys(Canvas.UUIDToMesh)) {
+                                        saveScreenshot([meshUUID], "jpeg");
+                                    }
+                                } else {
+                                    // save the current view as-is
+                                    const meshUUIDToBeRendered = [];
+                                    for (let meshUUID of Object.keys(Canvas.UUIDToMesh)) {
+                                        if (Canvas.UUIDToMesh[meshUUID].visible) {
+                                            meshUUIDToBeRendered.push(meshUUID);
+                                        }
+                                        saveScreenshot(meshUUIDToBeRendered, "jpeg");
+                                    }
+                                }
                             });
                             pngDiv.appendChild(pngBtn);
                             divRow.appendChild(pngDiv);
@@ -67,6 +92,32 @@ const generateUI = async function () {
                     }
                     ul.appendChild(li);
                 }
+                {
+                    const liCheckbox = document.createElement("li");
+                    {
+                        const pCheckbox = document.createElement("p");
+                        {
+                            const labelCheckbox = document.createElement("label");
+                            {
+                                const inputCheckbox = document.createElement("input");
+                                inputCheckbox.setAttribute("type", "checkbox")
+                                inputCheckbox.setAttribute("id", "savePerMesh");
+                                inputCheckbox.checked = false;
+                                labelCheckbox.appendChild(inputCheckbox);
+                            }
+                            {
+                                const spanCheckbox = document.createElement("span");
+                                spanCheckbox.innerText = getText(text, "Save screenshot per mesh.");
+                                labelCheckbox.appendChild(spanCheckbox);
+                            }
+                            pCheckbox.appendChild(labelCheckbox);
+                        }
+
+                        liCheckbox.appendChild(pCheckbox);
+                    }
+                    ul.appendChild(liCheckbox);
+                }
+
                 modalContentDiv.appendChild(ul);
             }
             modal.appendChild(modalContentDiv);
@@ -95,7 +146,6 @@ const generateUI = async function () {
         {
             const a = document.createElement("a");
             a.addEventListener('click', function () {
-                parameters["meshes"] = Object.keys(Canvas.UUIDToMesh);
                 const instance = M.Modal.getInstance(modal);
                 instance.open();
             });
@@ -116,7 +166,7 @@ const generateUI = async function () {
 
 ////
 // callback
-const saveScreenshot = function (parameters) {
+const saveScreenshot = function (visibleMeshUUIDArray, format) {
     const toBlob = function (base64) {
         const bin = atob(base64.replace(/^.*,/, ''));
         const buffer = new Uint8Array(bin.length);
@@ -133,20 +183,33 @@ const saveScreenshot = function (parameters) {
 
     ////
     // store current settings
+    const originalVisibility = {};
+    for (let meshUUID in Canvas.UUIDToMesh) {
+        originalVisibility[meshUUID] = Canvas.UUIDToMesh[meshUUID].visible;
+        Canvas.UUIDToMesh[meshUUID].visible = false;
+    }
+    for (let meshUUID of visibleMeshUUIDArray) {
+        Canvas.UUIDToMesh[meshUUID].visible = true;
+    }
     let originalSelectedObjects = [];
     if (Canvas.outlinePass) {
         originalSelectedObjects = Canvas.outlinePass.selectedObjects;
         Canvas.outlinePass.selectedObjects = [];
     }
+
     // filename
     let screenshotFileName = "screenshot";
+    if (visibleMeshUUIDArray.length == 1) {
+        screenshotFileName += "_";
+        screenshotFileName += Canvas.UUIDToMesh[visibleMeshUUIDArray[0]].name;
+    }
 
-    if (parameters["format"] == "png") {
+    if (format == "png") {
         // temporary change alpha and force render (at least) once
         Canvas.renderer.setClearAlpha(0.0);
     }
     Canvas.effectComposer.render();
-    const screenshotDataURL = Canvas.renderer.domElement.toDataURL("image/" + parameters["format"]);
+    const screenshotDataURL = Canvas.renderer.domElement.toDataURL("image/" + format);
 
     const fileId = Math.random().toString(36).substring(2, 9);
     const base64 = screenshotDataURL.substring(screenshotDataURL.indexOf(',') + 1);
@@ -165,7 +228,7 @@ const saveScreenshot = function (parameters) {
                     "packetId": packet,
                     "packetSize": packetSize,
                     "packetTotal": packetCount,
-                    "type": parameters["format"].toLowerCase(),
+                    "type": format.toLowerCase(),
                     "base64Packet": base64Packet
                 }
             }
@@ -201,6 +264,9 @@ const saveScreenshot = function (parameters) {
     window.URL.revokeObjectURL(screenshotDataURL);
     if (Canvas.outlinePass) {
         Canvas.outlinePass.selectedObjects = originalSelectedObjects;
+    }
+    for (let meshUUID in Canvas.UUIDToMesh) {
+        Canvas.UUIDToMesh[meshUUID].visible = originalVisibility[meshUUID];
     }
 }
 

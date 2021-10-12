@@ -44,8 +44,7 @@ const generateUI = async function () {
                             jpegBtn.setAttribute("style", "width: 100%;");
                             jpegBtn.innerText = "JPEG (.jpeg)";
                             jpegBtn.addEventListener('click', function () {
-                                parameters["format"] = "jpeg";
-                                saveScreenshot(parameters);
+                                saveScreenshot([parameters["meshUUID"]], "jpeg");
                             });
                             jpegDiv.appendChild(jpegBtn);
                             divRow.appendChild(jpegDiv);
@@ -58,8 +57,7 @@ const generateUI = async function () {
                             pngBtn.setAttribute("style", "width: 100%;");
                             pngBtn.innerText = "PNG (.png)";
                             pngBtn.addEventListener('click', function () {
-                                parameters["format"] = "png";
-                                saveScreenshot(parameters);
+                                saveScreenshot([parameters["meshUUID"]], "png");
                             });
                             pngDiv.appendChild(pngBtn);
                             divRow.appendChild(pngDiv);
@@ -101,7 +99,7 @@ const generateUI = async function () {
                 a.setAttribute("data-position", "top");
                 a.setAttribute("data-tooltip", getText(text, "Save screenshot"));
                 a.addEventListener('click', function (e) {
-                    parameters["meshes"] = [json["UUID"]];
+                    parameters["meshUUID"] = json["UUID"];
                     const instance = M.Modal.getInstance(modal);
                     instance.open();
                     // don't fire click event on the parent (e.g. outlineOnClick)
@@ -123,7 +121,7 @@ const generateUI = async function () {
 
 ////
 // callback
-const saveScreenshot = function (parameters) {
+const saveScreenshot = function (visibleMeshUUIDArray, format) {
     const toBlob = function (base64) {
         const bin = atob(base64.replace(/^.*,/, ''));
         const buffer = new Uint8Array(bin.length);
@@ -145,7 +143,7 @@ const saveScreenshot = function (parameters) {
         originalVisibility[meshUUID] = Canvas.UUIDToMesh[meshUUID].visible;
         Canvas.UUIDToMesh[meshUUID].visible = false;
     }
-    for (let meshUUID of parameters["meshes"]) {
+    for (let meshUUID of visibleMeshUUIDArray) {
         Canvas.UUIDToMesh[meshUUID].visible = true;
     }
     let originalSelectedObjects = [];
@@ -153,19 +151,20 @@ const saveScreenshot = function (parameters) {
         originalSelectedObjects = Canvas.outlinePass.selectedObjects;
         Canvas.outlinePass.selectedObjects = [];
     }
+
     // filename
     let screenshotFileName = "screenshot";
-    if (parameters["meshes"].length == 1) {
+    if (visibleMeshUUIDArray.length == 1) {
         screenshotFileName += "_";
-        screenshotFileName += Canvas.UUIDToMesh[parameters["meshes"]].name;
+        screenshotFileName += Canvas.UUIDToMesh[visibleMeshUUIDArray[0]].name;
     }
 
-    if (parameters["format"] == "png") {
+    if (format == "png") {
         // temporary change alpha and force render (at least) once
         Canvas.renderer.setClearAlpha(0.0);
     }
     Canvas.effectComposer.render();
-    const screenshotDataURL = Canvas.renderer.domElement.toDataURL("image/" + parameters["format"]);
+    const screenshotDataURL = Canvas.renderer.domElement.toDataURL("image/" + format);
 
     const fileId = Math.random().toString(36).substring(2, 9);
     const base64 = screenshotDataURL.substring(screenshotDataURL.indexOf(',') + 1);
@@ -184,7 +183,7 @@ const saveScreenshot = function (parameters) {
                     "packetId": packet,
                     "packetSize": packetSize,
                     "packetTotal": packetCount,
-                    "type": parameters["format"].toLowerCase(),
+                    "type": format.toLowerCase(),
                     "base64Packet": base64Packet
                 }
             }
