@@ -108,7 +108,7 @@ if(WIN32)
         minizip::minizip
         OpenSSL::SSL
         OpenSSL::Crypto
-        # bcrypt.lib
+        bcrypt.lib
     )
 elseif (APPLE)
     find_library(CORE_FOUNDATION_LIBRARY CoreFoundation)

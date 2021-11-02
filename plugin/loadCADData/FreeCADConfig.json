@@ -1,6 +1,0 @@
-{
-    "fileName": "filaNameToBeImported",
-    "filePath": "path/to/stp/file/to/be/imported",
-    "merge": false,
-    "maxTolerance": 0.1
-}
