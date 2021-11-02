@@ -241,8 +241,8 @@ Canvas.resetCamera = function (refreshBSphere) {
     let clippingFar = 1.01;
     if (UI.sliderDiv) {
         const sliderValue = UI.sliderDiv.noUiSlider.get();
-        const clippingNear = (parseFloat(sliderValue[0]) - 50.0) / 50.0;
-        const clippingFar = (parseFloat(sliderValue[1]) - 50.0) / 50.0;
+        clippingNear = (parseFloat(sliderValue[0]) - 50.0) / 50.0;
+        clippingFar = (parseFloat(sliderValue[1]) - 50.0) / 50.0;
     }
 
     const meshList = Canvas.meshGroup.children.filter(function (obj) { return (obj instanceof THREE.Mesh); });
