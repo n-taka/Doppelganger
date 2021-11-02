@@ -145,7 +145,9 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC _USE_MATH_DEFINES)
 ##############################################
 ### install
 ##############################################
-# todo
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include DESTINATION .)
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/resources DESTINATION .)
+install(TARGETS ${PROJECT_NAME} ARCHIVE DESTINATION lib)
 
 
 ##############################################
