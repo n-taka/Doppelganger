@@ -237,13 +237,16 @@ Canvas.pullCurrentMeshes = async function () {
 }
 
 Canvas.resetCamera = function (refreshBSphere) {
+    let clippingNear = -1.01;
+    let clippingFar = 1.01;
+    if (UI.sliderDiv) {
+        const sliderValue = UI.sliderDiv.noUiSlider.get();
+        const clippingNear = (parseFloat(sliderValue[0]) - 50.0) / 50.0;
+        const clippingFar = (parseFloat(sliderValue[1]) - 50.0) / 50.0;
+    }
+
     const meshList = Canvas.meshGroup.children.filter(function (obj) { return (obj instanceof THREE.Mesh); });
     if (meshList.length > 0) {
-        // var sliderValue = document.getElementById("clippingSlider").noUiSlider.get();
-        // var clippingNear = (parseFloat(sliderValue[0]) - 50) / 50;
-        // var clippingFar = (parseFloat(sliderValue[1]) - 50) / 50;
-        const clippingNear = -1.01;
-        const clippingFar = 1.01;
 
         if (refreshBSphere) {
             const posAttrib = mergeBufferAttributes(meshList.map(function (obj) { return obj.geometry.getAttribute("position"); }));

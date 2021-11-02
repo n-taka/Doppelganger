@@ -28,27 +28,6 @@ Core.init = function () {
         await Plugin.init();
         
         await Canvas.pullCurrentMeshes();
-
-        //     // slider
-        //     var slider = document.getElementById('clippingSlider');
-        //     noUiSlider.create(slider, {
-        //         start: [0, 100],
-        //         connect: [false, true, false],
-        //         step: 1,
-        //         direction: 'rtl',
-        //         tooltips: false,
-        //         orientation: 'vertical', // 'horizontal' or 'vertical'
-        //         range: {
-        //             'min': [0],
-        //             'max': [100]
-        //         }
-        //     });
-        //     slider.noUiSlider.on('update', function () {
-        //         resetCamera();
-        //     });
-        //     slider.noUiSlider.on('end', function () {
-        //         document.body.style.cursor = "url(../icon/cursorIcon" + (DoppelCore.sessionId % 10) + ".png) 16 16 , default"
-        //     });
     };
     return;
 };

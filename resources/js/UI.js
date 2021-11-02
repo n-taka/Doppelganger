@@ -130,12 +130,10 @@ UI.init = function () {
         // busy icon
         {
             UI.busyDiv = document.createElement('div');
-            UI.busyDiv.setAttribute('class', 'taskState');
-            UI.busyDiv.setAttribute('style', 'visibility: hidden;');
+            UI.busyDiv.setAttribute('style', 'visibility: hidden; position: absolute; left: 0; top: 0; width: 100vw; height: 100vh; background: rgba(100, 100, 100, .8); z-index: 2147483647;');
             {
                 UI.busyIconA = document.createElement('a');
-                UI.busyIconA.setAttribute('class', 'taskStateText');
-                UI.busyIconA.setAttribute('style', 'user-select: none;');
+                UI.busyIconA.setAttribute('style', 'user-select: none; position: absolute; left: 0; top: 40vh; width: 100vw; color: rgba(250, 250, 250, 1); text-align: center;');
                 {
                     UI.busyIconI = document.createElement('i');
                     UI.busyIconI.setAttribute('class', 'material-icons');
@@ -152,7 +150,7 @@ UI.init = function () {
     // utility function definitions
     {
         UI.setBusyMode = function (mode) {
-            UI.busyDiv.setAttribute('style', (mode ? 'visibility: visible;' : 'visibility: hidden;'));
+            UI.busyDiv.style.visibility = (mode ? 'visible' : 'hidden');
         };
     }
 
