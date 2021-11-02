@@ -1,7 +1,7 @@
 #ifndef ENCODEBINDATATOBASE64_CPP
 #define ENCODEBINDATATOBASE64_CPP
 
-#include "encodeBinDataToBase64.h"
+#include "Doppelganger/Util/encodeBinDataToBase64.h"
 
 namespace Doppelganger
 {

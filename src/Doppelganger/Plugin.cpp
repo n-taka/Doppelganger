@@ -3,8 +3,8 @@
 
 #include "Doppelganger/Plugin.h"
 #include "Doppelganger/Core.h"
-#include "Util/download.h"
-#include "Util/unzip.h"
+#include "Doppelganger/Util/download.h"
+#include "Doppelganger/Util/unzip.h"
 #include <string>
 #include <fstream>
 #include <streambuf>

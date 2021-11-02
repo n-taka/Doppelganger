@@ -8,7 +8,7 @@
 #include "Doppelganger/Room.h"
 #include "Doppelganger/WebsocketSession.h"
 #include "Doppelganger/Plugin.h"
-#include "Util/uuid.h"
+#include "Doppelganger/Util/uuid.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <filesystem>

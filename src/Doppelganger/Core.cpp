@@ -6,7 +6,7 @@
 #include "Doppelganger/Room.h"
 #include "Doppelganger/HTTPSession.h"
 #include "Doppelganger/Plugin.h"
-#include "Util/download.h"
+#include "Doppelganger/Util/download.h"
 
 #include <fstream>
 #include <sstream>

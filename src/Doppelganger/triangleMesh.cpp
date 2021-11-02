@@ -2,8 +2,8 @@
 #define TRIANGLEMESH_CPP
 
 #include "Doppelganger/triangleMesh.h"
-#include "Util/encodeEigenMatrixToBase64.h"
-#include "Util/decodeBase64ToEigenMatrix.h"
+#include "Doppelganger/Util/encodeEigenMatrixToBase64.h"
+#include "Doppelganger/Util/decodeBase64ToEigenMatrix.h"
 
 #include "igl/barycenter.h"
 #include "igl/signed_distance.h"

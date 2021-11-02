@@ -1,167 +1,157 @@
 cmake_minimum_required(VERSION 3.15)
 
+##############################################
+### we use MT for users without C++ runtime
+##############################################
 if(WIN32)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif ()
 
+
+##############################################
+### at least we support macOS that is still maintained
+##############################################
 if(APPLE)
-    # at least we support macOS that is still maintained
     set(CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING "" FORCE)
 endif ()
 
+
+##############################################
+### we use vcpkg for dependencies
+##############################################
 set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/submodule/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "Vcpkg toolchain file")
 
-set(PROJECT DoppelgangerTopLevel)
-project(${PROJECT})
 
-# version
-set(Version "1.0")
-# basically, we use Release
-if (NOT CMAKE_BUILD_TYPE)
-   set(CMAKE_BUILD_TYPE "Release")
-endif()
+##############################################
+### options
+##############################################
+option(DOPPELGANGER_BUILD_EXAMPLE  "Build example server" ON)
 
-#####################
-##### Libraries #####
-#####################
-###
+
+##############################################
+### project
+##############################################
+project(Doppelganger
+    VERSION 2.0.0
+    DESCRIPTION "HTML based interface with C++ backend"
+    HOMEPAGE_URL "https://github.com/n-taka/Doppelganger"
+    LANGUAGES CXX)
+
+
+##############################################
+### dependencies
+##############################################
 # Boost
 if(WIN32)
-    find_package(Boost COMPONENTS random)
+    find_package(Boost REQUIRED COMPONENTS random)
 elseif (APPLE)
-    find_package(Boost COMPONENTS random filesystem)
+    find_package(Boost REQUIRED COMPONENTS random filesystem)
 endif ()
-
-###
 # json
 find_package(nlohmann_json CONFIG REQUIRED)
-
-###
 # eigen3
-find_package(Eigen3 3.3 REQUIRED)
-
-###
+find_package(Eigen3 CONFIG REQUIRED)
 # minizip
 find_package(minizip CONFIG REQUIRED)
-
-###
 # openSSL
 find_package(OpenSSL REQUIRED)
 
-# ###
-# # tbb
-# find_package(TBB CONFIG REQUIRED)
 
-# ###
-# # embree
-# find_package(embree 3 CONFIG REQUIRED)
+##############################################
+### target
+##############################################
+add_library(${PROJECT_NAME} STATIC)
 
-set(LINK_LIBS
-    ${Boost_LIBRARIES}
-    nlohmann_json
-    nlohmann_json::nlohmann_json
-    Eigen3::Eigen
-    minizip::minizip
-    OpenSSL::SSL
-    OpenSSL::Crypto
-    # TBB::tbb
-    # embree
+
+##############################################
+### source
+##############################################
+target_sources(${PROJECT_NAME} PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Core.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/HTTPSession.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Logger.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Plugin.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Room.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/triangleMesh.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/WebsocketSession.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Util/download.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Util/encodeBinDataToBase64.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Util/unzip.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Util/uuid.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Util/writeBase64ToFile.cpp
 )
-# add OS specific libraries
-if(WIN32)
-    # we need to explicitly add bcrypt.lib due to some bug.
-    set(LINK_LIBS
-        ${LINK_LIBS}
-        bcrypt.lib
-    )
-elseif (APPLE)
-    find_library(CORE_FOUNDATION_LIBRARY CoreFoundation)
-    set(LINK_LIBS
-        ${LINK_LIBS}
-        ${CORE_FOUNDATION_LIBRARY}
-    )
-endif ()
-###########################
-##### Libraries (end) #####
-###########################
 
 
-###################
-##### Include #####
-###################
-# Include directories for this project
-set(INCLUDE_DIR
+##############################################
+### include directories
+##############################################
+target_include_directories(${PROJECT_NAME} PUBLIC
     ${EIGEN3_INCLUDE_DIR}
     ${Boost_INCLUDE_DIRS}
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/submodule/libigl/include
     ${CMAKE_CURRENT_SOURCE_DIR}/submodule/certify/include
 )
-#########################
-##### Include (end) #####
-#########################
 
 
-###############################
-##### app bundle settings #####
-###############################
-if(APPLE)
-    set(APP_BUNDLE MACOSX_BUNDLE)
-endif()
+##############################################
+### libraries
+##############################################
+if(WIN32)
+    # we need to explicitly add bcrypt.lib due to some bug.
+    target_link_libraries(
+        ${PROJECT_NAME} PRIVATE
+        ${Boost_LIBRARIES}
+        nlohmann_json
+        nlohmann_json::nlohmann_json
+        Eigen3::Eigen
+        minizip::minizip
+        OpenSSL::SSL
+        OpenSSL::Crypto
+        # bcrypt.lib
+    )
+elseif (APPLE)
+    find_library(CORE_FOUNDATION_LIBRARY CoreFoundation)
+    target_link_libraries(
+        ${PROJECT_NAME} PRIVATE
+        ${Boost_LIBRARIES}
+        nlohmann_json
+        nlohmann_json::nlohmann_json
+        Eigen3::Eigen
+        minizip::minizip
+        OpenSSL::SSL
+        OpenSSL::Crypto
+        ${CORE_FOUNDATION_LIBRARY}
+    )
+endif ()
 
-if(APPLE)
-    set(MACOSX_BUNDLE_EXECUTABLE ${PROJECT})
-    set(MACOSX_BUNDLE_INFO_STRING "${PROJECT_NAME}")
-    set(MACOSX_BUNDLE_GUI_IDENTIFIER "info.n-taka")
-    set(MACOSX_BUNDLE_LONG_VERSION_STRING "${PROJECT_NAME} Version ${Version}")
-    set(MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME})
-    set(MACOSX_BUNDLE_SHORT_VERSION_STRING ${Version})
-    set(MACOSX_BUNDLE_BUNDLE_VERSION ${Version})
-    # set(MACOSX_BUNDLE_COPYRIGHT "Copyright 2020--2021.")
-endif()
-###############################
-##### app bundle settings #####
-###############################
 
-#########################
-##### object target #####
-#########################
-file(GLOB DOPPELGANGER_CPP "src/Doppelganger/*.cpp")
-file(GLOB UTIL_CPP "src/Util/*.cpp")
-set(DoppelgangerObjSrc
-    ${DOPPELGANGER_CPP}
-    ${UTIL_CPP}
-)
-add_library(DoppelgangerObj OBJECT)
-target_sources(DoppelgangerObj PRIVATE ${DoppelgangerObjSrc})
-target_include_directories(DoppelgangerObj PUBLIC ${INCLUDE_DIR})
-###########################
-##### compile options #####
-###########################
+##############################################
+### compile options
+##############################################
 if (WIN32)
     # because we want to use std::filesystem, we require C++17 for windows
-    target_compile_features(DoppelgangerObj PUBLIC cxx_std_17)
+    target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
+    # our target is windows 10 or newer
+    target_compile_definitions(${PROJECT_NAME} PUBLIC _WIN32_WINNT=0x0A00)
 elseif (APPLE)
     # because we support macOS Mojave, we only require C++14 for macOS
     # we use boost::filesystem for macOS
-    target_compile_features(DoppelgangerObj PUBLIC cxx_std_14)
+    target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_14)
 endif ()
-target_compile_definitions(DoppelgangerObj PUBLIC _USE_MATH_DEFINES)
+target_compile_definitions(${PROJECT_NAME} PUBLIC _USE_MATH_DEFINES)
 
-if (WIN32)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4244 /wd4819")
-    add_definitions(-D_WIN32_WINNT=0x0A00)
-endif ()
-#################################
-##### compile options (end) #####
-#################################
-set(LINK_LIBS
-    ${LINK_LIBS}
-    $<TARGET_OBJECTS:DoppelgangerObj>
-)
-#########################
-##### object target #####
-#########################
 
-add_subdirectory(src)
-add_subdirectory(plugin)
+##############################################
+### install
+##############################################
+# todo
+
+
+##############################################
+### example
+##############################################
+if(DOPPELGANGER_BUILD_EXAMPLE)
+    add_subdirectory(example)
+endif()
+

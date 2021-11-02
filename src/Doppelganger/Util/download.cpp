@@ -1,7 +1,7 @@
 #ifndef DOWNLOAD_CPP
 #define DOWNLOAD_CPP
 
-#include "Util/download.h"
+#include "Doppelganger/Util/download.h"
 #include <string>
 #include <fstream>
 
