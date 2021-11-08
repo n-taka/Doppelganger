@@ -70,54 +70,65 @@ namespace Doppelganger
 
 	void Plugin::install(const std::string &version)
 	{
-		std::string versionToBeInstalled(version);
-		if (versionToBeInstalled == "latest")
-		{
-			versionToBeInstalled = parameters.at("latest").get<std::string>();
-		}
+		const std::string actualVersion((version == "latest") ? parameters.at("versions").at(0).at("version").get<std::string>() : version);
 
 		fs::path pluginsDir(core->config.at("plugin").at("dir").get<std::string>());
 		fs::path pluginDir(pluginsDir);
 		std::string dirName(name);
 		dirName += "_";
-		dirName += versionToBeInstalled;
+		dirName += actualVersion;
 		pluginDir.append(dirName);
 		if (!fs::exists(pluginDir))
 		{
-			if (parameters.at("versions").contains(versionToBeInstalled))
+			bool versionFound = false;
+			for (const auto &versionEntry : parameters.at("versions"))
 			{
-				const std::string &pluginUrl = parameters.at("versions").at(versionToBeInstalled).get<std::string>();
-				fs::path zipPath(pluginsDir);
-				zipPath.append("tmp.zip");
-
-				if (Util::download(pluginUrl, zipPath))
+				const std::string &pluginVersion = versionEntry.at("version").get<std::string>();
+				if (pluginVersion == actualVersion)
 				{
-					Util::unzip(zipPath, pluginDir);
-					// erase temporary file
-					fs::remove_all(zipPath);
-				}
-				else
-				{
-					// failure
-					std::stringstream ss;
-					ss << "Plugin \"";
-					ss << name;
-					ss << "\" (";
-					ss << versionToBeInstalled;
-					ss << ")";
-					ss << " is NOT loaded correctly. (Download)";
-					core->logger.log(ss.str(), "ERROR");
-					return;
+					const std::string &pluginURL = versionEntry.at("URL").get<std::string>();
+					fs::path zipPath(pluginsDir);
+					zipPath.append("tmp.zip");
+					if (Util::download(pluginURL, zipPath))
+					{
+						Util::unzip(zipPath, pluginDir);
+						// erase temporary file
+						fs::remove_all(zipPath);
+						versionFound = true;
+						break;
+					}
+					else
+					{
+						// failure
+						std::stringstream ss;
+						ss << "Plugin \"";
+						ss << name;
+						ss << "\" (";
+						if (version == "latest")
+						{
+							ss << "latest, ";
+						}
+						ss << actualVersion;
+						ss << ")";
+						ss << " is NOT loaded correctly. (Download)";
+						core->logger.log(ss.str(), "ERROR");
+						return;
+					}
 				}
 			}
-			else
+
+			if (!versionFound)
 			{
 				// failure
 				std::stringstream ss;
 				ss << "Plugin \"";
 				ss << name;
 				ss << "\" (";
-				ss << versionToBeInstalled;
+				if (version == "latest")
+				{
+					ss << "latest, ";
+				}
+				ss << actualVersion;
 				ss << ")";
 				ss << " is NOT loaded correctly. (No such version)";
 				core->logger.log(ss.str(), "ERROR");
@@ -131,7 +142,11 @@ namespace Doppelganger
 			ss << "Plugin \"";
 			ss << name;
 			ss << "\" (";
-			ss << versionToBeInstalled;
+			if (version == "latest")
+			{
+				ss << "latest, ";
+			}
+			ss << actualVersion;
 			ss << ")";
 			ss << " is already downloaded. We reuse it.";
 			core->logger.log(ss.str(), "SYSTEM");

@@ -14,7 +14,7 @@ Plugin.init = async function () {
     for (let plugin of Plugin.pluginList) {
         if (plugin["installedVersion"].length > 0 && plugin["hasModuleJS"]) {
             // we explicitly load plugin sequentially
-            await Plugin.loadPlugin(plugin["name"], plugin["installedVersion"] == "latest" ? plugin["latest"] : plugin["installedVersion"]);
+            await Plugin.loadPlugin(plugin["name"], plugin["installedVersion"] == "latest" ? plugin["versions"][0]["version"] : plugin["installedVersion"]);
         }
     }
 
