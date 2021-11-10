@@ -6,6 +6,7 @@
 #include <fstream>
 
 #include "minizip/unzip.h"
+#include <sys/stat.h>
 
 namespace Doppelganger
 {
@@ -50,6 +51,10 @@ namespace Doppelganger
 						ofs.write(buffer, sizeRead);
 					}
 					ofs.close();
+
+					// restore original permission
+					chmod(targetPath.string().c_str(), ((fileInfo.external_fa >> 16) & 0x01FF));
+
 					unzCloseCurrentFile(unzipHandle);
 
 				} while (unzGoToNextFile(unzipHandle) != UNZ_END_OF_LIST_OF_FILE);
