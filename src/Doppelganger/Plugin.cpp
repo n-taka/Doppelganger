@@ -164,7 +164,7 @@ namespace Doppelganger
 #if defined(_WIN32) || defined(_WIN64)
 		dllName += ".dll";
 #else
-		dllName += ".so";
+		dllName = "lib" + dllName + ".so";
 #endif
 		// c++ functions (.dll/.so) (if exists)
 		fs::path dllPath(pluginDir);
