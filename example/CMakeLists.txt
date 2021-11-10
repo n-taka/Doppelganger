@@ -1,34 +1,82 @@
-add_executable(example main.cpp)
+add_executable(example
+    main.cpp
+    ${CMAKE_SOURCE_DIR}/resources/css/Doppelganger.css
+    ${CMAKE_SOURCE_DIR}/resources/html/index.html
+    ${CMAKE_SOURCE_DIR}/resources/icon/cursorIcon0.png
+    ${CMAKE_SOURCE_DIR}/resources/icon/cursorIcon1.png
+    ${CMAKE_SOURCE_DIR}/resources/icon/cursorIcon2.png
+    ${CMAKE_SOURCE_DIR}/resources/icon/cursorIcon3.png
+    ${CMAKE_SOURCE_DIR}/resources/icon/cursorIcon4.png
+    ${CMAKE_SOURCE_DIR}/resources/icon/cursorIcon5.png
+    ${CMAKE_SOURCE_DIR}/resources/icon/cursorIcon6.png
+    ${CMAKE_SOURCE_DIR}/resources/icon/cursorIcon7.png
+    ${CMAKE_SOURCE_DIR}/resources/icon/cursorIcon8.png
+    ${CMAKE_SOURCE_DIR}/resources/icon/cursorIcon9.png
+    ${CMAKE_SOURCE_DIR}/resources/js/Canvas.js
+    ${CMAKE_SOURCE_DIR}/resources/js/constructMeshFrom.js
+    ${CMAKE_SOURCE_DIR}/resources/js/constructMeshLiFrom.js
+    ${CMAKE_SOURCE_DIR}/resources/js/Core.js
+    ${CMAKE_SOURCE_DIR}/resources/js/Modal.js
+    ${CMAKE_SOURCE_DIR}/resources/js/MouseKey.js
+    ${CMAKE_SOURCE_DIR}/resources/js/Plugin.js
+    ${CMAKE_SOURCE_DIR}/resources/js/request.js
+    ${CMAKE_SOURCE_DIR}/resources/js/Text.js
+    ${CMAKE_SOURCE_DIR}/resources/js/UI.js
+    ${CMAKE_SOURCE_DIR}/resources/js/WS.js
+    ${CMAKE_SOURCE_DIR}/resources/js/WSTasks.js
+    ${CMAKE_SOURCE_DIR}/resources/defaultConfig.json
+)
+
 target_link_libraries(example Doppelganger)
 
 ##############################################
 ### app bundle for macOS (need to check on macOS...)
 ##############################################
 if(APPLE)
-    set(APP_BUNDLE MACOSX_BUNDLE)
-    set(MACOSX_BUNDLE_EXECUTABLE "example")
-    set(MACOSX_BUNDLE_INFO_STRING "DoppelgangerExampleServer")
-    set(MACOSX_BUNDLE_GUI_IDENTIFIER "info.n-taka")
-    set(MACOSX_BUNDLE_LONG_VERSION_STRING "DoppelgangerExampleServer Version ${CMAKE_PROJECT_VERSION}")
-    set(MACOSX_BUNDLE_BUNDLE_NAME "DoppelgangerExampleServer")
-    set(MACOSX_BUNDLE_SHORT_VERSION_STRING "${CMAKE_PROJECT_VERSION}")
-    set(MACOSX_BUNDLE_BUNDLE_VERSION ${CMAKE_PROJECT_VERSION})
+    set_target_properties(example PROPERTIES
+        MACOSX_BUNDLE TRUE
+        MACOSX_FRAMEWORK_IDENTIFIER org.cmake.ExecutableTarget
+        MACOSX_BUNDLE_EXECUTABLE "example"
+        MACOSX_BUNDLE_INFO_STRING "DoppelgangerExampleServer"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "info.n-taka"
+        MACOSX_BUNDLE_LONG_VERSION_STRING "DoppelgangerExampleServer Version ${CMAKE_PROJECT_VERSION}"
+        MACOSX_BUNDLE_BUNDLE_NAME "DoppelgangerExampleServer"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "${CMAKE_PROJECT_VERSION}"
+        MACOSX_BUNDLE_BUNDLE_VERSION ${CMAKE_PROJECT_VERSION}
+    )
 endif()
 
-#####################
-##### Resources #####
-#####################
+##############################################
+### Resources
+##############################################
 if(WIN32)
     add_custom_command(TARGET example POST_BUILD COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:example>/resources")
-    add_custom_command(TARGET example POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/../resources" "$<TARGET_FILE_DIR:example>/resources")
+    add_custom_command(TARGET example POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/resources" "$<TARGET_FILE_DIR:example>/resources")
 elseif (APPLE)
-    foreach(RES_FILE ${RESOURCES_FILES})
-        file(RELATIVE_PATH RES_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../resources" ${RES_FILE})
-        get_filename_component(RES_DIR_PATH ${RES_PATH} DIRECTORY)
-        set_property(SOURCE ${RES_FILE} PROPERTY MACOSX_PACKAGE_LOCATION "resources/${RES_DIR_PATH}")
-    endforeach(RES_FILE)
+    set_property(SOURCE ${CMAKE_SOURCE_DIR}/resources/css/Doppelganger.css PROPERTY MACOSX_PACKAGE_LOCATION "Resources/css")
+    set_property(SOURCE ${CMAKE_SOURCE_DIR}/resources/html/index.html PROPERTY MACOSX_PACKAGE_LOCATION "Resources/html")
+    set_property(SOURCE ${CMAKE_SOURCE_DIR}/resources/icon/cursorIcon0.png PROPERTY MACOSX_PACKAGE_LOCATION "Resources/icon")
+    set_property(SOURCE ${CMAKE_SOURCE_DIR}/resources/icon/cursorIcon1.png PROPERTY MACOSX_PACKAGE_LOCATION "Resources/icon")
+    set_property(SOURCE ${CMAKE_SOURCE_DIR}/resources/icon/cursorIcon2.png PROPERTY MACOSX_PACKAGE_LOCATION "Resources/icon")
+    set_property(SOURCE ${CMAKE_SOURCE_DIR}/resources/icon/cursorIcon3.png PROPERTY MACOSX_PACKAGE_LOCATION "Resources/icon")
+    set_property(SOURCE ${CMAKE_SOURCE_DIR}/resources/icon/cursorIcon4.png PROPERTY MACOSX_PACKAGE_LOCATION "Resources/icon")
+    set_property(SOURCE ${CMAKE_SOURCE_DIR}/resources/icon/cursorIcon5.png PROPERTY MACOSX_PACKAGE_LOCATION "Resources/icon")
+    set_property(SOURCE ${CMAKE_SOURCE_DIR}/resources/icon/cursorIcon6.png PROPERTY MACOSX_PACKAGE_LOCATION "Resources/icon")
+    set_property(SOURCE ${CMAKE_SOURCE_DIR}/resources/icon/cursorIcon7.png PROPERTY MACOSX_PACKAGE_LOCATION "Resources/icon")
+    set_property(SOURCE ${CMAKE_SOURCE_DIR}/resources/icon/cursorIcon8.png PROPERTY MACOSX_PACKAGE_LOCATION "Resources/icon")
+    set_property(SOURCE ${CMAKE_SOURCE_DIR}/resources/icon/cursorIcon9.png PROPERTY MACOSX_PACKAGE_LOCATION "Resources/icon")
+    set_property(SOURCE ${CMAKE_SOURCE_DIR}/resources/js/Canvas.js PROPERTY MACOSX_PACKAGE_LOCATION "Resources/js")
+    set_property(SOURCE ${CMAKE_SOURCE_DIR}/resources/js/constructMeshFrom.js PROPERTY MACOSX_PACKAGE_LOCATION "Resources/js")
+    set_property(SOURCE ${CMAKE_SOURCE_DIR}/resources/js/constructMeshLiFrom.js PROPERTY MACOSX_PACKAGE_LOCATION "Resources/js")
+    set_property(SOURCE ${CMAKE_SOURCE_DIR}/resources/js/Core.js PROPERTY MACOSX_PACKAGE_LOCATION "Resources/js")
+    set_property(SOURCE ${CMAKE_SOURCE_DIR}/resources/js/Modal.js PROPERTY MACOSX_PACKAGE_LOCATION "Resources/js")
+    set_property(SOURCE ${CMAKE_SOURCE_DIR}/resources/js/MouseKey.js PROPERTY MACOSX_PACKAGE_LOCATION "Resources/js")
+    set_property(SOURCE ${CMAKE_SOURCE_DIR}/resources/js/Plugin.js PROPERTY MACOSX_PACKAGE_LOCATION "Resources/js")
+    set_property(SOURCE ${CMAKE_SOURCE_DIR}/resources/js/request.js PROPERTY MACOSX_PACKAGE_LOCATION "Resources/js")
+    set_property(SOURCE ${CMAKE_SOURCE_DIR}/resources/js/Text.js PROPERTY MACOSX_PACKAGE_LOCATION "Resources/js")
+    set_property(SOURCE ${CMAKE_SOURCE_DIR}/resources/js/UI.js PROPERTY MACOSX_PACKAGE_LOCATION "Resources/js")
+    set_property(SOURCE ${CMAKE_SOURCE_DIR}/resources/js/WS.js PROPERTY MACOSX_PACKAGE_LOCATION "Resources/js")
+    set_property(SOURCE ${CMAKE_SOURCE_DIR}/resources/js/WSTasks.js PROPERTY MACOSX_PACKAGE_LOCATION "Resources/js")
+    set_property(SOURCE ${CMAKE_SOURCE_DIR}/resources/defaultConfig.json PROPERTY MACOSX_PACKAGE_LOCATION "Resources")
 endif ()
-###########################
-##### Resources (end) #####
-###########################
 

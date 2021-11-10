@@ -9,7 +9,6 @@
 #include <fstream>
 #include <streambuf>
 #if defined(_WIN32) || defined(_WIN64)
-#define STDCALL __stdcall
 #include "windows.h"
 #include "libloaderapi.h"
 #elif defined(__APPLE__)
@@ -20,7 +19,11 @@ namespace
 {
 	////
 	// typedef for loading API from dll/lib
-	typedef void(STDCALL *APIPtr_t)(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &, nlohmann::json &, nlohmann::json &);
+#if defined(_WIN32) || defined(_WIN64)
+	typedef void(__stdcall *APIPtr_t)(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &, nlohmann::json &, nlohmann::json &);
+#else
+	typedef void (*APIPtr_t)(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &, nlohmann::json &, nlohmann::json &);
+#endif
 
 	bool loadDll(const fs::path &dllPath, const std::string &functionName, Doppelganger::Plugin::API_t &apiFunc)
 	{
@@ -207,7 +210,7 @@ namespace Doppelganger
 
 			nlohmann::json installedPluginJson;
 
-			std::ifstream ifs(installedPluginJsonPath);
+			std::ifstream ifs(installedPluginJsonPath.string());
 			installedPluginJson = nlohmann::json::parse(ifs);
 			ifs.close();
 
@@ -216,7 +219,7 @@ namespace Doppelganger
 			pluginInfo["version"] = installedVersion;
 			installedPluginJson.push_back(pluginInfo);
 
-			std::ofstream ofs(installedPluginJsonPath);
+			std::ofstream ofs(installedPluginJsonPath.string());
 			ofs << installedPluginJson.dump(4);
 			ofs.close();
 		}

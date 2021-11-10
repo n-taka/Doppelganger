@@ -12,6 +12,34 @@
 #include <sstream>
 #include <nlohmann/json.hpp>
 
+#if defined(__APPLE__)
+#include "CoreFoundation/CoreFoundation.h"
+#include "sysdir.h"
+#include <stdlib.h>
+namespace
+{
+	// https://stackoverflow.com/questions/4891006/how-to-create-a-folder-in-the-home-directory
+	std::string expand_user(std::string path)
+	{
+		if (!path.empty() && path[0] == '~')
+		{
+			char const *home = getenv("HOME");
+			if (home || (home = getenv("USERPROFILE")))
+			{
+				path.replace(0, 1, home);
+			}
+			else
+			{
+				char const *hdrive = getenv("HOMEDRIVE"),
+						   *hpath = getenv("HOMEPATH");
+				path.replace(0, 1, std::string(hdrive) + hpath);
+			}
+		}
+		return path;
+	}
+}
+#endif
+
 // https://github.com/boostorg/beast/blob/develop/example/http/server/async/http_server_async.cpp
 
 namespace Doppelganger
@@ -37,20 +65,28 @@ namespace Doppelganger
 			systemParams.resourceDir.append("resources");
 			systemParams.workingDir = systemParams.resourceDir;
 #elif defined(__APPLE__)
-			CFURLRef appUrlRef;
-			appUrlRef = CFBundleCopyResourceURL(CFBundleGetMainBundle(), CFSTR("index"), CFSTR(".html"), CFSTR("html"));
-			CFStringRef filePathRef = CFURLCopyPath(appUrlRef);
-			const char *filePath = CFStringGetCStringPtr(filePathRef, kCFStringEncodingUTF8);
-			fs::path p(filePath);
-			p = p.parent_path();
-			p = p.parent_path();
-			p = p.parent_path();
-			systemParams.resourceDir = p;
+			CFBundleRef mainBundle = CFBundleGetMainBundle();
+			CFURLRef resourcesURL = CFBundleCopyResourcesDirectoryURL(mainBundle);
+			char path[PATH_MAX];
+			if (!CFURLGetFileSystemRepresentation(resourcesURL, TRUE, (UInt8 *)path, PATH_MAX))
+			{
+				// error!
+				exit(-1);
+			}
+			systemParams.resourceDir = fs::path(path);
 			systemParams.resourceDir.make_preferred();
-			systemParams.resourceDir.append("resources");
-			// TODO 2021.08.17
-			// get directory that app can read/write
-			// systemParams.workingDir = systemParams.resourceDir;
+			CFRelease(resourcesURL);
+
+			sysdir_search_path_enumeration_state state = sysdir_start_search_path_enumeration(SYSDIR_DIRECTORY_APPLICATION_SUPPORT, SYSDIR_DOMAIN_MASK_USER);
+			sysdir_get_next_search_path_enumeration(state, path);
+			const std::string fullPathStr = expand_user(std::string(path));
+
+			systemParams.workingDir = fs::path(fullPathStr);
+			systemParams.workingDir.append("Doppelganger");
+			if (!fs::exists(systemParams.workingDir))
+			{
+				fs::create_directories(systemParams.workingDir);
+			}
 #endif
 		}
 
@@ -68,7 +104,8 @@ namespace Doppelganger
 			}
 			// config
 			// parse config json
-			std::ifstream ifs(configPath);
+			// we could directry pass std::filesystem::path, but we could not pass boost::filesystem::path
+			std::ifstream ifs(configPath.string());
 			configFileContent = nlohmann::json::parse(ifs);
 			ifs.close();
 			config = configFileContent;
@@ -131,7 +168,7 @@ namespace Doppelganger
 					listJsonPath.make_preferred();
 					listJsonPath.append("tmp.json");
 					Util::download(listUrl.get<std::string>(), listJsonPath);
-					std::ifstream ifs(listJsonPath);
+					std::ifstream ifs(listJsonPath.string());
 					nlohmann::json listJson = nlohmann::json::parse(ifs);
 					ifs.close();
 					fs::remove_all(listJsonPath);
@@ -158,14 +195,14 @@ namespace Doppelganger
 			installedPluginJsonPath.append("installed.json");
 			if (fs::exists(installedPluginJsonPath))
 			{
-				std::ifstream ifs(installedPluginJsonPath);
+				std::ifstream ifs(installedPluginJsonPath.string());
 				const nlohmann::json installedPluginJson = nlohmann::json::parse(ifs);
 				ifs.close();
 
 				// we erase previous installed plugin array.
 				// following Doppelganger::Plugin::install updates intalled.json
 				const nlohmann::json emptyArray = nlohmann::json::array();
-				std::ofstream ofs(installedPluginJsonPath);
+				std::ofstream ofs(installedPluginJsonPath.string());
 				ofs << emptyArray.dump(4);
 				ofs.close();
 
@@ -194,7 +231,7 @@ namespace Doppelganger
 			else
 			{
 				const nlohmann::json emptyArray = nlohmann::json::array();
-				std::ofstream ofs(installedPluginJsonPath);
+				std::ofstream ofs(installedPluginJsonPath.string());
 				ofs << emptyArray.dump(4);
 				ofs.close();
 			}

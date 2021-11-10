@@ -112,6 +112,7 @@ if(WIN32)
     )
 elseif (APPLE)
     find_library(CORE_FOUNDATION_LIBRARY CoreFoundation)
+    find_library(SECURITY_LIBRARY Security)
     target_link_libraries(
         ${PROJECT_NAME} PRIVATE
         ${Boost_LIBRARIES}
@@ -122,6 +123,7 @@ elseif (APPLE)
         OpenSSL::SSL
         OpenSSL::Crypto
         ${CORE_FOUNDATION_LIBRARY}
+        ${SECURITY_LIBRARY}
     )
 endif ()
 

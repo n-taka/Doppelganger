@@ -41,7 +41,7 @@ namespace Doppelganger
 					// create direcotry
 					fs::create_directories(targetPath.parent_path());
 
-					std::ofstream ofs(targetPath, std::ios::binary);
+					std::ofstream ofs(targetPath.string(), std::ios::binary);
 
 					char buffer[8192];
 					unsigned long sizeRead;

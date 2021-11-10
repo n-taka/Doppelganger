@@ -127,7 +127,7 @@ namespace Doppelganger
 				http::read(stream, buffer, parser);
 
 				// write to file
-				std::ofstream destFile(destPath, std::ios::binary);
+				std::ofstream destFile(destPath.string(), std::ios::binary);
 				const std::string content = boost::beast::buffers_to_string(parser.get().body().data());
 				destFile.write(content.c_str(), content.size());
 				destFile.close();
