@@ -508,6 +508,9 @@ namespace Doppelganger
 				}
 				// URL
 				cmd << config.at("server").at("completeURL").get<std::string>();
+#if defined(__APPLE__)
+				cmd << " &";
+#endif
 				browserJson["cmd"] = cmd.str();
 				logger.log(cmd.str(), "SYSTEM");
 				system(cmd.str().c_str());
