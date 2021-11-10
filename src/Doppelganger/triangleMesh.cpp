@@ -359,17 +359,11 @@ namespace Doppelganger
 
 			// texture
 			{
-				// face texture coordinates (FTC)
-				// this implementation is not perfect ...
-				if (source->FTC.rows() == source->F.rows())
-				{
-					igl::barycentric_interpolation(source->TC, source->F, L, vertCorrespondingFace, TC);
-					FTC = F;
-				}
-				else if (source->TC.rows() == source->V.rows())
+				if (source->TC.rows() == source->V.rows())
 				{
 					igl::barycentric_interpolation(source->TC, source->F, L, vertCorrespondingFace, TC);
 				}
+				// currently, we don't support FTC...
 			}
 
 			// misc
