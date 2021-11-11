@@ -332,7 +332,7 @@ namespace Doppelganger
 		}
 		////
 		// open browser
-		// "openOnBoot" = true|false
+		// "openOnStartup" = true|false
 		// "browser" = "chrome"|"firefox"|"edge"|"safari"|"default"|"N/A"
 		// "browserPath" = path/to/executables
 		// "openAs" = "app"|"window"|"tab"|"default"
@@ -341,9 +341,9 @@ namespace Doppelganger
 		{
 			nlohmann::json &browserJson = config.at("browser");
 			// by default, we open browser
-			if (!browserJson.contains("openOnBoot") || browserJson.at("openOnBoot").get<bool>())
+			if (!browserJson.contains("openOnStartup") || browserJson.at("openOnStartup").get<bool>())
 			{
-				browserJson["openOnBoot"] = true;
+				browserJson["openOnStartup"] = true;
 				// by default, we use default browser (open/start command)
 				std::string browserType = std::string("default");
 				if (browserJson.contains("type"))

@@ -31,9 +31,9 @@
         ]
     },
     "browser": {
-        "type": "chrome",
+        "type": "default",
         "path": "",
-        "openAs": "app",
-        "openOnBoot": true
+        "openAs": "default",
+        "openOnStartup": true
     }
 }
