@@ -37,6 +37,10 @@ namespace Doppelganger
 
 		std::unordered_set<std::string> suppressedAPICall;
 
+		// where we put log
+		fs::path logDir;
+		fs::path logFile;
+
 	private:
 		std::string UUID;
 		// set of strings -> boolean
@@ -45,10 +49,6 @@ namespace Doppelganger
 		// set of strings -> boolean
 		// {"STDOUT", "FILE"} -> boolean
 		std::unordered_map<std::string, bool> logType;
-
-		// where we put log
-		fs::path logDir;
-		fs::path logFile;
 	};
 }
 
