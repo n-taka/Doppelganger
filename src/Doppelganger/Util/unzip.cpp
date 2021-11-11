@@ -6,7 +6,9 @@
 #include <fstream>
 
 #include "minizip/unzip.h"
+#if defined(__APPLE__)
 #include <sys/stat.h>
+#endif
 
 namespace Doppelganger
 {
@@ -52,8 +54,10 @@ namespace Doppelganger
 					}
 					ofs.close();
 
+#if defined(__APPLE__)
 					// restore original permission
 					chmod(targetPath.string().c_str(), ((fileInfo.external_fa >> 16) & 0x01FF));
+#endif
 
 					unzCloseCurrentFile(unzipHandle);
 
