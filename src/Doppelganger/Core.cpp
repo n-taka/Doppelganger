@@ -388,8 +388,7 @@ namespace Doppelganger
 					std::vector<fs::path> firefoxPaths({fs::path("C:\\Program Files\\Mozilla Firefox\\firefox.exe"),
 														fs::path("C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe")});
 #elif defined(__APPLE__)
-					// todo update
-					std::vector<fs::path> firefoxPaths({fs::path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")});
+					std::vector<fs::path> firefoxPaths({fs::path("/Applications/Firefox.app/Contents/MacOS/firefox")});
 #endif
 					for (auto &p : firefoxPaths)
 					{
@@ -410,18 +409,12 @@ namespace Doppelganger
 				}
 				else if (browserJson.at("type").get<std::string>() == "safari")
 				{
-					// todo
-					browserJson["path"] = std::string("");
+					browserJson["path"] = std::string("/Applications/Safari.app");
 				}
 				else if (browserJson.at("type").get<std::string>() == "default")
 				{
 					// do nothing
-#if defined(_WIN32) || defined(_WIN64)
 					browserJson["path"] = std::string("");
-#elif defined(__APPLE__)
-					// todo update
-					browserJson["path"] = std::string("open");
-#endif
 				}
 				else
 				{
@@ -458,7 +451,11 @@ namespace Doppelganger
 				else if (browserJson.at("type").get<std::string>() == "safari")
 				{
 					// todo check which mode is supported by safari ...
-					// safari supports "app"|"window"|"tab"|"default"
+					if (browserJson.at("openAs").get<std::string>() == "app" || browserJson.at("openAs").get<std::string>() == "window")
+					{
+						browserJson.at("openAs") = std::string("tab");
+					}
+					// safari supports "tab"|"default"
 					//   precisely speaking, "tab" and "default" are the same
 				}
 				else if (browserJson.at("type").get<std::string>() == "default")
@@ -484,19 +481,34 @@ namespace Doppelganger
 				{
 					cmd << "\"\" ";
 				}
-#endif
 				cmd << "\"";
 				cmd << browserJson.at("path").get<std::string>();
 				cmd << "\"";
 				cmd << " ";
+#elif defined(__APPLE__)
+				if (browserJson.at("type").get<std::string>() == "default")
+				{
+					cmd << "open ";
+				}
+				else if (browserJson.at("type").get<std::string>() == "safari")
+				{
+					cmd << "open -a Safari.app ";
+				}
+				else
+				{
+					cmd << "\"";
+					cmd << browserJson.at("path").get<std::string>();
+					cmd << "\"";
+					cmd << " ";
+				}
+#endif
 				if (browserJson.at("openAs").get<std::string>() == "app")
 				{
 					cmd << "--app=";
 				}
 				else if (browserJson.at("openAs").get<std::string>() == "window")
 				{
-					cmd << "--new-window";
-					cmd << " ";
+					cmd << "--new-window ";
 				}
 				else if (browserJson.at("openAs").get<std::string>() == "tab")
 				{
@@ -509,8 +521,12 @@ namespace Doppelganger
 				// URL
 				cmd << config.at("server").at("completeURL").get<std::string>();
 #if defined(__APPLE__)
-				cmd << " &";
+				if (browserJson.at("type").get<std::string>() != "default" && browserJson.at("type").get<std::string>() != "safari")
+				{
+					cmd << " &";
+				}
 #endif
+
 				browserJson["cmd"] = cmd.str();
 				logger.log(cmd.str(), "SYSTEM");
 				system(cmd.str().c_str());
