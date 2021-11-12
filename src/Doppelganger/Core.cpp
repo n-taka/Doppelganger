@@ -479,10 +479,10 @@ namespace Doppelganger
 				// browser path
 #if defined(_WIN32) || defined(_WIN64)
 				// make sure that program runs in background.
+				cmd << "start ";
 				if (browserJson.at("type").get<std::string>() != "default")
 				{
-					cmd << "start \"\"";
-					cmd << " ";
+					cmd << "\"\" ";
 				}
 #endif
 				cmd << "\"";
