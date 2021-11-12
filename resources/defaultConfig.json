@@ -1,8 +1,9 @@
 {
-    "server": {
-        "protocol": "http://",
-        "host": "127.0.0.1",
-        "port": 0
+    "browser": {
+        "openAs": "default",
+        "openOnStartup": true,
+        "path": "",
+        "type": "default"
     },
     "log": {
         "dir": "",
@@ -20,8 +21,8 @@
         ]
     },
     "output": {
-        "type": "local",
-        "dir": ""
+        "dir": "",
+        "type": "local"
     },
     "plugin": {
         "dir": "",
@@ -30,10 +31,9 @@
             "https://n-taka.info/nextcloud/s/w5cTBjXmHFH697k/download/pluginList_TORIDE.json"
         ]
     },
-    "browser": {
-        "type": "default",
-        "path": "",
-        "openAs": "default",
-        "openOnStartup": true
+    "server": {
+        "host": "127.0.0.1",
+        "port": 0,
+        "protocol": "http://"
     }
 }
