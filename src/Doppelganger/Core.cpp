@@ -477,14 +477,14 @@ namespace Doppelganger
 #if defined(_WIN32) || defined(_WIN64)
 				// make sure that program runs in background.
 				cmd << "start ";
+				cmd << "\"\" ";
 				if (browserJson.at("type").get<std::string>() != "default")
 				{
-					cmd << "\"\" ";
+					cmd << "\"";
+					cmd << browserJson.at("path").get<std::string>();
+					cmd << "\"";
+					cmd << " ";
 				}
-				cmd << "\"";
-				cmd << browserJson.at("path").get<std::string>();
-				cmd << "\"";
-				cmd << " ";
 #elif defined(__APPLE__)
 				if (browserJson.at("type").get<std::string>() == "default")
 				{
