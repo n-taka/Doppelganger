@@ -101,7 +101,7 @@ if(WIN32)
     # we need to explicitly add bcrypt.lib due to some bug.
     target_link_libraries(
         ${PROJECT_NAME} PRIVATE
-        ${Boost_LIBRARIES}
+        Boost::random
         nlohmann_json
         nlohmann_json::nlohmann_json
         Eigen3::Eigen
@@ -115,7 +115,8 @@ elseif (APPLE)
     find_library(SECURITY_LIBRARY Security)
     target_link_libraries(
         ${PROJECT_NAME} PRIVATE
-        ${Boost_LIBRARIES}
+        Boost::random
+        Boost::filesystem
         nlohmann_json
         nlohmann_json::nlohmann_json
         Eigen3::Eigen

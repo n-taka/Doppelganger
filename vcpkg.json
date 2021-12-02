@@ -4,7 +4,11 @@
     "description": "HTML5 GUI for geometry processing with C++ backend",
     "homepage": "https://github.com/n-taka/Doppelganger",
     "dependencies": [
-        "boost",
+        "boost-any",
+        "boost-beast",
+        "boost-random",
+        "boost-uuid",
+        "boost-filesystem",
         "nlohmann-json",
         "eigen3",
         "minizip",
