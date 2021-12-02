@@ -60,7 +60,9 @@ find_package(OpenSSL REQUIRED)
 ##############################################
 ### target
 ##############################################
-add_library(${PROJECT_NAME} STATIC)
+add_library(${PROJECT_NAME} SHARED)
+# we need to export symbols!!
+# set_target_properties(${PROJECT_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS 1)
 
 
 ##############################################
@@ -99,6 +101,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 ##############################################
 if(WIN32)
     # we need to explicitly add bcrypt.lib due to some bug.
+    # we need to explicitly add Crypt32.lib due to some bug.
+    # https://github.com/microsoft/vcpkg/issues/19379
     target_link_libraries(
         ${PROJECT_NAME} PRIVATE
         Boost::random
@@ -108,6 +112,7 @@ if(WIN32)
         minizip::minizip
         OpenSSL::SSL
         OpenSSL::Crypto
+        Crypt32.lib
         bcrypt.lib
     )
 elseif (APPLE)
@@ -146,17 +151,18 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC _USE_MATH_DEFINES)
 
 
 ##############################################
-### install
-##############################################
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include DESTINATION .)
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/resources DESTINATION .)
-install(TARGETS ${PROJECT_NAME} ARCHIVE DESTINATION lib)
-
-
-##############################################
 ### example
 ##############################################
 if(DOPPELGANGER_BUILD_EXAMPLE)
     add_subdirectory(example)
 endif()
+
+
+##############################################
+### install
+##############################################
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include DESTINATION .)
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/resources DESTINATION .)
+# install(TARGETS ${PROJECT_NAME} ARCHIVE DESTINATION lib)
+install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION lib)
 

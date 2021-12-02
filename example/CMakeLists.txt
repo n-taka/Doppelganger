@@ -27,7 +27,8 @@ add_executable(example
     ${CMAKE_SOURCE_DIR}/resources/defaultConfig.json
 )
 
-target_link_libraries(example Doppelganger)
+# target_link_directories(example PRIVATE "../Release")
+target_link_libraries(example PRIVATE ${PROJECT_NAME})
 
 ##############################################
 ### app bundle for macOS (need to check on macOS...)
