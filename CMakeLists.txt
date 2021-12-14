@@ -163,5 +163,13 @@ endif()
 ##############################################
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include DESTINATION .)
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/resources DESTINATION .)
-install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION lib)
+if (WIN32)
+    # *.dll file for actual execution
+    install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION lib)
+    # accompanying *.lib file for link
+    install(TARGETS ${PROJECT_NAME} ARCHIVE DESTINATION lib)
+elseif (APPLE)
+    # shared library (todo: test on macOS)
+    install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib)
+endif ()
 
