@@ -61,8 +61,6 @@ find_package(OpenSSL REQUIRED)
 ### target
 ##############################################
 add_library(${PROJECT_NAME} SHARED)
-# we need to export symbols!!
-# set_target_properties(${PROJECT_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS 1)
 
 
 ##############################################

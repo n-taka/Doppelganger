@@ -27,7 +27,8 @@
     "plugin": {
         "dir": "",
         "listURL": [
-            "https://n-taka.info/nextcloud/s/wJQHdgqJSFJFj3E/download/pluginList_Core.json",
+            "https://n-taka.info/nextcloud/s/XqGGYPo8J2rwc9S/download/pluginList_Essential.json",
+            "https://n-taka.info/nextcloud/s/PgccNTmPECPXSgQ/download/pluginList_Basic.json",
             "https://n-taka.info/nextcloud/s/PWPR7YDXKoMeP66/download/pluginList_TORIDE.json"
         ]
     },
