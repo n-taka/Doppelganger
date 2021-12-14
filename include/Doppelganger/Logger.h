@@ -1,6 +1,14 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
+#if defined(_WIN32) || defined(_WIN64)
+#ifdef DLL_EXPORT
+#define DECLSPEC __declspec(dllexport)
+#else
+#define DECLSPEC __declspec(dllimport)
+#endif
+#endif
+
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -15,7 +23,7 @@ namespace fs = boost::filesystem;
 
 namespace Doppelganger
 {
-	class Logger
+	class DECLSPEC Logger
 	{
 	public:
 		Logger(){};

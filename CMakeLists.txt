@@ -142,6 +142,8 @@ if (WIN32)
     target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
     # our target is windows 10 or newer
     target_compile_definitions(${PROJECT_NAME} PUBLIC _WIN32_WINNT=0x0A00)
+    # for window, we need to export symbols
+    target_compile_definitions(${PROJECT_NAME} PUBLIC DLL_EXPORT)
 elseif (APPLE)
     # because we support macOS Mojave, we only require C++14 for macOS
     # we use boost::filesystem for macOS
@@ -163,6 +165,5 @@ endif()
 ##############################################
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include DESTINATION .)
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/resources DESTINATION .)
-# install(TARGETS ${PROJECT_NAME} ARCHIVE DESTINATION lib)
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION lib)
 

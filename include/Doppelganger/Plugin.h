@@ -1,6 +1,14 @@
 #ifndef PLUGIN_H
 #define PLUGIN_H
 
+#if defined(_WIN32) || defined(_WIN64)
+#ifdef DLL_EXPORT
+#define DECLSPEC __declspec(dllexport)
+#else
+#define DECLSPEC __declspec(dllimport)
+#endif
+#endif
+
 #include <memory>
 #include <string>
 #include <nlohmann/json.hpp>
@@ -17,7 +25,7 @@ namespace Doppelganger
 	class Core;
 	class Room;
 
-	class Plugin
+	class DECLSPEC Plugin
 	{
 	public:
 		Plugin(const std::shared_ptr<Core> &core_, const std::string &name_, const nlohmann::json &parameters_);

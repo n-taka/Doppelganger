@@ -1,6 +1,14 @@
 #ifndef ROOM_H
 #define ROOM_H
 
+#if defined(_WIN32) || defined(_WIN64)
+#ifdef DLL_EXPORT
+#define DECLSPEC __declspec(dllexport)
+#else
+#define DECLSPEC __declspec(dllimport)
+#endif
+#endif
+
 #include "Doppelganger/triangleMesh.h"
 
 #include <string>
@@ -25,7 +33,7 @@ namespace Doppelganger
 	class Core;
 	class WebsocketSession;
 
-	class Room
+	class DECLSPEC Room
 	{
 	public:
 		Room(

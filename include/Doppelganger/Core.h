@@ -1,6 +1,14 @@
 #ifndef CORE_H
 #define CORE_H
 
+#if defined(_WIN32) || defined(_WIN64)
+#ifdef DLL_EXPORT
+#define DECLSPEC __declspec(dllexport)
+#else
+#define DECLSPEC __declspec(dllimport)
+#endif
+#endif
+
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -22,7 +30,7 @@ namespace Doppelganger
 	class triangleMesh;
 	class Plugin;
 
-	class Core : public std::enable_shared_from_this<Core>
+	class DECLSPEC Core : public std::enable_shared_from_this<Core>
 	{
 	public:
 		Core(boost::asio::io_context &ioc_);

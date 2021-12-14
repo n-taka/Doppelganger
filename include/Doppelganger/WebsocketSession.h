@@ -1,6 +1,14 @@
 #ifndef WEBSOCKETSESSION_H
 #define WEBSOCKETSESSION_H
 
+#if defined(_WIN32) || defined(_WIN64)
+#ifdef DLL_EXPORT
+#define DECLSPEC __declspec(dllexport)
+#else
+#define DECLSPEC __declspec(dllimport)
+#endif
+#endif
+
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -11,7 +19,7 @@ namespace Doppelganger
 {
 	class Room;
 
-	class WebsocketSession : public std::enable_shared_from_this<WebsocketSession>
+	class DECLSPEC WebsocketSession : public std::enable_shared_from_this<WebsocketSession>
 	{
 	public:
 		WebsocketSession(boost::asio::ip::tcp::socket socket,

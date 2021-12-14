@@ -30,6 +30,7 @@ add_executable(example
 # target_link_directories(example PRIVATE "../Release")
 target_link_libraries(example PRIVATE ${PROJECT_NAME})
 
+
 ##############################################
 ### app bundle for macOS (need to check on macOS...)
 ##############################################
@@ -53,6 +54,7 @@ endif()
 if(WIN32)
     add_custom_command(TARGET example POST_BUILD COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:example>/resources")
     add_custom_command(TARGET example POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/resources" "$<TARGET_FILE_DIR:example>/resources")
+    add_custom_command(TARGET example POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE_DIR:example>/../../Release/Doppelganger.dll" "$<TARGET_FILE_DIR:example>")
 elseif (APPLE)
     set_property(SOURCE ${CMAKE_SOURCE_DIR}/resources/css/Doppelganger.css PROPERTY MACOSX_PACKAGE_LOCATION "Resources/css")
     set_property(SOURCE ${CMAKE_SOURCE_DIR}/resources/html/index.html PROPERTY MACOSX_PACKAGE_LOCATION "Resources/html")
