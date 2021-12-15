@@ -132,28 +132,6 @@ namespace Doppelganger
 		editHistory.diffFromPrev.emplace_back(diff);
 		editHistory.index = editHistory.diffFromNext.size();
 	}
-
-#if 0
-	void Room::broadcastMeshUpdate(const std::vector<int> &doppelIdVec)
-	{
-		// load internal API
-		typedef std::function<void(const int &, const std::unordered_map<int, Doppel::triangleMesh> &, nlohmann::json &, const bool)> writeMeshToJson_t;
-		const writeMeshToJson_t &writeMeshToJson = boost::any_cast<writeMeshToJson_t &>(internalAPI.at("writeMeshToJson"));
-
-		nlohmann::json meshesJson = nlohmann::json::object();
-		for (const auto &doppelId : doppelIdVec)
-		{
-			nlohmann::json meshJson = nlohmann::json::object();
-			writeMeshToJson(doppelId, meshes, meshJson, true);
-			meshesJson[std::to_string(doppelId)] = meshJson;
-		}
-		nlohmann::json json = nlohmann::json::object();
-		json["task"] = "syncMeshes";
-		json["meshes"] = meshesJson;
-
-		broadcastWS(json.dump());
-	}
-#endif
 } // namespace
 
 #endif

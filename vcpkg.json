@@ -5,6 +5,7 @@
     "homepage": "https://github.com/n-taka/Doppelganger",
     "dependencies": [
         "boost-any",
+        "boost-asio",
         "boost-beast",
         "boost-random",
         "boost-uuid",

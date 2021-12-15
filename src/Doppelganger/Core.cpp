@@ -371,6 +371,8 @@ namespace Doppelganger
 													   fs::path("C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe")});
 #elif defined(__APPLE__)
 					std::vector<fs::path> chromePaths({fs::path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")});
+#else
+					std::vector<fs::path> chromePaths({});
 #endif
 					for (auto &p : chromePaths)
 					{
@@ -389,6 +391,8 @@ namespace Doppelganger
 														fs::path("C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe")});
 #elif defined(__APPLE__)
 					std::vector<fs::path> firefoxPaths({fs::path("/Applications/Firefox.app/Contents/MacOS/firefox")});
+#else
+					std::vector<fs::path> firefoxPaths({});
 #endif
 					for (auto &p : firefoxPaths)
 					{

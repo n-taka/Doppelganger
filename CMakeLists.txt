@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.15)
 ##############################################
 ### we use MT for users without C++ runtime
 ##############################################
-if(WIN32)
+if (WIN32)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif ()
 
@@ -11,7 +11,7 @@ endif ()
 ##############################################
 ### at least we support macOS that is still maintained
 ##############################################
-if(APPLE)
+if (APPLE)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING "" FORCE)
 endif ()
 
@@ -42,10 +42,12 @@ project(Doppelganger
 ### dependencies
 ##############################################
 # Boost
-if(WIN32)
+if (WIN32)
     find_package(Boost REQUIRED COMPONENTS random)
 elseif (APPLE)
     find_package(Boost REQUIRED COMPONENTS random filesystem)
+elseif (UNIX)
+    find_package(Boost REQUIRED COMPONENTS random)
 endif ()
 # json
 find_package(nlohmann_json CONFIG REQUIRED)
@@ -129,6 +131,17 @@ elseif (APPLE)
         ${CORE_FOUNDATION_LIBRARY}
         ${SECURITY_LIBRARY}
     )
+elseif (UNIX)
+    target_link_libraries(
+        ${PROJECT_NAME} PRIVATE
+        Boost::random
+        nlohmann_json
+        nlohmann_json::nlohmann_json
+        Eigen3::Eigen
+        minizip::minizip
+        OpenSSL::SSL
+        OpenSSL::Crypto
+    )
 endif ()
 
 
@@ -146,6 +159,9 @@ elseif (APPLE)
     # because we support macOS Mojave, we only require C++14 for macOS
     # we use boost::filesystem for macOS
     target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_14)
+elseif (UNIX)
+    # because we want to use std::filesystem, we require C++17 for Linux
+    target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 endif ()
 target_compile_definitions(${PROJECT_NAME} PUBLIC _USE_MATH_DEFINES)
 
@@ -153,9 +169,9 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC _USE_MATH_DEFINES)
 ##############################################
 ### example
 ##############################################
-if(DOPPELGANGER_BUILD_EXAMPLE)
+if (DOPPELGANGER_BUILD_EXAMPLE)
     add_subdirectory(example)
-endif()
+endif ()
 
 
 ##############################################
@@ -171,5 +187,8 @@ if (WIN32)
 elseif (APPLE)
     # shared library (todo: test on macOS)
     install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib)
+elseif (UNIX)
+    # shared library (todo: test on Linux)
+    install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION lib)
 endif ()
 

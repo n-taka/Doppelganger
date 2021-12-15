@@ -10,12 +10,12 @@
 #include "Doppelganger/Plugin.h"
 #include "Doppelganger/Util/uuid.h"
 
-#if defined(_WIN32) || defined(_WIN64)
-#include <filesystem>
-namespace fs = std::filesystem;
-#else
+#if defined(__APPLE__)
 #include "boost/filesystem.hpp"
 namespace fs = boost::filesystem;
+#else
+#include <filesystem>
+namespace fs = std::filesystem;
 #endif
 
 namespace

@@ -7,15 +7,16 @@
 #else
 #define DECLSPEC __declspec(dllimport)
 #endif
+#else
+#define DECLSPEC
 #endif
 
-#include <memory>
-#if defined(_WIN32) || defined(_WIN64)
-#include <filesystem>
-namespace fs = std::filesystem;
-#else
+#if defined(__APPLE__)
 #include "boost/filesystem.hpp"
 namespace fs = boost::filesystem;
+#else
+#include <filesystem>
+namespace fs = std::filesystem;
 #endif
 
 namespace Doppelganger

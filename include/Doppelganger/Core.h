@@ -7,20 +7,21 @@
 #else
 #define DECLSPEC __declspec(dllimport)
 #endif
+#else
+#define DECLSPEC
 #endif
 
 #include <memory>
 #include <string>
 #include <unordered_map>
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(__APPLE__)
+#include "boost/filesystem.hpp"
+namespace fs = boost::filesystem;
+#else
 #include <filesystem>
 namespace fs = std::filesystem;
-#else
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
 #endif
 #include <boost/asio.hpp>
-#include <boost/any.hpp>
 #include <nlohmann/json.hpp>
 #include "Doppelganger/Logger.h"
 

@@ -11,7 +11,7 @@
 #if defined(_WIN32) || defined(_WIN64)
 #include "windows.h"
 #include "libloaderapi.h"
-#elif defined(__APPLE__)
+#else
 #include <dlfcn.h>
 #endif
 

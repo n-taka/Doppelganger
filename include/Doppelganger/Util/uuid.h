@@ -7,6 +7,8 @@
 #else
 #define DECLSPEC __declspec(dllimport)
 #endif
+#else
+#define DECLSPEC
 #endif
 
 #include <string>
