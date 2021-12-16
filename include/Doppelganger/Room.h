@@ -1,14 +1,27 @@
 #ifndef ROOM_H
 #define ROOM_H
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(_WIN64)
 #ifdef DLL_EXPORT
 #define DECLSPEC __declspec(dllexport)
 #else
 #define DECLSPEC __declspec(dllimport)
 #endif
-#else
+#elif defined(__APPLE__)
 #define DECLSPEC
+#elif defined(__linux__)
+#define DECLSPEC
+#endif
+
+#if defined(_WIN64)
+#include <filesystem>
+namespace fs = std::filesystem;
+#elif defined(__APPLE__)
+#include "boost/filesystem.hpp"
+namespace fs = boost::filesystem;
+#elif defined(__linux__)
+#include <filesystem>
+namespace fs = std::filesystem;
 #endif
 
 #include "Doppelganger/triangleMesh.h"
@@ -20,13 +33,6 @@
 #include <mutex>
 #include <boost/any.hpp>
 #include <nlohmann/json.hpp>
-#if defined(__APPLE__)
-#include "boost/filesystem.hpp"
-namespace fs = boost::filesystem;
-#else
-#include <filesystem>
-namespace fs = std::filesystem;
-#endif
 
 #include "Doppelganger/Logger.h"
 

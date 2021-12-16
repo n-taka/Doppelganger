@@ -40,6 +40,11 @@ namespace
 }
 #endif
 
+#if defined(__linux__)
+#include <unistd.h>
+#include <limits.h>
+#endif
+
 // https://github.com/boostorg/beast/blob/develop/example/http/server/async/http_server_async.cpp
 
 namespace Doppelganger
@@ -54,7 +59,7 @@ namespace Doppelganger
 		////
 		// setup for resourceDir/workingDir
 		{
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(_WIN64)
 			char buffer[MAX_PATH];
 			// for windows, we use the directory of .exe itself
 			GetModuleFileName(NULL, buffer, sizeof(buffer));
@@ -87,6 +92,16 @@ namespace Doppelganger
 			{
 				fs::create_directories(systemParams.workingDir);
 			}
+#elif defined(__linux__)
+			char buffer[PATH_MAX];
+			// for linux, we use the directory of itself
+			readlink("/proc/self/exe", buffer, PATH_MAX);
+			fs::path p(buffer);
+			p = p.parent_path();
+			systemParams.resourceDir = p;
+			systemParams.resourceDir.make_preferred();
+			systemParams.resourceDir.append("resources");
+			systemParams.workingDir = systemParams.resourceDir;
 #endif
 		}
 
@@ -341,7 +356,8 @@ namespace Doppelganger
 		{
 			nlohmann::json &browserJson = config.at("browser");
 			// by default, we open browser
-			if (!browserJson.contains("openOnStartup") || browserJson.at("openOnStartup").get<bool>())
+			if ((!browserJson.contains("openOnStartup") || browserJson.at("openOnStartup").get<bool>())
+			 && config.at("server").at("host") == "127.0.0.1")
 			{
 				browserJson["openOnStartup"] = true;
 				// by default, we use default browser (open/start command)
@@ -366,13 +382,13 @@ namespace Doppelganger
 				// update browserJson["path"]
 				if (browserJson.at("type").get<std::string>() == "chrome")
 				{
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(_WIN64)
 					std::vector<fs::path> chromePaths({fs::path("C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"),
 													   fs::path("C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe")});
 #elif defined(__APPLE__)
 					std::vector<fs::path> chromePaths({fs::path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")});
-#else
-					std::vector<fs::path> chromePaths({});
+#elif defined(__linux__)
+					std::vector<fs::path> chromePaths({fs::path("/opt/google/chrome/google-chrome")});
 #endif
 					for (auto &p : chromePaths)
 					{
@@ -386,13 +402,13 @@ namespace Doppelganger
 				}
 				else if (browserJson.at("type").get<std::string>() == "firefox")
 				{
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(_WIN64)
 					std::vector<fs::path> firefoxPaths({fs::path("C:\\Program Files\\Mozilla Firefox\\firefox.exe"),
 														fs::path("C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe")});
 #elif defined(__APPLE__)
 					std::vector<fs::path> firefoxPaths({fs::path("/Applications/Firefox.app/Contents/MacOS/firefox")});
-#else
-					std::vector<fs::path> firefoxPaths({});
+#elif defined(__linux__)
+					std::vector<fs::path> firefoxPaths({fs::path("/usr/bin/firefox")});
 #endif
 					for (auto &p : firefoxPaths)
 					{
@@ -478,7 +494,7 @@ namespace Doppelganger
 				// todo: check command line switches for each browser
 				std::stringstream cmd;
 				// browser path
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(_WIN64)
 				// make sure that program runs in background.
 				cmd << "start ";
 				cmd << "\"\" ";
@@ -497,6 +513,18 @@ namespace Doppelganger
 				else if (browserJson.at("type").get<std::string>() == "safari")
 				{
 					cmd << "open -a Safari.app ";
+				}
+				else
+				{
+					cmd << "\"";
+					cmd << browserJson.at("path").get<std::string>();
+					cmd << "\"";
+					cmd << " ";
+				}
+#elif defined(__linux__)
+				if (browserJson.at("type").get<std::string>() == "default")
+				{
+					cmd << "xdg-open ";
 				}
 				else
 				{
@@ -526,6 +554,11 @@ namespace Doppelganger
 				cmd << config.at("server").at("completeURL").get<std::string>();
 #if defined(__APPLE__)
 				if (browserJson.at("type").get<std::string>() != "default" && browserJson.at("type").get<std::string>() != "safari")
+				{
+					cmd << " &";
+				}
+#elif defined(__linux__)
+				if (browserJson.at("type").get<std::string>() != "default")
 				{
 					cmd << " &";
 				}

@@ -8,10 +8,12 @@
 #include <string>
 #include <fstream>
 #include <streambuf>
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(_WIN64)
 #include "windows.h"
 #include "libloaderapi.h"
-#else
+#elif defined(__APPLE__)
+#include <dlfcn.h>
+#elif defined(__linux__)
 #include <dlfcn.h>
 #endif
 
@@ -19,34 +21,43 @@ namespace
 {
 	////
 	// typedef for loading API from dll/lib
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(_WIN64)
 	typedef void(__stdcall *APIPtr_t)(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &, nlohmann::json &, nlohmann::json &);
-#else
+#elif defined(__APPLE__)
+	typedef void (*APIPtr_t)(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &, nlohmann::json &, nlohmann::json &);
+#elif defined(__linux__)
 	typedef void (*APIPtr_t)(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &, nlohmann::json &, nlohmann::json &);
 #endif
 
 	bool loadDll(const fs::path &dllPath, const std::string &functionName, Doppelganger::Plugin::API_t &apiFunc)
 	{
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(_WIN64)
 		HINSTANCE handle = LoadLibrary(dllPath.string().c_str());
-#else
+#elif defined(__APPLE__)
+		void *handle;
+		handle = dlopen(dllPath.string().c_str(), RTLD_LAZY);
+#elif defined(__linux__)
 		void *handle;
 		handle = dlopen(dllPath.string().c_str(), RTLD_LAZY);
 #endif
 
 		if (handle != NULL)
 		{
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(_WIN64)
 			FARPROC lpfnDllFunc = GetProcAddress(handle, functionName.c_str());
-#else
+#elif defined(__APPLE__)
+			void *lpfnDllFunc = dlsym(handle, functionName.c_str());
+#elif defined(__linux__)
 			void *lpfnDllFunc = dlsym(handle, functionName.c_str());
 #endif
 			if (!lpfnDllFunc)
 			{
 				// error
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(_WIN64)
 				FreeLibrary(handle);
-#else
+#elif defined(__APPLE__)
+				dlclose(handle);
+#elif defined(__linux__)
 				dlclose(handle);
 #endif
 				return false;
@@ -161,10 +172,12 @@ namespace Doppelganger
 	void Plugin::installFromDirectory(const fs::path &pluginDir)
 	{
 		std::string dllName(name);
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(_WIN64)
 		dllName += ".dll";
-#else
-		dllName = "lib" + dllName + ".so";
+#elif defined(__APPLE__)
+		dllName = "lib" + dllName + "_macOS" + ".so";
+#elif defined(__linux__)
+		dllName = "lib" + dllName + "_Linux" + ".so";
 #endif
 		// c++ functions (.dll/.so) (if exists)
 		fs::path dllPath(pluginDir);
