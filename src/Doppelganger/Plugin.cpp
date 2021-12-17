@@ -171,17 +171,20 @@ namespace Doppelganger
 
 	void Plugin::installFromDirectory(const fs::path &pluginDir)
 	{
+		fs::path dllPath(pluginDir);
 		std::string dllName(name);
 #if defined(_WIN64)
+		dllPath.append("Windows");
 		dllName += ".dll";
 #elif defined(__APPLE__)
-		dllName = "lib" + dllName + "_macOS" + ".so";
+		dllPath.append("Darwin");
+		dllName = "lib" + dllName + ".so";
 #elif defined(__linux__)
-		dllName = "lib" + dllName + "_Linux" + ".so";
+		dllPath.append("Linux");
+		dllName = "lib" + dllName + ".so";
 #endif
-		// c++ functions (.dll/.so) (if exists)
-		fs::path dllPath(pluginDir);
 		dllPath.append(dllName);
+		// c++ functions (.dll/.so) (if exists)
 		if (fs::exists(dllPath))
 		{
 			if (!loadDll(dllPath, "pluginProcess", func))
