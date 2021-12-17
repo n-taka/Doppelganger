@@ -184,12 +184,15 @@ namespace Doppelganger
 					listJsonPath.append("tmp.json");
 					Util::download(listUrl.get<std::string>(), listJsonPath);
 					std::ifstream ifs(listJsonPath.string());
-					nlohmann::json listJson = nlohmann::json::parse(ifs);
-					ifs.close();
-					fs::remove_all(listJsonPath);
-					for (const auto &el : listJson.items())
+					if(ifs)
 					{
-						pluginListJson[el.key()] = el.value();
+						nlohmann::json listJson = nlohmann::json::parse(ifs);
+						ifs.close();
+						fs::remove_all(listJsonPath);
+						for (const auto &el : listJson.items())
+						{
+							pluginListJson[el.key()] = el.value();
+						}
 					}
 				}
 				pluginJson["list"] = pluginListJson;
