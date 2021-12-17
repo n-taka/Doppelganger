@@ -17,17 +17,71 @@
 #include <boost/asio/ssl/error.hpp>
 #include <boost/asio/ssl/stream.hpp>
 
+namespace {
+	namespace beast = boost::beast;
+	namespace asio = boost::asio;
+	namespace ssl = asio::ssl;
+	namespace http = boost::beast::http;
+	using tcp = boost::asio::ip::tcp;
+
+	tcp::resolver::results_type	resolve(asio::io_context& ctx, std::string const& hostname)
+	{
+	    tcp::resolver resolver{ctx};
+	    return resolver.resolve(hostname, "https");
+	}
+	
+	tcp::socket	connect(asio::io_context& ctx, std::string const& hostname)
+	{
+	    tcp::socket socket{ctx};
+	    asio::connect(socket, resolve(ctx, hostname));
+	    return socket;
+	}
+	
+	std::unique_ptr<ssl::stream<tcp::socket>> connect(asio::io_context& ctx,
+	        ssl::context& ssl_ctx,
+	        std::string const& hostname)
+	{
+	    auto stream = boost::make_unique<ssl::stream<tcp::socket>>(
+	      connect(ctx, hostname), ssl_ctx);
+	    // tag::stream_setup_source[]
+	    boost::certify::set_server_hostname(*stream, hostname);
+	    boost::certify::sni_hostname(*stream, hostname);
+	    // end::stream_setup_source[]
+	
+	    stream->handshake(ssl::stream_base::handshake_type::client);
+	    return stream;
+	}
+	
+	http::response<http::string_body> get(ssl::stream<tcp::socket>& stream,
+	    boost::string_view hostname,
+	    boost::string_view uri)
+	{
+	    http::request<http::empty_body> request;
+	    request.method(http::verb::get);
+	    request.target(uri);
+	    request.keep_alive(false);
+	    request.set(http::field::host, hostname);
+	    http::write(stream, request);
+	
+	    http::response<http::string_body> response;
+	    beast::flat_buffer buffer;
+	    http::read(stream, buffer, response);
+	
+	    return response;
+	}
+}
+
 namespace Doppelganger
 {
 	namespace Util
 	{
 		bool download(const std::string &targetUrl, const fs::path &destPath)
 		{
-			namespace beast = boost::beast; // from <boost/beast.hpp>
-			namespace http = beast::http;	// from <boost/beast/http.hpp>
-			namespace net = boost::asio;	// from <boost/asio.hpp>
-			namespace ssl = net::ssl;		// from <boost/asio/ssl.hpp>
-			using tcp = net::ip::tcp;		// from <boost/asio/ip/tcp.hpp>
+			namespace beast = boost::beast;
+			namespace asio = boost::asio;
+			namespace ssl = asio::ssl;
+			namespace http = boost::beast::http;
+			using tcp = boost::asio::ip::tcp;
 
 			// https://www.boost.org/doc/libs/develop/libs/beast/example/http/client/sync/http_client_sync.cpp
 			// https://www.boost.org/doc/libs/develop/libs/beast/example/http/client/sync-ssl/http_client_sync_ssl.cpp
@@ -44,7 +98,7 @@ namespace Doppelganger
 				std::string host;
 				findPos = url.find("/");
 				host = url.substr(0, findPos);
-				url = url.substr(host.size());
+				std::string target = url.substr(host.size());
 
 				std::string port;
 				findPos = host.find(":");
@@ -58,95 +112,26 @@ namespace Doppelganger
 					host = host.substr(0, findPos);
 				}
 
-				std::string target = std::move(url);
+				asio::io_context ctx;
+				ssl::context ssl_ctx{ssl::context::tlsv12_client};
 
-				const int version = 11;
-
-				// The io_context is required for all I/O
-				net::io_context ioc;
-
-				// The SSL context is required, and holds certificates
-				ssl::context ctx(ssl::context::tlsv12_client);
-
-#if 0
-			// This holds the root certificate used for verification
-			load_root_certificates(ctx);
-			// Verify the remote server's certificate
-			ctx.set_verify_mode(ssl::verify_peer);
-#else
-				// https://stackoverflow.com/questions/49507407/using-boost-beast-asio-http-client-with-ssl-https
-				ctx.set_verify_mode(ssl::context::verify_peer);
-				boost::certify::enable_native_https_server_verification(ctx);
-#endif
-
-				// These objects perform our I/O
-				tcp::resolver resolver(ioc);
-				beast::ssl_stream<beast::tcp_stream> stream(ioc, ctx);
-
-				// Set SNI Hostname (many hosts need this to handshake successfully)
-				if (!SSL_set_tlsext_host_name(stream.native_handle(), host.c_str()))
-				{
-					beast::error_code ec{static_cast<int>(::ERR_get_error()), net::error::get_ssl_category()};
-					throw beast::system_error{ec};
-				}
-
-				// Look up the domain name
-				auto const results = resolver.resolve(host, port);
-
-				// Make the connection on the IP address we get from a lookup
-				beast::get_lowest_layer(stream).connect(results);
-
-				// Perform the SSL handshake
-				stream.handshake(ssl::stream_base::client);
-
-				// Set up an HTTP GET request message
-				http::request<http::string_body> req{http::verb::get, target, version};
-				req.set(http::field::host, host);
-				req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
-
-				// Send the HTTP request to the remote host
-				http::write(stream, req);
-
-				// This buffer is used for reading and must be persisted
-				beast::flat_buffer buffer;
-
-				// https://github.com/boostorg/beast/issues/1588
-				// https://stackoverflow.com/questions/50348516/boost-beast-message-with-body-limit
-				// // Declare a container to hold the response
-				// http::response<http::dynamic_body> res;
-				// // Receive the HTTP response
-				// http::read(stream, buffer, res);
-				// std::ofstream destFile(destPath, std::ios::binary);
-				// const std::string content = boost::beast::buffers_to_string(res.body().data());
-				// destFile.write(content.c_str(), content.size());
-				// destFile.close();
-
-				http::response_parser<http::dynamic_body> parser;
-				// Allow for an unlimited body size
-				parser.body_limit((std::numeric_limits<std::uint64_t>::max)());
-				http::read(stream, buffer, parser);
+				ssl_ctx.set_verify_mode(ssl::context::verify_peer | ssl::context::verify_fail_if_no_peer_cert);
+			    ssl_ctx.set_default_verify_paths();
+			    // tag::ctx_setup_source[]
+    			boost::certify::enable_native_https_server_verification(ssl_ctx);
+    			// end::ctx_setup_source[]
+    			auto stream_ptr = connect(ctx, ssl_ctx, host);
+    			auto response = get(*stream_ptr, host, target);
 
 				// write to file
 				std::ofstream destFile(destPath.string(), std::ios::binary);
-				const std::string content = boost::beast::buffers_to_string(parser.get().body().data());
-				destFile.write(content.c_str(), content.size());
+				destFile << response.body();
 				destFile.close();
 
-				// Gracefully close the stream
-				beast::error_code ec;
-				stream.shutdown(ec);
-				if (ec == net::error::eof || ec == ssl::error::stream_truncated)
-				{
-					// Rationale:
-					// http://stackoverflow.com/questions/25587403/boost-asio-ssl-async-shutdown-always-finishes-with-an-error
-					ec = {};
-				}
-				if (ec)
-				{
-					throw beast::system_error{ec};
-				}
+    			boost::system::error_code ec;
+    			stream_ptr->shutdown(ec);
+    			stream_ptr->next_layer().close(ec);
 
-				// If we get here then the connection is closed gracefully
 				return true;
 			}
 			catch (std::exception const &e)
