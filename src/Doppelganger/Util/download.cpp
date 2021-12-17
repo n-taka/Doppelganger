@@ -17,57 +17,58 @@
 #include <boost/asio/ssl/error.hpp>
 #include <boost/asio/ssl/stream.hpp>
 
-namespace {
+namespace
+{
 	namespace beast = boost::beast;
 	namespace asio = boost::asio;
 	namespace ssl = asio::ssl;
 	namespace http = boost::beast::http;
 	using tcp = boost::asio::ip::tcp;
 
-	tcp::resolver::results_type	resolve(asio::io_context& ctx, std::string const& hostname)
+	tcp::resolver::results_type resolve(asio::io_context &ctx, std::string const &hostname)
 	{
-	    tcp::resolver resolver{ctx};
-	    return resolver.resolve(hostname, "https");
+		tcp::resolver resolver{ctx};
+		return resolver.resolve(hostname, "https");
 	}
-	
-	tcp::socket	connect(asio::io_context& ctx, std::string const& hostname)
+
+	tcp::socket connect(asio::io_context &ctx, std::string const &hostname)
 	{
-	    tcp::socket socket{ctx};
-	    asio::connect(socket, resolve(ctx, hostname));
-	    return socket;
+		tcp::socket socket{ctx};
+		asio::connect(socket, resolve(ctx, hostname));
+		return socket;
 	}
-	
-	std::unique_ptr<ssl::stream<tcp::socket>> connect(asio::io_context& ctx,
-	        ssl::context& ssl_ctx,
-	        std::string const& hostname)
+
+	std::unique_ptr<ssl::stream<tcp::socket>> connect(asio::io_context &ctx,
+													  ssl::context &ssl_ctx,
+													  std::string const &hostname)
 	{
-	    auto stream = boost::make_unique<ssl::stream<tcp::socket>>(
-	      connect(ctx, hostname), ssl_ctx);
-	    // tag::stream_setup_source[]
-	    boost::certify::set_server_hostname(*stream, hostname);
-	    boost::certify::sni_hostname(*stream, hostname);
-	    // end::stream_setup_source[]
-	
-	    stream->handshake(ssl::stream_base::handshake_type::client);
-	    return stream;
+		auto stream = boost::make_unique<ssl::stream<tcp::socket>>(
+			connect(ctx, hostname), ssl_ctx);
+		// tag::stream_setup_source[]
+		boost::certify::set_server_hostname(*stream, hostname);
+		boost::certify::sni_hostname(*stream, hostname);
+		// end::stream_setup_source[]
+
+		stream->handshake(ssl::stream_base::handshake_type::client);
+		return stream;
 	}
-	
-	http::response<http::string_body> get(ssl::stream<tcp::socket>& stream,
-	    boost::string_view hostname,
-	    boost::string_view uri)
+
+	http::response<http::string_body> get(ssl::stream<tcp::socket> &stream,
+										  boost::string_view hostname,
+										  boost::string_view uri)
 	{
-	    http::request<http::empty_body> request;
-	    request.method(http::verb::get);
-	    request.target(uri);
-	    request.keep_alive(false);
-	    request.set(http::field::host, hostname);
-	    http::write(stream, request);
-	
-	    http::response<http::string_body> response;
-	    beast::flat_buffer buffer;
-	    http::read(stream, buffer, response);
-	
-	    return response;
+		http::request<http::empty_body> request;
+		request.method(http::verb::get);
+		request.target(uri);
+		request.keep_alive(false);
+		request.set(http::field::host, hostname);
+		http::write(stream, request);
+
+		http::response<http::string_body> response;
+		beast::flat_buffer buffer;
+		http::read(stream, buffer, response);
+
+		return response;
 	}
 }
 
@@ -116,21 +117,21 @@ namespace Doppelganger
 				ssl::context ssl_ctx{ssl::context::tlsv12_client};
 
 				ssl_ctx.set_verify_mode(ssl::context::verify_peer | ssl::context::verify_fail_if_no_peer_cert);
-			    ssl_ctx.set_default_verify_paths();
-			    // tag::ctx_setup_source[]
-    			boost::certify::enable_native_https_server_verification(ssl_ctx);
-    			// end::ctx_setup_source[]
-    			auto stream_ptr = connect(ctx, ssl_ctx, host);
-    			auto response = get(*stream_ptr, host, target);
+				ssl_ctx.set_default_verify_paths();
+				// tag::ctx_setup_source[]
+				boost::certify::enable_native_https_server_verification(ssl_ctx);
+				// end::ctx_setup_source[]
+				auto stream_ptr = connect(ctx, ssl_ctx, host);
+				auto response = get(*stream_ptr, host, target);
 
 				// write to file
 				std::ofstream destFile(destPath.string(), std::ios::binary);
 				destFile << response.body();
 				destFile.close();
 
-    			boost::system::error_code ec;
-    			stream_ptr->shutdown(ec);
-    			stream_ptr->next_layer().close(ec);
+				boost::system::error_code ec;
+				stream_ptr->shutdown(ec);
+				stream_ptr->next_layer().close(ec);
 
 				return true;
 			}
