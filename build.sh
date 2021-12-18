@@ -22,13 +22,13 @@ fi
 # build project
 ############
 if [ "$(uname)" == "Darwin" ]; then
-    cmake -B build -S . -DVCPKG_TARGET_TRIPLET="${triplet}" -DCMAKE_INSTALL_PREFIX=Doppelganger_install
+    cmake -B build -S . -DVCPKG_TARGET_TRIPLET="${triplet}"  -DCMAKE_BUILD_TYPE="Release" -DCMAKE_INSTALL_PREFIX=Doppelganger_install
     cmake --build build --config "Release"
     cmake --install build
 elif [ "$(expr substr $(uname -s) 1 10)" == "MINGW64_NT" ]; then
     subst X: .
     cd X:
-    cmake -B build -S . -DVCPKG_TARGET_TRIPLET="${triplet}" -DCMAKE_INSTALL_PREFIX=Doppelganger_install
+    cmake -B build -S . -DVCPKG_TARGET_TRIPLET="${triplet}"  -DCMAKE_BUILD_TYPE="Release" -DCMAKE_INSTALL_PREFIX=Doppelganger_install
     cmake --build build --config "Release"
     cmake --install build
     # revert subst command
@@ -36,7 +36,7 @@ elif [ "$(expr substr $(uname -s) 1 10)" == "MINGW64_NT" ]; then
     # echo "unbind ./submodule as X:"
     subst X: //D
 elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
-    cmake -B build -S . -DVCPKG_TARGET_TRIPLET="${triplet}" -DCMAKE_INSTALL_PREFIX=Doppelganger_install
+    cmake -B build -S . -DVCPKG_TARGET_TRIPLET="${triplet}"  -DCMAKE_BUILD_TYPE="Release" -DCMAKE_INSTALL_PREFIX=Doppelganger_install
     cmake --build build --config "Release"
     cmake --install build
 else
