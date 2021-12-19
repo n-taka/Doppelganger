@@ -64,11 +64,12 @@ namespace
 		request.set(http::field::host, hostname);
 		http::write(stream, request);
 
-		http::response<http::string_body> response;
 		beast::flat_buffer buffer;
-		http::read(stream, buffer, response);
-
-		return response;
+		http::response_parser<http::string_body> parser;
+		// we disable body limit (this is not the best way, but works.)
+		parser.body_limit(boost::none);
+		http::read(stream, buffer, parser);
+		return parser.get();
 	}
 }
 
