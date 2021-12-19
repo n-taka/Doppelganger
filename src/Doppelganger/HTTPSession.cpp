@@ -201,22 +201,24 @@ namespace
 					if (reqPathVec.at(2) == "css" || reqPathVec.at(2) == "html" || reqPathVec.at(2) == "icon" || reqPathVec.at(2) == "js")
 					{
 						// resource
-						fs::path completePath(core->systemParams.resourceDir);
+						fs::path completePath(room->core->config.at("plugin").at("dir").get<std::string>());
 						completePath.make_preferred();
+						{
+							// find assets plugin
+							std::string dirName("assets");
+							dirName += "_";
+							std::string installedVersion(room->core->plugin.at("assets")->installedVersion);
+							if (installedVersion == "latest")
+							{
+								installedVersion = room->core->plugin.at("assets")->parameters.at("versions").at(0).at("version").get<std::string>();
+							}
+							dirName += installedVersion;
+							completePath.append(dirName);
+						}
 						for (int pIdx = 2; pIdx < reqPathVec.size(); ++pIdx)
 						{
 							completePath.append(reqPathVec.at(pIdx));
 						}
-
-						// // note: second condition is for boost::filesystem
-						// if (!completePath.has_filename() || completePath.filename().string() == ".")
-						// {
-						// 	// moved permanently (301)
-						// 	std::string location = core->config.at("completeURL").get<std::string>();
-						// 	location += "/html/index.html";
-
-						// 	return send(movedPermanently(res, location));
-						// }
 
 						// Attempt to open the file
 						boost::beast::error_code ec;

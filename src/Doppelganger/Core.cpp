@@ -93,8 +93,8 @@ namespace Doppelganger
 				fs::create_directories(systemParams.workingDir);
 			}
 #elif defined(__linux__)
-			char buffer[PATH_MAX];
 			// for linux, we use the directory of itself
+			char buffer[PATH_MAX];
 			readlink("/proc/self/exe", buffer, PATH_MAX);
 			fs::path p(buffer);
 			p = p.parent_path();

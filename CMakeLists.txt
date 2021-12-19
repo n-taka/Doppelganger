@@ -178,7 +178,6 @@ endif ()
 ### install
 ##############################################
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include DESTINATION .)
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/resources DESTINATION .)
 if (WIN32)
     # *.dll file for actual execution
     install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION lib)
