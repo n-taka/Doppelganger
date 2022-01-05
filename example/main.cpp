@@ -2,29 +2,44 @@
 
 #include <boost/asio/signal_set.hpp>
 
-#include <iostream>
-
 int main(int argv, char *argc[])
 {
-	boost::asio::io_context ioc;
+	const int threads = std::max<int>(1, std::thread::hardware_concurrency());
 
-	std::shared_ptr<Doppelganger::Core> core = std::make_shared<Doppelganger::Core>(ioc);
+	boost::asio::io_context ioc{threads};
+	boost::asio::ssl::context ctx{boost::asio::ssl::context::tlsv12};
+
+	// todo
+	// load_server_certificate(ctx);
+
+	std::shared_ptr<Doppelganger::Core> core = std::make_shared<Doppelganger::Core>(ioc, ctx);
 	core->setup();
 	core->run();
 
-	// Capture SIGINT and SIGTERM to perform a clean shutdown
 	boost::asio::signal_set signals(ioc, SIGINT, SIGTERM);
 	signals.async_wait(
 		[&ioc](boost::system::error_code const &, int)
 		{
-			// Stop the io_context. This will cause run()
-			// to return immediately, eventually destroying the
-			// io_context and any remaining handlers in it.
 			ioc.stop();
 		});
 
-	// Run the I/O service on the main thread
+	std::vector<std::thread> v;
+	v.reserve(threads - 1);
+	for (auto i = threads - 1; i > 0; --i)
+		v.emplace_back(
+			[&ioc]
+			{
+				ioc.run();
+			});
 	ioc.run();
+
+	// (If we get here, it means we got a SIGINT or SIGTERM)
+
+	// Block until all the threads exit
+	for (auto &t : v)
+	{
+		t.join();
+	}
 
 	return 0;
 }

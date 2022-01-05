@@ -61,10 +61,12 @@ namespace Doppelganger
 		}
 	}
 
-	void Room::joinWS(const std::shared_ptr<WebsocketSession> &session)
+	void Room::joinWS(const std::variant<std::shared_ptr<PlainWebsocketSession>, std::shared_ptr<SSLWebsocketSession>> &session)
 	{
 		std::lock_guard<std::mutex> lock(serverParams.mutex);
-		serverParams.websocketSessions[session->UUID] = session;
+		std::visit([&](const auto &session_)
+				   { serverParams.websocketSessions[session_->UUID_] = session_; },
+				   session);
 	}
 
 	void Room::leaveWS(const std::string &sessionUUID)
@@ -98,19 +100,27 @@ namespace Doppelganger
 		for (const auto &uuid_session : serverParams.websocketSessions)
 		{
 			const std::string &sessionUUID = uuid_session.first;
-			const std::shared_ptr<WebsocketSession> &session = uuid_session.second;
+			const std::variant<std::shared_ptr<PlainWebsocketSession>, std::shared_ptr<SSLWebsocketSession>> &session = uuid_session.second;
 			if (sessionUUID != sourceUUID)
 			{
 				if (!broadcast.empty())
 				{
-					session->send(broadcastMessage);
+					std::visit([&](const auto &session_)
+							   {
+								   session_->send(broadcastMessage);
+							   },
+							   session);
 				}
 			}
 			else
 			{
 				if (!response.empty())
 				{
-					session->send(responseMessage);
+					std::visit([&](const auto &session_)
+							   {
+								   session_->send(responseMessage);
+							   },
+							   session);
 				}
 			}
 		}

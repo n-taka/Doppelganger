@@ -7,6 +7,7 @@
 #include "Doppelganger/HTTPSession.h"
 #include "Doppelganger/Plugin.h"
 #include "Doppelganger/Util/download.h"
+#include "Doppelganger/Listener.h"
 
 #include <fstream>
 #include <sstream>
@@ -49,10 +50,12 @@ namespace
 
 namespace Doppelganger
 {
-	Core::Core(boost::asio::io_context &ioc_)
-		: ioc(ioc_), acceptor(ioc), socket(ioc)
+	Core::Core(boost::asio::io_context &ioc,
+			 boost::asio::ssl::context &ctx)
+		: ioc_(ioc), ctx_(ctx)
 	{
 	}
+
 
 	void Core::setup()
 	{
@@ -290,40 +293,9 @@ namespace Doppelganger
 			boost::system::error_code ec;
 			boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::make_address(serverJson.at("host").get<std::string>()), serverJson.at("port").get<int>());
 
-			// Open the acceptor
-			acceptor.open(endpoint.protocol(), ec);
-			if (ec)
-			{
-				fail(ec, "open");
-				return;
-			}
+			listener = std::make_shared<Listener>(shared_from_this(), ioc_, ctx_, endpoint);
 
-			// Allow address reuse
-			acceptor.set_option(boost::asio::socket_base::reuse_address(true));
-			if (ec)
-			{
-				fail(ec, "set_option");
-				return;
-			}
-
-			// Bind to the server address
-			acceptor.bind(endpoint, ec);
-			if (ec)
-			{
-				fail(ec, "bind");
-				return;
-			}
-
-			// Start listening for connections
-			acceptor.listen(
-				boost::asio::socket_base::max_listen_connections, ec);
-			if (ec)
-			{
-				fail(ec, "listen");
-				return;
-			}
-
-			serverJson["port"] = acceptor.local_endpoint().port();
+			serverJson["port"] = listener->acceptor_.local_endpoint().port();
 			std::stringstream completeURL;
 			completeURL << serverJson.at("protocol").get<std::string>();
 			completeURL << serverJson.at("host").get<std::string>();
@@ -337,12 +309,7 @@ namespace Doppelganger
 	{
 		// start servers
 		{
-			acceptor.async_accept(
-				socket,
-				[self = shared_from_this()](boost::system::error_code ec)
-				{
-					self->onAccept(ec);
-				});
+			listener->run();
 
 			std::stringstream s;
 			s << "Listening for requests at : " << config.at("server").at("completeURL").get<std::string>();
@@ -573,44 +540,6 @@ namespace Doppelganger
 			}
 		}
 	}
-
-	void Core::fail(
-		boost::system::error_code ec,
-		char const *what)
-	{
-		// Don't report on canceled operations
-		if (ec == boost::asio::error::operation_aborted)
-		{
-			return;
-		}
-
-		std::stringstream s;
-		s << what << ": " << ec.message();
-		logger.log(s.str(), "ERROR");
-	}
-
-	void Core::onAccept(
-		boost::system::error_code ec)
-	{
-		if (ec)
-		{
-			return fail(ec, "accept");
-		}
-		else
-		{
-			// Launch a new session for this connection
-			std::make_shared<HTTPSession>(std::move(socket), shared_from_this())->run();
-		}
-
-		// Accept another connection
-		acceptor.async_accept(
-			socket,
-			[self = shared_from_this()](boost::system::error_code ec)
-			{
-				self->onAccept(ec);
-			});
-	}
-
 }
 
 #endif

@@ -1,6 +1,14 @@
 #ifndef WEBSOCKETSESSION_CPP
 #define WEBSOCKETSESSION_CPP
 
+// see
+// https://www.boost.org/doc/libs/develop/libs/beast/example/advanced/server-flex/advanced_server_flex.cpp
+
+#include <memory>
+#include <string>
+#include <sstream>
+#include <vector>
+
 #include "Doppelganger/WebsocketSession.h"
 
 #include "Doppelganger/Core.h"
@@ -8,95 +16,64 @@
 #include "Doppelganger/Logger.h"
 #include "Doppelganger/Plugin.h"
 
+////
+// #include "example/common/server_certificate.hpp"
+
 namespace Doppelganger
 {
-	WebsocketSession::WebsocketSession(boost::asio::ip::tcp::socket socket,
-									   const std::string &UUID_,
-									   const std::shared_ptr<Room> &room_)
-		: UUID(UUID_), ws(std::move(socket)), room(room_)
+	////
+	// WebsocketSession
+	////
+	template <class Derived>
+	Derived &WebsocketSession<Derived>::derived()
 	{
-		std::stringstream ss;
-		ss << "New WS session \"" << UUID << "\" is created.";
-		room->logger.log(ss.str(), "SYSTEM");
+		return static_cast<Derived &>(*this);
 	}
 
-	WebsocketSession::~WebsocketSession()
+	template <class Derived>
+	void WebsocketSession<Derived>::onAccept(beast::error_code ec)
 	{
-	}
-
-	void WebsocketSession::fail(boost::system::error_code ec, char const *what)
-	{
-		// Remove this session from the list of active sessions
-		// If something wrong happens and WS is invalidated, such WS will be removed
-		//   in the next write operation.
-		{
-			std::stringstream ss;
-			ss << "WS session \"" << UUID << "\" is closed.";
-			room->logger.log(ss.str(), "SYSTEM");
-		}
-		// remove mouse cursor
-		//   - update parameter on this server
-		//   - broadcast message for remove
-		{
-			room->interfaceParams.cursors.erase(UUID);
-			// parameters = {
-			//  "sessionUUID": sessionUUID string,
-			//  "cursor": {
-			//   "remove": boolean value for removing cursor for no longer connected session
-			//  }
-			// }
-			nlohmann::json response, broadcast;
-			response = nlohmann::json::object();
-			broadcast = nlohmann::json::object();
-			broadcast["sessionUUID"] = UUID;
-			broadcast["cursor"] = nlohmann::json::object();
-			broadcast["cursor"]["remove"] = true;
-			room->broadcastWS("syncCursor", UUID, broadcast, response);
-		}
-		room->leaveWS(UUID);
-
-		// Don't report these
-		if (ec == boost::asio::error::operation_aborted ||
-			ec == boost::beast::websocket::error::closed)
-		{
-			return;
-		}
-
-		std::stringstream s;
-		s << what << ": " << ec.message();
-		room->logger.log(s.str(), "ERROR");
-	}
-
-	void WebsocketSession::onAccept(boost::system::error_code ec)
-	{
-		// Handle the error, if any
 		if (ec)
 		{
 			return fail(ec, "accept (websocket)");
 		}
 
 		// Add this session to the list of active sessions
-		room->joinWS(shared_from_this());
-
+		room_->joinWS(derived().shared_from_this());
 		// initialize session
 		nlohmann::json broadcast = nlohmann::json::object();
 		nlohmann::json response = nlohmann::json::object();
-		response["sessionUUID"] = UUID;
-		room->broadcastWS("initializeSession", UUID, broadcast, response);
+		response["sessionUUID"] = UUID_;
+		room_->broadcastWS("initializeSession", UUID_, broadcast, response);
 
-		// start reading a message
-		ws.async_read(
-			buffer,
-			[sp = shared_from_this()](
-				boost::system::error_code ec, std::size_t bytes)
-			{
-				sp->onRead(ec, bytes);
-			});
+		// Read a message
+		doRead();
 	}
 
-	void WebsocketSession::onRead(boost::system::error_code ec, std::size_t bytes_transferred)
+	template <class Derived>
+	void WebsocketSession<Derived>::doRead()
 	{
-		// Handle the error, if any
+		// Read a message into our buffer
+		derived().ws().async_read(
+			buffer_,
+			beast::bind_front_handler(
+				&WebsocketSession::onRead,
+				derived().shared_from_this()));
+	}
+
+	template <class Derived>
+	void WebsocketSession<Derived>::onRead(
+		beast::error_code ec,
+		std::size_t bytes_transferred)
+	{
+		boost::ignore_unused(bytes_transferred);
+
+		// This indicates that the websocket_session was closed
+		if (ec == websocket::error::closed)
+		{
+			return;
+		}
+
 		if (ec)
 		{
 			return fail(ec, "read (websocket)");
@@ -104,11 +81,11 @@ namespace Doppelganger
 
 		try
 		{
-			const std::string payload = boost::beast::buffers_to_string(buffer.data());
+			const std::string payload = boost::beast::buffers_to_string(buffer_.data());
 			const nlohmann::json parameters = nlohmann::json::parse(payload);
 			const std::string &APIName = parameters.at("API").get<std::string>();
 			const std::string &sourceUUID = parameters.at("sessionUUID").get<std::string>();
-			const Doppelganger::Plugin::API_t &APIFunc = room->core->plugin.at(APIName)->func;
+			const Doppelganger::Plugin::API_t &APIFunc = room_->core->plugin.at(APIName)->func;
 
 			// WS APIs are called so many times (e.g. syncCursor).
 			// So, I simply comment out this logging
@@ -127,72 +104,178 @@ namespace Doppelganger
 			// }
 
 			nlohmann::json response, broadcast;
-			APIFunc(room, parameters.at("parameters"), response, broadcast);
+			APIFunc(room_, parameters.at("parameters"), response, broadcast);
 
-			room->broadcastWS(APIName, sourceUUID, broadcast, response);
+			room_->broadcastWS(APIName, sourceUUID, broadcast, response);
 		}
 		catch (...)
 		{
 			std::stringstream logContent;
 			logContent << "Invalid WS API Call...";
-			room->logger.log(logContent.str(), "ERROR");
+			room_->logger.log(logContent.str(), "ERROR");
 		}
 
 		// Clear the buffer
-		buffer.consume(buffer.size());
+		buffer_.consume(buffer_.size());
 
 		// Read another message
-		ws.async_read(
-			buffer,
-			[sp = shared_from_this()](
-				boost::system::error_code ec, std::size_t bytes)
-			{
-				sp->onRead(ec, bytes);
-			});
+		doRead();
 	}
 
-	void WebsocketSession::send(const std::shared_ptr<const std::string> &ss)
+	template <class Derived>
+	void WebsocketSession<Derived>::doWrite()
 	{
-		// Always add to queue
-		queue.push_back(ss);
-
-		// Are we already writing?
-		if (queue.size() > 1)
-		{
-			return;
-		}
-
-		// We are not currently writing, so send this immediately
-		ws.async_write(
-			boost::asio::buffer(*queue.front()),
-			[sp = shared_from_this()](
-				boost::system::error_code ec, std::size_t bytes)
-			{
-				sp->onWrite(ec, bytes);
-			});
+		// Read a message into our buffer
+		derived().ws().async_write(
+			boost::asio::buffer(*queue_.front()),
+			beast::bind_front_handler(
+				&WebsocketSession::onWrite,
+				derived().shared_from_this()));
 	}
 
-	void WebsocketSession::onWrite(boost::system::error_code ec, std::size_t)
+	template <class Derived>
+	void WebsocketSession<Derived>::onWrite(
+		beast::error_code ec,
+		std::size_t bytes_transferred)
 	{
-		// Handle the error, if any
+		boost::ignore_unused(bytes_transferred);
+
 		if (ec)
 		{
 			return fail(ec, "write (websocket)");
 		}
 
 		// Remove the string from the queue
-		queue.erase(queue.begin());
+		queue_.erase(queue_.begin());
 
 		// Send the next message if any
-		if (!queue.empty())
-			ws.async_write(
-				boost::asio::buffer(*queue.front()),
-				[sp = shared_from_this()](
-					boost::system::error_code ec, std::size_t bytes)
-				{
-					sp->onWrite(ec, bytes);
-				});
+		if (!queue_.empty())
+		{
+			doWrite();
+		}
+	}
+
+	template <class Derived>
+	void WebsocketSession<Derived>::fail(boost::system::error_code ec, char const *what)
+	{
+		// Remove this session from the list of active sessions
+		// If something wrong happens and WS is invalidated, such WS will be removed
+		//   in the next write operation.
+		{
+			std::stringstream ss;
+			ss << "WS session \"" << UUID_ << "\" is closed.";
+			room_->logger.log(ss.str(), "SYSTEM");
+		}
+		// remove mouse cursor
+		//   - update parameter on this server
+		//   - broadcast message for remove
+		{
+			room_->interfaceParams.cursors.erase(UUID_);
+			// parameters = {
+			//  "sessionUUID": sessionUUID string,
+			//  "cursor": {
+			//   "remove": boolean value for removing cursor for no longer connected session
+			//  }
+			// }
+			nlohmann::json response, broadcast;
+			response = nlohmann::json::object();
+			broadcast = nlohmann::json::object();
+			broadcast["sessionUUID"] = UUID_;
+			broadcast["cursor"] = nlohmann::json::object();
+			broadcast["cursor"]["remove"] = true;
+			room_->broadcastWS("syncCursor", UUID_, broadcast, response);
+		}
+		room_->leaveWS(UUID_);
+
+		// Don't report these
+		if (ec == boost::asio::error::operation_aborted ||
+			ec == boost::beast::websocket::error::closed)
+		{
+			return;
+		}
+
+		std::stringstream s;
+		s << what << ": " << ec.message();
+		room_->logger.log(s.str(), "ERROR");
+	}
+
+	template <class Derived>
+	WebsocketSession<Derived>::WebsocketSession(
+		const std::shared_ptr<Room> &room,
+		const std::string &UUID)
+		: room_(room), UUID_(UUID)
+	{
+		std::stringstream ss;
+		ss << "New WS session \"" << UUID_ << "\" is created.";
+		room_->logger.log(ss.str(), "SYSTEM");
+	}
+
+	template <class Derived>
+	void WebsocketSession<Derived>::send(const std::shared_ptr<const std::string> &ss)
+	{
+		// Always add to queue
+		queue_.push_back(ss);
+
+		// Are we already writing?
+		if (queue_.size() > 1)
+		{
+			return;
+		}
+
+		doWrite();
+	}
+
+	////
+	// PlainWebsocketSession
+	////
+	PlainWebsocketSession::PlainWebsocketSession(
+		const std::shared_ptr<Room> &room,
+		const std::string &UUID,
+		beast::tcp_stream &&stream)
+		: WebsocketSession<PlainWebsocketSession>(room, UUID), ws_(std::move(stream))
+	{
+	}
+
+	websocket::stream<beast::tcp_stream> &PlainWebsocketSession::ws()
+	{
+		return ws_;
+	}
+
+	////
+	// SSLWebsocketSession
+	////
+	SSLWebsocketSession::SSLWebsocketSession(
+		const std::shared_ptr<Room> &room,
+		const std::string &UUID,
+		beast::ssl_stream<beast::tcp_stream> &&stream)
+		: WebsocketSession<SSLWebsocketSession>(room, UUID), ws_(std::move(stream))
+	{
+	}
+
+	websocket::stream<beast::ssl_stream<beast::tcp_stream>> &SSLWebsocketSession::ws()
+	{
+		return ws_;
 	}
 }
+
+template Doppelganger::PlainWebsocketSession &Doppelganger::WebsocketSession<Doppelganger::PlainWebsocketSession>::derived();
+template void Doppelganger::WebsocketSession<Doppelganger::PlainWebsocketSession>::onAccept(beast::error_code);
+template void Doppelganger::WebsocketSession<Doppelganger::PlainWebsocketSession>::doRead();
+template void Doppelganger::WebsocketSession<Doppelganger::PlainWebsocketSession>::onRead(beast::error_code, std::size_t);
+template void Doppelganger::WebsocketSession<Doppelganger::PlainWebsocketSession>::doWrite();
+template void Doppelganger::WebsocketSession<Doppelganger::PlainWebsocketSession>::onWrite(beast::error_code, std::size_t);
+template void Doppelganger::WebsocketSession<Doppelganger::PlainWebsocketSession>::fail(boost::system::error_code, char const *);
+template Doppelganger::WebsocketSession<Doppelganger::PlainWebsocketSession>::WebsocketSession(const std::shared_ptr<Room> &, const std::string &);
+template void Doppelganger::WebsocketSession<Doppelganger::PlainWebsocketSession>::send(const std::shared_ptr<const std::string> &);
+
+template Doppelganger::SSLWebsocketSession &Doppelganger::WebsocketSession<Doppelganger::SSLWebsocketSession>::derived();
+template void Doppelganger::WebsocketSession<Doppelganger::SSLWebsocketSession>::onAccept(beast::error_code);
+template void Doppelganger::WebsocketSession<Doppelganger::SSLWebsocketSession>::doRead();
+template void Doppelganger::WebsocketSession<Doppelganger::SSLWebsocketSession>::onRead(beast::error_code, std::size_t);
+template void Doppelganger::WebsocketSession<Doppelganger::SSLWebsocketSession>::doWrite();
+template void Doppelganger::WebsocketSession<Doppelganger::SSLWebsocketSession>::onWrite(beast::error_code, std::size_t);
+template void Doppelganger::WebsocketSession<Doppelganger::SSLWebsocketSession>::fail(boost::system::error_code, char const *);
+template Doppelganger::WebsocketSession<Doppelganger::SSLWebsocketSession>::WebsocketSession(const std::shared_ptr<Room> &, const std::string &);
+template void Doppelganger::WebsocketSession<Doppelganger::SSLWebsocketSession>::send(const std::shared_ptr<const std::string> &);
 
 #endif

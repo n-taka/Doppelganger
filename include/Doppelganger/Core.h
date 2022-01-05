@@ -28,7 +28,19 @@ namespace fs = std::filesystem;
 #include <string>
 #include <unordered_map>
 
-#include <boost/asio.hpp>
+#include <boost/beast/core.hpp>
+#include <boost/beast/http.hpp>
+#include <boost/beast/ssl.hpp>
+#include <boost/beast/websocket.hpp>
+#include <boost/beast/version.hpp>
+#include <boost/asio/bind_executor.hpp>
+#include <boost/asio/dispatch.hpp>
+#include <boost/asio/signal_set.hpp>
+#include <boost/asio/steady_timer.hpp>
+#include <boost/asio/strand.hpp>
+#include <boost/make_unique.hpp>
+#include <boost/optional.hpp>
+
 #include <nlohmann/json.hpp>
 #include "Doppelganger/Logger.h"
 
@@ -37,11 +49,13 @@ namespace Doppelganger
 	class Room;
 	class triangleMesh;
 	class Plugin;
+	class Listener;
 
 	class DECLSPEC Core : public std::enable_shared_from_this<Core>
 	{
 	public:
-		Core(boost::asio::io_context &ioc_);
+		Core(boost::asio::io_context &ioc,
+			 boost::asio::ssl::context &ctx);
 
 		void setup();
 		void run();
@@ -64,16 +78,10 @@ namespace Doppelganger
 		std::unordered_map<std::string, std::shared_ptr<Doppelganger::Plugin>> plugin;
 
 		// for graceful shutdown
-		boost::asio::io_context &ioc;
+		boost::asio::io_context &ioc_;
+		boost::asio::ssl::context &ctx_;
 	private:
-		boost::asio::ip::tcp::acceptor acceptor;
-		boost::asio::ip::tcp::socket socket;
-
-		void fail(
-			boost::system::error_code ec,
-			char const *what);
-		void onAccept(
-			boost::system::error_code ec);
+		std::shared_ptr<Listener> listener;
 	};
 }
 

@@ -6,7 +6,13 @@ add_executable(example
 find_package(Threads REQUIRED)
 
 # target_link_directories(example PRIVATE "../Release")
-target_link_libraries(example PRIVATE ${PROJECT_NAME} Threads::Threads)
+target_link_libraries(
+    example PRIVATE
+    ${PROJECT_NAME}
+    OpenSSL::SSL
+    OpenSSL::Crypto
+    Threads::Threads
+)
 
 
 ##############################################

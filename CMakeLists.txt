@@ -70,7 +70,7 @@ add_library(${PROJECT_NAME} SHARED)
 ##############################################
 target_sources(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Core.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/HTTPSession.cpp
+    # ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/HTTPSession.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Logger.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Plugin.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Room.cpp
@@ -155,6 +155,7 @@ if (WIN32)
     target_compile_definitions(${PROJECT_NAME} PUBLIC _WIN32_WINNT=0x0A00)
     # for window, we need to export symbols
     target_compile_definitions(${PROJECT_NAME} PUBLIC DLL_EXPORT)
+    add_definitions(/bigobj)
 elseif (APPLE)
     # because we support macOS Mojave, we only require C++14 for macOS
     # we use boost::filesystem for macOS

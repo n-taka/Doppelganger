@@ -24,22 +24,24 @@ namespace fs = boost::filesystem;
 namespace fs = std::filesystem;
 #endif
 
-#include "Doppelganger/triangleMesh.h"
-
 #include <string>
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
 #include <mutex>
+// todo variant requires C++17
+#include <variant>
 #include <boost/any.hpp>
 #include <nlohmann/json.hpp>
 
+#include "Doppelganger/triangleMesh.h"
 #include "Doppelganger/Logger.h"
 
 namespace Doppelganger
 {
 	class Core;
-	class WebsocketSession;
+	class PlainWebsocketSession;
+	class SSLWebsocketSession;
 
 	class DECLSPEC Room
 	{
@@ -59,11 +61,11 @@ namespace Doppelganger
 		// parameters for server setup
 		struct serverParameters
 		{
-			std::unordered_map<std::string, std::shared_ptr<WebsocketSession>> websocketSessions;
+			std::unordered_map<std::string, std::variant<std::shared_ptr<PlainWebsocketSession>, std::shared_ptr<SSLWebsocketSession>>> websocketSessions;
 			std::mutex mutex;
 		};
 		serverParameters serverParams;
-		void joinWS(const std::shared_ptr<WebsocketSession> &session);
+		void joinWS(const std::variant<std::shared_ptr<PlainWebsocketSession>, std::shared_ptr<SSLWebsocketSession>> &session);
 		void leaveWS(const std::string &sessionUUID);
 		void broadcastWS(const std::string &APIName, const std::string &sourceUUID, const nlohmann::json &broadcast, const nlohmann::json &response);
 		// void broadcastMeshUpdate(const std::vector<std::string> &meshUUIDVec);
