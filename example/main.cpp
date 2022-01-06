@@ -1,5 +1,6 @@
 #include "Doppelganger/Core.h"
 
+#include "server_certificate.hpp"
 #include <boost/asio/signal_set.hpp>
 
 int main(int argv, char *argc[])
@@ -10,7 +11,7 @@ int main(int argv, char *argc[])
 	boost::asio::ssl::context ctx{boost::asio::ssl::context::tlsv12};
 
 	// todo
-	// load_server_certificate(ctx);
+	load_server_certificate(ctx);
 
 	std::shared_ptr<Doppelganger::Core> core = std::make_shared<Doppelganger::Core>(ioc, ctx);
 	core->setup();

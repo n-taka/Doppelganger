@@ -291,6 +291,7 @@ namespace Doppelganger
 			nlohmann::json &serverJson = config.at("server");
 
 			boost::system::error_code ec;
+			// todo change endpoint depends on protocol
 			boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::make_address(serverJson.at("host").get<std::string>()), serverJson.at("port").get<int>());
 
 			listener = std::make_shared<Listener>(shared_from_this(), ioc_, ctx_, endpoint);

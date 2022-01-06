@@ -159,6 +159,7 @@ if (WIN32)
     target_compile_definitions(${PROJECT_NAME} PUBLIC _WIN32_WINNT=0x0A00)
     # for window, we need to export symbols
     target_compile_definitions(${PROJECT_NAME} PUBLIC DLL_EXPORT)
+    # our codes heavily depend on template...
     add_definitions(/bigobj)
 elseif (APPLE)
     # because we support macOS Mojave, we only require C++14 for macOS
