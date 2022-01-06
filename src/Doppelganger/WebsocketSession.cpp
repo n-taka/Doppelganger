@@ -7,7 +7,6 @@
 #include <memory>
 #include <string>
 #include <sstream>
-#include <vector>
 
 #include "Doppelganger/WebsocketSession.h"
 
@@ -15,9 +14,6 @@
 #include "Doppelganger/Room.h"
 #include "Doppelganger/Logger.h"
 #include "Doppelganger/Plugin.h"
-
-////
-// #include "example/common/server_certificate.hpp"
 
 namespace Doppelganger
 {
@@ -223,38 +219,6 @@ namespace Doppelganger
 		}
 
 		doWrite();
-	}
-
-	////
-	// PlainWebsocketSession
-	////
-	PlainWebsocketSession::PlainWebsocketSession(
-		const std::shared_ptr<Room> &room,
-		const std::string &UUID,
-		beast::tcp_stream &&stream)
-		: WebsocketSession<PlainWebsocketSession>(room, UUID), ws_(std::move(stream))
-	{
-	}
-
-	websocket::stream<beast::tcp_stream> &PlainWebsocketSession::ws()
-	{
-		return ws_;
-	}
-
-	////
-	// SSLWebsocketSession
-	////
-	SSLWebsocketSession::SSLWebsocketSession(
-		const std::shared_ptr<Room> &room,
-		const std::string &UUID,
-		beast::ssl_stream<beast::tcp_stream> &&stream)
-		: WebsocketSession<SSLWebsocketSession>(room, UUID), ws_(std::move(stream))
-	{
-	}
-
-	websocket::stream<beast::ssl_stream<beast::tcp_stream>> &SSLWebsocketSession::ws()
-	{
-		return ws_;
 	}
 }
 

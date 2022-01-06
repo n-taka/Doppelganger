@@ -70,12 +70,16 @@ add_library(${PROJECT_NAME} SHARED)
 ##############################################
 target_sources(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Core.cpp
-    # ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/HTTPSession.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/HTTPSession.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/PlainHTTPSession.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/SSLHTTPSession.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Logger.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Plugin.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Room.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/triangleMesh.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/WebsocketSession.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/PlainWebsocketSession.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/SSLWebsocketSession.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Util/download.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Util/encodeBinDataToBase64.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Util/unzip.cpp
