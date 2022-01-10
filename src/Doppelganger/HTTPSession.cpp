@@ -558,13 +558,6 @@ namespace Doppelganger
 			}
 			const std::shared_ptr<Room> room = std::make_shared<Room>(roomUUID, core_);
 			core_->rooms[roomUUID] = room;
-
-			// todo check...
-			// // return 301 (moved permanently)
-			// std::string location = core_->config.at("server").at("completeURL").get<std::string>();
-			// location += "/";
-			// location += roomUUID;
-			// return queue_(movedPermanently(std::move(parser_->release()), location));
 			handleRequest(core_, room, parser_->release(), queue_);
 		}
 		else
