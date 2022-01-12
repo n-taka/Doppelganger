@@ -35,6 +35,10 @@
     "server": {
         "host": "127.0.0.1",
         "port": 0,
-        "protocol": "http://"
+        "protocol": "http",
+        "certificateFiles": {
+            "certificate": "",
+            "privateKey": ""
+        }
     }
 }

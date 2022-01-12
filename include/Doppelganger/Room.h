@@ -30,6 +30,7 @@ namespace fs = std::filesystem;
 #include <unordered_set>
 #include <mutex>
 // todo variant requires C++17
+// we need to use boost::variant for macOS
 #include <variant>
 #include <boost/any.hpp>
 #include <nlohmann/json.hpp>

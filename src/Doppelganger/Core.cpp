@@ -9,6 +9,11 @@
 #include "Doppelganger/Util/download.h"
 #include "Doppelganger/Listener.h"
 
+#include <boost/asio/buffer.hpp>
+#include <boost/asio/ssl/context.hpp>
+#include <cstddef>
+#include <memory>
+
 #include <fstream>
 #include <sstream>
 #include <nlohmann/json.hpp>
@@ -46,16 +51,55 @@ namespace
 #include <limits.h>
 #endif
 
+namespace
+{
+	void loadServerCertificate(boost::asio::ssl::context &ctx, const fs::path &certificatePath, const fs::path &privateKeyPath)
+	{
+
+		const std::string dh =
+			"-----BEGIN DH PARAMETERS-----\n"
+			"MIIBCAKCAQEAiPqG0guWzJK/5BENNAhWoxVDNUjEc7FtkVxtwjXYrUUcvL2Db5ni\n"
+			"MlhPqsEtY8n7n0vTcZjvpHuyVgChSXIrw17OYrtjDONz0MtZygKVN99DNVzmhsvX\n"
+			"Km7J55r48ktqSzNwJSxRe3GE1Kv3Q8P3KwDHlmDfKXMKs29gUFElus5J9n7YFzJ6\n"
+			"aNOCjxJRSMKM9P0pdSE/acQTQzlMHEk/9ndJfINxLcagt8OMlqroFl3mOvSpIV0a\n"
+			"EJ/jJZlH+LEUqrPX7ZnnSeHOH2AOODagMPf07iGWIuEhS4IcY3AmD5V1HZqAg/y2\n"
+			"JoiGl/8+RNpL1HlmZXwNXVv4zUIHirskCwIBAg==\n"
+			"-----END DH PARAMETERS-----";
+
+		ctx.set_password_callback(
+			[](std::size_t,
+			   boost::asio::ssl::context_base::password_purpose)
+			{
+				return "test";
+			});
+
+		// we only support TLS
+		// we always generate dh params every time
+		ctx.set_options(
+			boost::asio::ssl::context::default_workarounds |
+			boost::asio::ssl::context::no_sslv2 |
+			boost::asio::ssl::context::no_sslv3 |
+			boost::asio::ssl::context::single_dh_use);
+
+		ctx.use_certificate_chain_file(certificatePath.string());
+
+		ctx.use_private_key_file(privateKeyPath.string(), boost::asio::ssl::context::file_format::pem);
+
+		// we always generate dh params every time
+		ctx.use_tmp_dh(
+			boost::asio::buffer(dh.data(), dh.size()));
+	}
+}
+
 // https://github.com/boostorg/beast/blob/develop/example/http/server/async/http_server_async.cpp
 
 namespace Doppelganger
 {
 	Core::Core(boost::asio::io_context &ioc,
-			 boost::asio::ssl::context &ctx)
+			   boost::asio::ssl::context &ctx)
 		: ioc_(ioc), ctx_(ctx)
 	{
 	}
-
 
 	void Core::setup()
 	{
@@ -187,7 +231,7 @@ namespace Doppelganger
 					listJsonPath.append("tmp.json");
 					Util::download(listUrl.get<std::string>(), listJsonPath);
 					std::ifstream ifs(listJsonPath.string());
-					if(ifs)
+					if (ifs)
 					{
 						nlohmann::json listJson = nlohmann::json::parse(ifs);
 						ifs.close();
@@ -285,7 +329,7 @@ namespace Doppelganger
 			}
 		}
 
-		// initialize acceptor
+		// initialize server (and certificates)
 		if (config.contains("server"))
 		{
 			nlohmann::json &serverJson = config.at("server");
@@ -293,11 +337,58 @@ namespace Doppelganger
 			boost::system::error_code ec;
 			boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::make_address(serverJson.at("host").get<std::string>()), serverJson.at("port").get<int>());
 
+			if (serverJson.at("protocol").get<std::string>() == "https")
+			{
+				// "certificateFiles": {
+				//     "certificate": "",
+				//     "privateKey": ""
+				// }
+
+				if (serverJson.contains("certificateFiles"))
+				{
+					fs::path certificatePath, privateKeyPath;
+					if (serverJson.at("certificateFiles").contains("certificate"))
+					{
+						certificatePath = fs::path(serverJson.at("certificateFiles").at("certificate").get<std::string>());
+					}
+					if (serverJson.at("certificateFiles").contains("privateKey"))
+					{
+						privateKeyPath = fs::path(serverJson.at("certificateFiles").at("privateKey").get<std::string>());
+					}
+					if (fs::exists(certificatePath) && fs::exists(privateKeyPath))
+					{
+						loadServerCertificate(ctx_, certificatePath, privateKeyPath);
+					}
+					else
+					{
+						{
+							std::stringstream ss;
+							ss << "Protocol \"https\" is specified, but no valid certificate is found. We switch to \"http\".";
+							logger.log(ss.str(), "ERROR");
+						}
+						{
+							std::stringstream ss;
+							ss << "    certificate: ";
+							ss << certificatePath;
+							logger.log(ss.str(), "ERROR");
+						}
+						{
+							std::stringstream ss;
+							ss << "    privateKey: ";
+							ss << privateKeyPath;
+							logger.log(ss.str(), "ERROR");
+						}
+						serverJson.at("protocol") = std::string("http");
+					}
+				}
+			}
+
 			listener = std::make_shared<Listener>(shared_from_this(), ioc_, ctx_, endpoint);
 
 			serverJson["port"] = listener->acceptor_.local_endpoint().port();
 			std::stringstream completeURL;
 			completeURL << serverJson.at("protocol").get<std::string>();
+			completeURL << "://";
 			completeURL << serverJson.at("host").get<std::string>();
 			completeURL << ":";
 			completeURL << serverJson.at("port").get<int>();
@@ -326,8 +417,7 @@ namespace Doppelganger
 		{
 			nlohmann::json &browserJson = config.at("browser");
 			// by default, we open browser
-			if ((!browserJson.contains("openOnStartup") || browserJson.at("openOnStartup").get<bool>())
-			 && config.at("server").at("host") == "127.0.0.1")
+			if ((!browserJson.contains("openOnStartup") || browserJson.at("openOnStartup").get<bool>()) && config.at("server").at("host") == "127.0.0.1")
 			{
 				browserJson["openOnStartup"] = true;
 				// by default, we use default browser (open/start command)
