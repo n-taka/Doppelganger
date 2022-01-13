@@ -335,7 +335,25 @@ namespace Doppelganger
 			nlohmann::json &serverJson = config.at("server");
 
 			boost::system::error_code ec;
-			boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::make_address(serverJson.at("host").get<std::string>()), serverJson.at("port").get<int>());
+
+			boost::asio::ip::tcp::resolver resolver(ioc_);
+			boost::asio::ip::tcp::resolver::results_type endpointIterator = resolver.resolve(serverJson.at("host").get<std::string>(), std::to_string(serverJson.at("port").get<int>()), ec);
+			if (ec)
+			{
+				{
+					std::stringstream ss;
+					ss << "Fail to resolve hostname \"" << serverJson.at("host").get<std::string>() << "\"";
+					logger.log(ss.str(), "ERROR");
+				}
+				{
+					std::stringstream ss;
+					ss << ec.message();
+					logger.log(ss.str(), "ERROR");
+				}
+				return;
+			}
+
+			boost::asio::ip::tcp::endpoint &endpoint = endpointIterator->endpoint();
 
 			if (serverJson.at("protocol").get<std::string>() == "https")
 			{

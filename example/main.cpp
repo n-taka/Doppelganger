@@ -1,6 +1,7 @@
 #include "Doppelganger/Core.h"
 
 #include <boost/asio/signal_set.hpp>
+#include <thread>
 
 int main(int argv, char *argc[])
 {
