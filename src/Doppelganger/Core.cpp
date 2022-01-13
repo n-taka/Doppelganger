@@ -353,7 +353,7 @@ namespace Doppelganger
 				return;
 			}
 
-			boost::asio::ip::tcp::endpoint &endpoint = endpointIterator->endpoint();
+			boost::asio::ip::tcp::endpoint endpoint = endpointIterator->endpoint();
 
 			if (serverJson.at("protocol").get<std::string>() == "https")
 			{
