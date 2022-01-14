@@ -167,12 +167,16 @@ namespace Doppelganger
 			}
 			else
 			{
-				// Plugin "<pluginName>" (<Version>) is loaded.
 				std::stringstream ss;
-				ss << "Plugin \"" << name_ << "\" (" << installedVersion << ")"
+				ss << "Plugin \"" << name_ << "\" (";
+				if (version == "latest")
+				{
+					ss << "latest, ";
+				}
+				ss << actualVersion << ")"
 				   << " is loaded.";
 				std::visit([&ss](const auto &v)
-						   { v->logger.log(ss.str(), "ERROR"); },
+						   { v->logger.log(ss.str(), "SYSTEM"); },
 						   coreRoom_);
 			}
 		}

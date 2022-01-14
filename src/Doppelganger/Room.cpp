@@ -45,6 +45,7 @@ namespace Doppelganger
 			dataDir.append("data");
 			std::string dirName("");
 			dirName += Util::getCurrentTimestampAsString(false);
+			dirName += "-";
 			dirName += UUID_;
 			dataDir.append(dirName);
 			fs::create_directories(dataDir);
