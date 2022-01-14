@@ -54,6 +54,9 @@ namespace
 #if defined(__linux__)
 #include <unistd.h>
 #include <limits.h>
+#include <cstdlib>
+#include <sys/types.h>
+#include <pwd.h>
 #endif
 
 namespace
@@ -180,25 +183,30 @@ namespace Doppelganger
 			}
 			CoTaskMemFree(localAppData);
 #elif defined(__APPLE__)
-			// todo tweak
+			// For macOS, we use "~/Library/Application Support/Doppelganger"
 			sysdir_search_path_enumeration_state state = sysdir_start_search_path_enumeration(SYSDIR_DIRECTORY_APPLICATION_SUPPORT, SYSDIR_DOMAIN_MASK_USER);
 			sysdir_get_next_search_path_enumeration(state, path);
 			const std::string fullPathStr = expand_user(std::string(path));
 
 			DoppelgangerRootDir = fs::path(fullPathStr);
+			DoppelgangerRootDir.make_preferred();
 			DoppelgangerRootDir.append("Doppelganger");
 			fs::create_directories(DoppelgangerRootDir);
 #elif defined(__linux__)
-			// todo tweak
-			// for linux, we use the directory of itself
-			char buffer[PATH_MAX];
-			readlink("/proc/self/exe", buffer, PATH_MAX);
-			fs::path p(buffer);
-			p = p.parent_path();
-			systemParams.resourceDir = p;
-			systemParams.resourceDir.make_preferred();
-			systemParams.resourceDir.append("resources");
-			systemParams.workingDir = systemParams.resourceDir;
+			// For macOS, we use "~/.Doppelganger"
+			const char *homeEnv = std::getenv("HOME");
+			std::string homeStr(homeEnv ? homeEnv : "");
+			if (homeStr.empty())
+			{
+				struct passwd *pw = getpwuid(getuid());
+				const char *homeDir = pw->pw_dir;
+				homeStr = std::string(homeDir);
+			}
+
+			DoppelgangerRootDir = fs::path(homeStr);
+			DoppelgangerRootDir.make_preferred();
+			DoppelgangerRootDir.append(".Doppelganger");
+			fs::create_directories(DoppelgangerRootDir);
 #endif
 		}
 
@@ -329,7 +337,8 @@ namespace Doppelganger
 					else
 					{
 						std::stringstream ss;
-						ss << "Plugin \"" << name << "\" (" << version << ")" << " is NOT found.";
+						ss << "Plugin \"" << name << "\" (" << version << ")"
+						   << " is NOT found.";
 						logger.log(ss.str(), "ERROR");
 					}
 				}
@@ -360,7 +369,8 @@ namespace Doppelganger
 					else
 					{
 						std::stringstream ss;
-						ss << "Non-optional plugin \"" << name << "\" (latest)" << " is NOT found.";
+						ss << "Non-optional plugin \"" << name << "\" (latest)"
+						   << " is NOT found.";
 						logger.log(ss.str(), "ERROR");
 					}
 				}
