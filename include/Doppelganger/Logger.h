@@ -50,6 +50,8 @@ namespace Doppelganger
 			const bool removeOriginal);
 
 		std::unordered_set<std::string> suppressedAPICall;
+		// where we put log
+		fs::path logDir;
 
 	private:
 		// set of strings -> boolean
@@ -60,7 +62,6 @@ namespace Doppelganger
 		std::unordered_map<std::string, bool> logType;
 
 		// where we put log
-		fs::path logDir;
 		fs::path logFile;
 	};
 }
