@@ -47,8 +47,8 @@ namespace fs = std::filesystem;
 namespace Doppelganger
 {
 	class Room;
-	class triangleMesh;
 	class Plugin;
+	class triangleMesh;
 	class Listener;
 
 	class DECLSPEC Core : public std::enable_shared_from_this<Core>
@@ -60,26 +60,19 @@ namespace Doppelganger
 		void setup();
 		void run();
 
-		////
-		// parameters for Doppel
-		struct systemParameters
-		{
-			// read only (static resources)
-			fs::path resourceDir;
-			// read write (logs, outputs, plugins)
-			fs::path workingDir;
-			std::mutex mutex;
-		};
-		systemParameters systemParams;
-
-		nlohmann::json configFileContent, config;
+		nlohmann::json configOrig, config;
 		Logger logger;
 		std::unordered_map<std::string, std::shared_ptr<Doppelganger::Room>> rooms;
 		std::unordered_map<std::string, std::shared_ptr<Doppelganger::Plugin>> plugin;
+		// Doppelganger/
+		fs::path DoppelgangerRootDir;
+		// Doppelganger/data/YYYYMMDDTHHMMSS-Core/
+		fs::path dataDir;
 
 		// for graceful shutdown
 		boost::asio::io_context &ioc_;
 		boost::asio::ssl::context &ctx_;
+
 	private:
 		std::shared_ptr<Listener> listener;
 	};

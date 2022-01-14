@@ -82,6 +82,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/SSLWebsocketSession.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Util/download.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Util/encodeBinDataToBase64.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Util/getCurrentTimestampAsString.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Util/unzip.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Util/uuid.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Util/writeBase64ToFile.cpp

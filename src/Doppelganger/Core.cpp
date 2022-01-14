@@ -6,8 +6,9 @@
 #include "Doppelganger/Room.h"
 #include "Doppelganger/HTTPSession.h"
 #include "Doppelganger/Plugin.h"
-#include "Doppelganger/Util/download.h"
 #include "Doppelganger/Listener.h"
+#include "Doppelganger/Util/download.h"
+#include "Doppelganger/Util/getCurrentTimestampAsString.h"
 
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/ssl/context.hpp>
@@ -17,6 +18,10 @@
 #include <fstream>
 #include <sstream>
 #include <nlohmann/json.hpp>
+
+#if defined(_WIN64)
+#include <shlobj_core.h>
+#endif
 
 #if defined(__APPLE__)
 #include "CoreFoundation/CoreFoundation.h"
@@ -89,6 +94,61 @@ namespace
 		ctx.use_tmp_dh(
 			boost::asio::buffer(dh.data(), dh.size()));
 	}
+
+	void generateDefaultConfigJson(nlohmann::json &config)
+	{
+		config = nlohmann::json::object();
+		{
+			config["browser"] = nlohmann::json::object();
+			{
+				config["browser"]["openAs"] = std::string("default");
+				config["browser"]["openOnStartup"] = true;
+				config["browser"]["path"] = std::string("");
+				config["browser"]["type"] = std::string("default");
+			}
+			config["log"] = nlohmann::json::object();
+			{
+				config["log"]["level"] = nlohmann::json::array();
+				{
+					config["log"]["level"].push_back(std::string("SYSTEM"));
+					config["log"]["level"].push_back(std::string("APICALL"));
+					config["log"]["level"].push_back(std::string("WSCALL"));
+					config["log"]["level"].push_back(std::string("ERROR"));
+					config["log"]["level"].push_back(std::string("MISC"));
+					config["log"]["level"].push_back(std::string("DEBUG"));
+				}
+				config["log"]["type"] = nlohmann::json::array();
+				{
+					config["log"]["type"].push_back(std::string("STDOUT"));
+					config["log"]["type"].push_back(std::string("FILE"));
+				}
+			}
+			config["output"] = nlohmann::json::object();
+			{
+				config["output"]["type"] = std::string("storage");
+			}
+			config["plugin"] = nlohmann::json::object();
+			{
+				config["plugin"]["listURL"] = nlohmann::json::array();
+				{
+					config["plugin"]["listURL"].push_back(std::string("https://n-taka.info/nextcloud/s/XqGGYPo8J2rwc9S/download/pluginList_Essential.json"));
+					config["plugin"]["listURL"].push_back(std::string("https://n-taka.info/nextcloud/s/PgccNTmPECPXSgQ/download/pluginList_Basic.json"));
+					config["plugin"]["listURL"].push_back(std::string("https://n-taka.info/nextcloud/s/PWPR7YDXKoMeP66/download/pluginList_TORIDE.json"));
+				}
+			}
+			config["server"] = nlohmann::json::object();
+			{
+				config["server"]["host"] = std::string("127.0.0.1");
+				config["server"]["port"] = 0;
+				config["server"]["protocol"] = std::string("http");
+				config["server"]["certificateFiles"] = nlohmann::json::object();
+				{
+					config["server"]["certificateFiles"]["certificate"] = std::string("");
+					config["server"]["certificateFiles"]["privateKey"] = std::string("");
+				}
+			}
+		}
+	}
 }
 
 // https://github.com/boostorg/beast/blob/develop/example/http/server/async/http_server_async.cpp
@@ -107,39 +167,29 @@ namespace Doppelganger
 		// setup for resourceDir/workingDir
 		{
 #if defined(_WIN64)
-			char buffer[MAX_PATH];
-			// for windows, we use the directory of .exe itself
-			GetModuleFileName(NULL, buffer, sizeof(buffer));
-			fs::path p(buffer);
-			p = p.parent_path();
-			systemParams.resourceDir = p;
-			systemParams.resourceDir.make_preferred();
-			systemParams.resourceDir.append("resources");
-			systemParams.workingDir = systemParams.resourceDir;
-#elif defined(__APPLE__)
-			CFBundleRef mainBundle = CFBundleGetMainBundle();
-			CFURLRef resourcesURL = CFBundleCopyResourcesDirectoryURL(mainBundle);
-			char path[PATH_MAX];
-			if (!CFURLGetFileSystemRepresentation(resourcesURL, TRUE, (UInt8 *)path, PATH_MAX))
+			// For windows, we use "%USERPROFILE%\AppData\Local\Doppelganger"
+			// e.g. "C:\Users\KazutakaNakashima\AppData\Local\Doppelganger"
+			PWSTR localAppData = NULL;
+			HRESULT hr = SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, NULL, &localAppData);
+			if (SUCCEEDED(hr))
 			{
-				// error!
-				exit(-1);
+				DoppelgangerRootDir = fs::path(localAppData);
+				DoppelgangerRootDir.make_preferred();
+				DoppelgangerRootDir.append("Doppelganger");
+				fs::create_directories(DoppelgangerRootDir);
 			}
-			systemParams.resourceDir = fs::path(path);
-			systemParams.resourceDir.make_preferred();
-			CFRelease(resourcesURL);
-
+			CoTaskMemFree(localAppData);
+#elif defined(__APPLE__)
+			// todo tweak
 			sysdir_search_path_enumeration_state state = sysdir_start_search_path_enumeration(SYSDIR_DIRECTORY_APPLICATION_SUPPORT, SYSDIR_DOMAIN_MASK_USER);
 			sysdir_get_next_search_path_enumeration(state, path);
 			const std::string fullPathStr = expand_user(std::string(path));
 
-			systemParams.workingDir = fs::path(fullPathStr);
-			systemParams.workingDir.append("Doppelganger");
-			if (!fs::exists(systemParams.workingDir))
-			{
-				fs::create_directories(systemParams.workingDir);
-			}
+			DoppelgangerRootDir = fs::path(fullPathStr);
+			DoppelgangerRootDir.append("Doppelganger");
+			fs::create_directories(DoppelgangerRootDir);
 #elif defined(__linux__)
+			// todo tweak
 			// for linux, we use the directory of itself
 			char buffer[PATH_MAX];
 			readlink("/proc/self/exe", buffer, PATH_MAX);
@@ -153,58 +203,58 @@ namespace Doppelganger
 		}
 
 		////
-		// load config.json
+		// config.json
 		{
-			fs::path configPath(systemParams.workingDir);
+			fs::path configPath(DoppelgangerRootDir);
 			configPath.append("config.json");
-			if (!fs::exists(configPath))
+			if (fs::exists(configPath))
 			{
-				fs::path defaultConfigPath(systemParams.resourceDir);
-				defaultConfigPath.append("defaultConfig.json");
-				fs::copy_file(defaultConfigPath, configPath);
-				std::cout << "No config file found. We use default config file." << std::endl;
+				// we could directly use std::filesystem::path, but we could not directly boost::filesystem::path
+				std::ifstream ifs(configPath.string());
+				configOrig = nlohmann::json::parse(ifs);
+				ifs.close();
 			}
-			// config
-			// parse config json
-			// we could directry pass std::filesystem::path, but we could not pass boost::filesystem::path
-			std::ifstream ifs(configPath.string());
-			configFileContent = nlohmann::json::parse(ifs);
-			ifs.close();
-			config = configFileContent;
+			else
+			{
+				// no config file is found. (e.g. use Doppelganger first time)
+				generateDefaultConfigJson(configOrig);
+				std::cout << "No config file found. We use default config." << std::endl;
+			}
+			config = configOrig;
+		}
+
+		////
+		// directory for Core
+		// Doppelganger/data/YYYYMMDDTHHMMSS-Core/
+		{
+			dataDir = DoppelgangerRootDir;
+			dataDir.append("data");
+			std::string dirName("");
+			dirName += Util::getCurrentTimestampAsString(false);
+			dirName += "-Core";
+			dataDir.append(dirName);
+			fs::create_directories(dataDir);
 		}
 
 		////
 		// log
+		// Doppelganger/data/YYYYMMDDTHHMMSS-Core/log
 		if (config.contains("log"))
 		{
 			nlohmann::json &logJson = config.at("log");
-			if (!logJson.contains("dir") || logJson.at("dir").get<std::string>().size() == 0)
-			{
-				fs::path logsDir = systemParams.workingDir;
-				logsDir.append("log");
-				fs::create_directories(logsDir);
-				logJson["dir"] = logsDir.string();
-			}
-			// initialize logger for Core
-			logger.initialize("Core", config.at("log"));
+			logger.initialize(dataDir, logJson);
 		}
 
 		////
 		// output
+		// Doppelganger/data/YYYYMMDDTHHMMSS-Core/output
 		if (config.contains("output"))
 		{
 			nlohmann::json &outputJson = config.at("output");
-			// output["type"] == "local"|"download"
-			if (outputJson.contains("type") && outputJson.at("type").get<std::string>() == "local")
-			{
-				if (!outputJson.contains("dir") || outputJson.at("dir").get<std::string>().size() == 0)
-				{
-					fs::path outputsDir = systemParams.workingDir;
-					outputsDir.append("output");
-					fs::create_directories(outputsDir);
-					outputJson["dir"] = outputsDir.string();
-				}
-			}
+			// output["type"] == "storage"|"download"
+			fs::path outputDir = dataDir;
+			outputDir.append("output");
+			fs::create_directories(outputDir);
 		}
 
 		////
@@ -212,21 +262,18 @@ namespace Doppelganger
 		if (config.contains("plugin"))
 		{
 			nlohmann::json &pluginJson = config.at("plugin");
-			// directory
-			if (!pluginJson.contains("dir") || pluginJson.at("dir").get<std::string>().size() == 0)
-			{
-				fs::path pluginDir = systemParams.workingDir;
-				pluginDir.append("plugin");
-				fs::create_directories(pluginDir);
-				pluginJson["dir"] = pluginDir.string();
-			}
+
+			fs::path pluginsDir = DoppelgangerRootDir;
+			pluginsDir.append("plugin");
+			fs::create_directories(pluginsDir);
+
 			// download and parse plugin list
+			nlohmann::json pluginListJson = nlohmann::json::object();
 			if (pluginJson.contains("listURL"))
 			{
-				nlohmann::json pluginListJson = nlohmann::json::object();
 				for (const auto &listUrl : pluginJson.at("listURL"))
 				{
-					fs::path listJsonPath(pluginJson.at("dir").get<std::string>());
+					fs::path listJsonPath(pluginsDir);
 					listJsonPath.make_preferred();
 					listJsonPath.append("tmp.json");
 					Util::download(listUrl.get<std::string>(), listJsonPath);
@@ -242,21 +289,20 @@ namespace Doppelganger
 						}
 					}
 				}
-				pluginJson["list"] = pluginListJson;
 			}
 
 			// initialize Doppelganger::Plugin instances
-			for (const auto &pluginEntry : pluginJson["list"].items())
+			for (const auto &pluginEntry : pluginListJson.items())
 			{
 				const std::string &name = pluginEntry.key();
 				const nlohmann::json &pluginInfo = pluginEntry.value();
-				const std::shared_ptr<Doppelganger::Plugin> plugin_ = std::make_shared<Doppelganger::Plugin>(shared_from_this(), name, pluginInfo);
-				plugin[name] = plugin_;
+				plugin[name] = std::make_shared<Doppelganger::Plugin>(shared_from_this(), name, pluginInfo, pluginsDir);
 			}
 
 			// install plugins
 			// installed plugins are stored in config["plugin"]["dir"]/installed.json
-			fs::path installedPluginJsonPath(config.at("plugin").at("dir").get<std::string>());
+			fs::path installedPluginJsonPath(DoppelgangerRootDir);
+			installedPluginJsonPath.append("plugin");
 			installedPluginJsonPath.append("installed.json");
 			if (fs::exists(installedPluginJsonPath))
 			{
@@ -283,12 +329,7 @@ namespace Doppelganger
 					else
 					{
 						std::stringstream ss;
-						ss << "Plugin \"";
-						ss << name;
-						ss << "\" (";
-						ss << version;
-						ss << ")";
-						ss << " is NOT found.";
+						ss << "Plugin \"" << name << "\" (" << version << ")" << " is NOT found.";
 						logger.log(ss.str(), "ERROR");
 					}
 				}
@@ -302,7 +343,7 @@ namespace Doppelganger
 			}
 
 			// install non-optional plugins
-			for (const auto &pluginEntry : pluginJson.at("list").items())
+			for (const auto &pluginEntry : pluginListJson.items())
 			{
 				const std::string &name = pluginEntry.key();
 				const nlohmann::json &pluginInfo = pluginEntry.value();
@@ -319,10 +360,7 @@ namespace Doppelganger
 					else
 					{
 						std::stringstream ss;
-						ss << "Non-optional plugin \"";
-						ss << name;
-						ss << "\" (latest)";
-						ss << " is NOT found.";
+						ss << "Non-optional plugin \"" << name << "\" (latest)" << " is NOT found.";
 						logger.log(ss.str(), "ERROR");
 					}
 				}
@@ -357,10 +395,6 @@ namespace Doppelganger
 
 			if (serverJson.at("protocol").get<std::string>() == "https")
 			{
-				// "certificateFiles": {
-				//     "certificate": "",
-				//     "privateKey": ""
-				// }
 
 				if (serverJson.contains("certificateFiles"))
 				{

@@ -38,7 +38,7 @@ namespace Doppelganger
 		~Logger(){};
 
 		void initialize(
-			const std::string& UUID_,
+			const fs::path &dataDir,
 			const nlohmann::json &config);
 
 		void log(
@@ -47,24 +47,21 @@ namespace Doppelganger
 		void log(
 			const fs::path &path,
 			const std::string &level,
-			const bool remove);
-
-		static std::string getCurrentTimestampAsString(bool separator);
+			const bool removeOriginal);
 
 		std::unordered_set<std::string> suppressedAPICall;
 
-		// where we put log
-		fs::path logDir;
-		fs::path logFile;
-
 	private:
-		std::string UUID;
 		// set of strings -> boolean
 		// {"SYSTEM", "APICALL", "WSCALL", "ERROR", "MISC", "DEBUG"} -> boolean
 		std::unordered_map<std::string, bool> logLevel;
 		// set of strings -> boolean
 		// {"STDOUT", "FILE"} -> boolean
 		std::unordered_map<std::string, bool> logType;
+
+		// where we put log
+		fs::path logDir;
+		fs::path logFile;
 	};
 }
 

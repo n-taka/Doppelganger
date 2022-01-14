@@ -3,6 +3,7 @@
 
 #include "Doppelganger/Plugin.h"
 #include "Doppelganger/Core.h"
+#include "Doppelganger/Room.h"
 #include "Doppelganger/Util/download.h"
 #include "Doppelganger/Util/unzip.h"
 #include <string>
@@ -29,7 +30,13 @@ namespace
 	typedef void (*APIPtr_t)(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &, nlohmann::json &, nlohmann::json &);
 #endif
 
-	bool loadDll(const fs::path &dllPath, const std::string &functionName, Doppelganger::Plugin::API_t &apiFunc)
+	bool functionCall(
+		const fs::path &dllPath,
+		const std::string &functionName,
+		const std::shared_ptr<Doppelganger::Room> &room,
+		const nlohmann::json &parameters,
+		nlohmann::json &response,
+		nlohmann::json &broadcast)
 	{
 #if defined(_WIN64)
 		HINSTANCE handle = LoadLibrary(dllPath.string().c_str());
@@ -64,7 +71,14 @@ namespace
 			}
 			else
 			{
-				apiFunc = Doppelganger::Plugin::API_t(reinterpret_cast<APIPtr_t>(lpfnDllFunc));
+				reinterpret_cast<APIPtr_t>(lpfnDllFunc)(room, parameters, response, broadcast);
+#if defined(_WIN64)
+				FreeLibrary(handle);
+#elif defined(__APPLE__)
+				dlclose(handle);
+#elif defined(__linux__)
+				dlclose(handle);
+#endif
 				return true;
 			}
 		}
@@ -77,31 +91,36 @@ namespace
 
 namespace Doppelganger
 {
-	Plugin::Plugin(const std::shared_ptr<Core> &core_, const std::string &name_, const nlohmann::json &parameters_)
-		: core(core_), name(name_), parameters(parameters_), hasModuleJS(false)
+	Plugin::Plugin(
+		const std::variant<std::shared_ptr<Doppelganger::Core>, std::shared_ptr<Doppelganger::Room>> &coreRoom,
+		const std::string &name,
+		const nlohmann::json &parameters,
+		const fs::path &pluginsDir)
+		: coreRoom_(coreRoom), name_(name), parameters_(parameters), pluginsDir_(pluginsDir), hasModuleJS(false)
 	{
 	}
 
 	void Plugin::install(const std::string &version)
 	{
-		const std::string actualVersion((version == "latest") ? parameters.at("versions").at(0).at("version").get<std::string>() : version);
+		const std::string actualVersion((version == "latest") ? parameters_.at("versions").at(0).at("version").get<std::string>() : version);
 
-		fs::path pluginsDir(core->config.at("plugin").at("dir").get<std::string>());
-		fs::path pluginDir(pluginsDir);
-		std::string dirName(name);
+		pluginDir = pluginsDir_;
+		std::string dirName("");
+		dirName += name_;
 		dirName += "_";
 		dirName += actualVersion;
 		pluginDir.append(dirName);
+
 		if (!fs::exists(pluginDir))
 		{
 			bool versionFound = false;
-			for (const auto &versionEntry : parameters.at("versions"))
+			for (const auto &versionEntry : parameters_.at("versions"))
 			{
 				const std::string &pluginVersion = versionEntry.at("version").get<std::string>();
 				if (pluginVersion == actualVersion)
 				{
 					const std::string &pluginURL = versionEntry.at("URL").get<std::string>();
-					fs::path zipPath(pluginsDir);
+					fs::path zipPath(pluginsDir_);
 					zipPath.append("tmp.zip");
 					if (Util::download(pluginURL, zipPath))
 					{
@@ -115,17 +134,16 @@ namespace Doppelganger
 					{
 						// failure
 						std::stringstream ss;
-						ss << "Plugin \"";
-						ss << name;
-						ss << "\" (";
+						ss << "Plugin \"" << name_ << "\" (";
 						if (version == "latest")
 						{
 							ss << "latest, ";
 						}
-						ss << actualVersion;
-						ss << ")";
-						ss << " is NOT loaded correctly. (Download)";
-						core->logger.log(ss.str(), "ERROR");
+						ss << actualVersion << ")"
+						   << " is NOT loaded correctly. (Download)";
+						std::visit([&ss](const auto &v)
+								   { v->logger.log(ss.str(), "ERROR"); },
+								   coreRoom_);
 						return;
 					}
 				}
@@ -135,44 +153,91 @@ namespace Doppelganger
 			{
 				// failure
 				std::stringstream ss;
-				ss << "Plugin \"";
-				ss << name;
-				ss << "\" (";
+				ss << "Plugin \"" << name_ << "\" (";
 				if (version == "latest")
 				{
 					ss << "latest, ";
 				}
-				ss << actualVersion;
-				ss << ")";
-				ss << " is NOT loaded correctly. (No such version)";
-				core->logger.log(ss.str(), "ERROR");
+				ss << actualVersion << ")"
+				   << " is NOT loaded correctly. (No such version)";
+				std::visit([&ss](const auto &v)
+						   { v->logger.log(ss.str(), "ERROR"); },
+						   coreRoom_);
 				return;
+			}
+			else
+			{
+				// Plugin "<pluginName>" (<Version>) is loaded.
+				std::stringstream ss;
+				ss << "Plugin \"" << name_ << "\" (" << installedVersion << ")"
+				   << " is loaded.";
+				std::visit([&ss](const auto &v)
+						   { v->logger.log(ss.str(), "ERROR"); },
+						   coreRoom_);
 			}
 		}
 		else
 		{
 			// already downloaded
 			std::stringstream ss;
-			ss << "Plugin \"";
-			ss << name;
-			ss << "\" (";
+			ss << "Plugin \"" << name_ << "\" (";
 			if (version == "latest")
 			{
 				ss << "latest, ";
 			}
-			ss << actualVersion;
-			ss << ")";
-			ss << " is already downloaded. We reuse it.";
-			core->logger.log(ss.str(), "SYSTEM");
+			ss << actualVersion << ")"
+			   << " is already downloaded. We reuse it.";
+			std::visit([&ss](const auto &v)
+					   { v->logger.log(ss.str(), "ERROR"); },
+					   coreRoom_);
 		}
 		installedVersion = version;
-		installFromDirectory(pluginDir);
+
+		// javascript module (if exists)
+		{
+			const std::string moduleName("module.js");
+			fs::path modulePath(pluginDir);
+			modulePath.append(moduleName);
+			hasModuleJS = fs::exists(modulePath);
+		}
+
+		// update installed plugin list "installed.json"
+		{
+			fs::path installedPluginJsonPath;
+			if (std::holds_alternative<std::shared_ptr<Doppelganger::Core>>(coreRoom_))
+			{
+				const std::shared_ptr<Doppelganger::Core> &core = std::get<std::shared_ptr<Doppelganger::Core>>(coreRoom_);
+				installedPluginJsonPath = core->DoppelgangerRootDir;
+				installedPluginJsonPath.append("plugin");
+			}
+			else // std::shared_ptr<Doppelganger::Room>
+			{
+				const std::shared_ptr<Doppelganger::Room> &room = std::get<std::shared_ptr<Doppelganger::Room>>(coreRoom_);
+				installedPluginJsonPath = room->dataDir;
+			}
+			installedPluginJsonPath.append("installed.json");
+
+			nlohmann::json installedPluginJson;
+
+			std::ifstream ifs(installedPluginJsonPath.string());
+			installedPluginJson = nlohmann::json::parse(ifs);
+			ifs.close();
+
+			nlohmann::json pluginInfo = nlohmann::json::object();
+			pluginInfo["name"] = name_;
+			pluginInfo["version"] = installedVersion;
+			installedPluginJson.push_back(pluginInfo);
+
+			std::ofstream ofs(installedPluginJsonPath.string());
+			ofs << installedPluginJson.dump(4);
+			ofs.close();
+		}
 	}
 
-	void Plugin::installFromDirectory(const fs::path &pluginDir)
+	void Plugin::pluginProcess(const std::shared_ptr<Doppelganger::Room> &room, const nlohmann::json &parameters, nlohmann::json &response, nlohmann::json &broadcast)
 	{
 		fs::path dllPath(pluginDir);
-		std::string dllName(name);
+		std::string dllName(name_);
 #if defined(_WIN64)
 		dllPath.append("Windows");
 		dllName += ".dll";
@@ -187,57 +252,16 @@ namespace Doppelganger
 		// c++ functions (.dll/.so) (if exists)
 		if (fs::exists(dllPath))
 		{
-			if (!loadDll(dllPath, "pluginProcess", func))
+			if (!functionCall(dllPath, "pluginProcess", room, parameters, response, broadcast))
 			{
 				std::stringstream ss;
-				ss << "Plugin \"";
-				ss << name;
-				ss << "\" (";
-				ss << installedVersion;
-				ss << ")";
-				ss << " is NOT loaded correctly. (Function pluginProcess not found)";
-				core->logger.log(ss.str(), "ERROR");
+				ss << "Plugin \"" << name_ << "\" (" << installedVersion << ")"
+				   << " is NOT called correctly.";
+				std::visit([&ss](const auto &v)
+						   { v->logger.log(ss.str(), "ERROR"); },
+						   coreRoom_);
 				return;
 			}
-		}
-
-		// javascript module (if exists)
-		std::string moduleName("module.js");
-		fs::path modulePath(pluginDir);
-		modulePath.append(moduleName);
-		hasModuleJS = fs::exists(modulePath);
-
-		// Plugin "<pluginName>" (<Version>) is loaded.
-		{
-			std::stringstream ss;
-			ss << "Plugin \"";
-			ss << name;
-			ss << "\" (";
-			ss << installedVersion;
-			ss << ")";
-			ss << " is loaded.";
-			core->logger.log(ss.str(), "SYSTEM");
-		}
-
-		// update installed plugin list "installed.json"
-		{
-			fs::path installedPluginJsonPath(core->config.at("plugin").at("dir").get<std::string>());
-			installedPluginJsonPath.append("installed.json");
-
-			nlohmann::json installedPluginJson;
-
-			std::ifstream ifs(installedPluginJsonPath.string());
-			installedPluginJson = nlohmann::json::parse(ifs);
-			ifs.close();
-
-			nlohmann::json pluginInfo = nlohmann::json::object();
-			pluginInfo["name"] = name;
-			pluginInfo["version"] = installedVersion;
-			installedPluginJson.push_back(pluginInfo);
-
-			std::ofstream ofs(installedPluginJsonPath.string());
-			ofs << installedPluginJson.dump(4);
-			ofs.close();
 		}
 	}
 } // namespace

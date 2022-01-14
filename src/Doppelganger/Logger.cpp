@@ -2,6 +2,7 @@
 #define LOGGER_CPP
 
 #include "Doppelganger/Logger.h"
+#include "Doppelganger/Util/getCurrentTimestampAsString.h"
 
 #include <sstream>
 #include <iostream>
@@ -10,20 +11,14 @@
 namespace Doppelganger
 {
 	void Logger::initialize(
-		const std::string &UUID_,
+		const fs::path &dataDir,
 		const nlohmann::json &config)
 	{
-		UUID = UUID_;
 		logLevel.clear();
 		logType.clear();
 
-		const std::string logsDir = config.at("dir").get<std::string>();
-		std::stringstream tmp;
-		tmp << getCurrentTimestampAsString(false);
-		tmp << "-";
-		tmp << UUID;
-		logDir = logsDir;
-		logDir.append(tmp.str());
+		logDir = dataDir;
+		logDir.append("log");
 		logDir.make_preferred();
 		fs::create_directories(logDir);
 
@@ -53,7 +48,7 @@ namespace Doppelganger
 			std::stringstream logText;
 
 			// time
-			logText << getCurrentTimestampAsString(true);
+			logText << Util::getCurrentTimestampAsString(true);
 			logText << " ";
 
 			// logLevel
@@ -71,11 +66,6 @@ namespace Doppelganger
 			logText << content;
 			logText << " ";
 
-			// which room?
-			logText << "(";
-			logText << UUID;
-			logText << ")";
-
 			// new line
 			logText << std::endl;
 
@@ -92,62 +82,30 @@ namespace Doppelganger
 		}
 	}
 
-	void Logger::log(const fs::path &path, const std::string &level, const bool remove)
+	void Logger::log(const fs::path &path, const std::string &level, const bool removeOriginal)
 	{
 		if (logLevel[level])
 		{
-			std::stringstream s;
 			{
 				try
 				{
 					fs::copy(path, logDir);
-					if (remove)
+					if (removeOriginal)
 					{
 						fs::remove_all(path);
 					}
+					std::stringstream s;
 					s << "temporary file " << path.filename().string() << " is stored in " << logDir.string();
+					log(s.str(), level);
 				}
 				catch (const fs::filesystem_error &e)
 				{
+					std::stringstream s;
 					s << e.what();
+					log(s.str(), "ERROR");
 				}
 			}
-			log(s.str(), level);
 		}
-	}
-
-	std::string Logger::getCurrentTimestampAsString(bool separator)
-	{
-		time_t t = time(nullptr);
-		const tm *localTime = localtime(&t);
-		std::stringstream s;
-		s << "20" << localTime->tm_year - 100;
-		if (separator)
-		{
-			s << "/";
-		}
-		s << std::setw(2) << std::setfill('0') << localTime->tm_mon + 1;
-		if (separator)
-		{
-			s << "/";
-		}
-		s << std::setw(2) << std::setfill('0') << localTime->tm_mday;
-		if (separator)
-		{
-			s << "/";
-		}
-		s << std::setw(2) << std::setfill('0') << localTime->tm_hour;
-		if (separator)
-		{
-			s << ":";
-		}
-		s << std::setw(2) << std::setfill('0') << localTime->tm_min;
-		if (separator)
-		{
-			s << ":";
-		}
-		s << std::setw(2) << std::setfill('0') << localTime->tm_sec;
-		return s.str();
 	}
 }
 

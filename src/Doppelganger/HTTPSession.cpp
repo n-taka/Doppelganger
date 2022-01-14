@@ -217,20 +217,7 @@ namespace
 					if (reqPathVec.at(2) == "css" || reqPathVec.at(2) == "html" || reqPathVec.at(2) == "icon" || reqPathVec.at(2) == "js")
 					{
 						// resource
-						fs::path completePath(room->core->config.at("plugin").at("dir").get<std::string>());
-						completePath.make_preferred();
-						{
-							// find assets plugin
-							std::string dirName("assets");
-							dirName += "_";
-							std::string installedVersion(room->core->plugin.at("assets")->installedVersion);
-							if (installedVersion == "latest")
-							{
-								installedVersion = room->core->plugin.at("assets")->parameters.at("versions").at(0).at("version").get<std::string>();
-							}
-							dirName += installedVersion;
-							completePath.append(dirName);
-						}
+						fs::path completePath(room->plugin.at("assets")->pluginDir);
 						for (int pIdx = 2; pIdx < reqPathVec.size(); ++pIdx)
 						{
 							completePath.append(reqPathVec.at(pIdx));
@@ -286,8 +273,8 @@ namespace
 					else if (reqPathVec.at(2) == "plugin")
 					{
 						// resource
-						fs::path completePath(core->systemParams.workingDir);
-						completePath.make_preferred();
+
+						fs::path completePath(core->DoppelgangerRootDir);
 						for (int pIdx = 2; pIdx < reqPathVec.size(); ++pIdx)
 						{
 							completePath.append(reqPathVec.at(pIdx));
@@ -358,7 +345,6 @@ namespace
 							}
 
 							const std::string &APIName = reqPathVec.at(2);
-							const Doppelganger::Plugin::API_t &APIFunc = core->plugin.at(APIName)->func;
 
 							nlohmann::json parameters = nlohmann::json::object();
 							boost::optional<std::uint64_t> size = req.payload_size();
@@ -381,7 +367,7 @@ namespace
 							}
 
 							nlohmann::json response, broadcast;
-							APIFunc(room, parameters.at("parameters"), response, broadcast);
+							room->plugin.at(APIName)->pluginProcess(room, parameters.at("parameters"), response, broadcast);
 
 							{
 								std::lock_guard<std::mutex> lock(room->interfaceParams.mutex);
@@ -424,7 +410,7 @@ namespace
 					// return 301 (moved permanently)
 					std::string location = core->config.at("server").at("completeURL").get<std::string>();
 					location += "/";
-					location += room->UUID;
+					location += room->UUID_;
 					location += "/html/index.html";
 					return send(movedPermanently(std::move(req), location));
 				}
@@ -434,7 +420,7 @@ namespace
 				// return 301 (moved permanently)
 				std::string location = core->config.at("server").at("completeURL").get<std::string>();
 				location += "/";
-				location += room->UUID;
+				location += room->UUID_;
 				location += "/html/index.html";
 				return send(movedPermanently(std::move(req), location));
 			}
@@ -444,7 +430,7 @@ namespace
 			// return 301 (moved permanently)
 			std::string location = core->config.at("server").at("completeURL").get<std::string>();
 			location += "/";
-			location += room->UUID;
+			location += room->UUID_;
 			location += "/html/index.html";
 			return send(movedPermanently(std::move(req), location));
 		}

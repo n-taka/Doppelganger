@@ -3,13 +3,18 @@
 
 #include "Doppelganger/Room.h"
 #include "Doppelganger/Core.h"
+#include "Doppelganger/Plugin.h"
 #include "Doppelganger/WebsocketSession.h"
+#include "Doppelganger/Util/getCurrentTimestampAsString.h"
+
+#include <fstream>
+#include <sstream>
 
 namespace Doppelganger
 {
-	Room::Room(const std::string &UUID_,
-			   const std::shared_ptr<Core> &core_)
-		: UUID(UUID_), core(core_)
+	Room::Room(const std::string &UUID,
+			   const std::shared_ptr<Core> &core)
+		: UUID_(UUID), core_(core)
 	{
 		//////
 		// initialize edit history parameters
@@ -33,31 +38,93 @@ namespace Doppelganger
 		}
 
 		////
-		// initialize logger for this room
+		// directory for Room
+		// Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/
 		{
-			logger.initialize(UUID, core->config.at("log"));
+			dataDir = core_->DoppelgangerRootDir;
+			dataDir.append("data");
+			std::string dirName("");
+			dirName += Util::getCurrentTimestampAsString(false);
+			dirName += UUID_;
+			dataDir.append(dirName);
+			fs::create_directories(dataDir);
+		}
+
+		////
+		// log
+		// Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/log
+		if (core_->config.contains("log"))
+		{
+			nlohmann::json &logJson = core_->config.at("log");
+			logger.initialize(dataDir, logJson);
+
 			{
 				std::stringstream ss;
-				ss << "New room \"" << UUID << "\" is created.";
+				ss << "New room \"" << UUID_ << "\" is created.";
 				logger.log(ss.str(), "SYSTEM");
 			}
 		}
 
 		////
-		// initialize outputDir for this room
-		if (core->config.at("output").at("type").get<std::string>() == "local")
+		// output
+		// Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/output
+		if (core_->config.contains("output"))
 		{
-			const std::string roomCreatedTimeStamp = Logger::getCurrentTimestampAsString(false);
-			std::stringstream tmp;
-			tmp << roomCreatedTimeStamp;
-			tmp << "-";
-			tmp << UUID;
-			const std::string timestampAndUUID = tmp.str();
-
-			outputDir = core->config.at("output").at("dir").get<std::string>();
-			outputDir.append(timestampAndUUID);
-			outputDir.make_preferred();
+			nlohmann::json &outputJson = core_->config.at("output");
+			// output["type"] == "storage"|"download"
+			fs::path outputDir = dataDir;
+			outputDir.append("output");
 			fs::create_directories(outputDir);
+		}
+
+		////
+		// plugin
+		if (core_->config.contains("plugin"))
+		{
+			nlohmann::json &pluginJson = core_->config.at("plugin");
+
+			// install plugins
+			fs::path installedPluginJsonPath(dataDir);
+			installedPluginJsonPath.append("installed.json");
+			if (!fs::exists(installedPluginJsonPath))
+			{
+				fs::path coreInstalledPluginJsonPath(core_->DoppelgangerRootDir);
+				coreInstalledPluginJsonPath.append("plugin");
+				coreInstalledPluginJsonPath.append("installed.json");
+				fs::copy_file(coreInstalledPluginJsonPath, installedPluginJsonPath);
+				plugin = core_->plugin;
+			}
+
+			{
+				std::ifstream ifs(installedPluginJsonPath.string());
+				const nlohmann::json installedPluginJson = nlohmann::json::parse(ifs);
+				ifs.close();
+
+				// we erase previous installed plugin array.
+				// following Doppelganger::Plugin::install updates intalled.json
+				const nlohmann::json emptyArray = nlohmann::json::array();
+				std::ofstream ofs(installedPluginJsonPath.string());
+				ofs << emptyArray.dump(4);
+				ofs.close();
+
+				for (const auto &pluginToBeInstalled : installedPluginJson)
+				{
+					const std::string &name = pluginToBeInstalled.at("name").get<std::string>();
+					const std::string &version = pluginToBeInstalled.at("version").get<std::string>();
+
+					if (plugin.find(name) != plugin.end() && version.size() > 0)
+					{
+						plugin.at(name)->install(version);
+					}
+					else
+					{
+						std::stringstream ss;
+						ss << "Plugin \"" << name << "\" (" << version << ")"
+						   << " is NOT found.";
+						logger.log(ss.str(), "ERROR");
+					}
+				}
+			}
 		}
 	}
 
@@ -106,9 +173,7 @@ namespace Doppelganger
 				if (!broadcast.empty())
 				{
 					std::visit([&](const auto &session_)
-							   {
-								   session_->send(broadcastMessage);
-							   },
+							   { session_->send(broadcastMessage); },
 							   session);
 				}
 			}
@@ -117,9 +182,7 @@ namespace Doppelganger
 				if (!response.empty())
 				{
 					std::visit([&](const auto &session_)
-							   {
-								   session_->send(responseMessage);
-							   },
+							   { session_->send(responseMessage); },
 							   session);
 				}
 			}

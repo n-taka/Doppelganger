@@ -81,7 +81,6 @@ namespace Doppelganger
 			const nlohmann::json parameters = nlohmann::json::parse(payload);
 			const std::string &APIName = parameters.at("API").get<std::string>();
 			const std::string &sourceUUID = parameters.at("sessionUUID").get<std::string>();
-			const Doppelganger::Plugin::API_t &APIFunc = room_->core->plugin.at(APIName)->func;
 
 			// WS APIs are called so many times (e.g. syncCursor).
 			// So, I simply comment out this logging
@@ -100,7 +99,7 @@ namespace Doppelganger
 			// }
 
 			nlohmann::json response, broadcast;
-			APIFunc(room_, parameters.at("parameters"), response, broadcast);
+			room_->plugin.at(APIName)->pluginProcess(room_, parameters.at("parameters"), response, broadcast);
 
 			room_->broadcastWS(APIName, sourceUUID, broadcast, response);
 		}

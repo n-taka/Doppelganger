@@ -26,6 +26,7 @@ namespace fs = std::filesystem;
 
 #include <memory>
 #include <string>
+#include <variant>
 #include <nlohmann/json.hpp>
 
 namespace Doppelganger
@@ -36,24 +37,29 @@ namespace Doppelganger
 	class DECLSPEC Plugin
 	{
 	public:
-		Plugin(const std::shared_ptr<Core> &core_, const std::string &name_, const nlohmann::json &parameters_);
+		Plugin(
+			const std::variant<std::shared_ptr<Doppelganger::Core>, std::shared_ptr<Doppelganger::Room>> &coreRoom,
+			const std::string &name,
+			const nlohmann::json &parameters,
+			const fs::path &pluginsDir);
 		~Plugin() {}
-		const std::shared_ptr<Core> core;
-		const std::string name;
-		const nlohmann::json parameters;
+
+		const std::variant<std::shared_ptr<Doppelganger::Core>, std::shared_ptr<Doppelganger::Room>> coreRoom_;
+		const std::string name_;
+		const nlohmann::json parameters_;
+		const fs::path pluginsDir_;
+		fs::path pluginDir;
+		std::string installedVersion;
+		bool hasModuleJS;
 
 		void install(const std::string &version);
-		std::string installedVersion;
+		void pluginProcess(const std::shared_ptr<Doppelganger::Room> &room, const nlohmann::json &parameters, nlohmann::json &response, nlohmann::json &broadcast);
 
 		////
 		// typedef for API
 		//   all API have this signature, and other parameters (e.g. meshUUID) are supplied within the parameter json.
 		typedef std::function<void(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &, nlohmann::json &, nlohmann::json &)> API_t;
 		API_t func;
-		bool hasModuleJS;
-
-	private:
-		void installFromDirectory(const fs::path &pluginDir);
 	};
 } // namespace
 

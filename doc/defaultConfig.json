@@ -22,7 +22,7 @@
     },
     "output": {
         "dir": "",
-        "type": "local"
+        "type": "storage"
     },
     "plugin": {
         "dir": "",

@@ -41,6 +41,7 @@ namespace fs = std::filesystem;
 namespace Doppelganger
 {
 	class Core;
+	class Plugin;
 	class PlainWebsocketSession;
 	class SSLWebsocketSession;
 
@@ -48,15 +49,17 @@ namespace Doppelganger
 	{
 	public:
 		Room(
-			const std::string &UUID_,
-			const std::shared_ptr<Core> &core_);
+			const std::string &UUID,
+			const std::shared_ptr<Core> &core);
 		~Room() {}
 
 	public:
-		std::string UUID;
+		const std::string UUID_;
+		const std::shared_ptr<Core> core_;
 		Logger logger;
-		fs::path outputDir;
-		const std::shared_ptr<Core> core;
+		// Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/
+		fs::path dataDir;
+		std::unordered_map<std::string, std::shared_ptr<Doppelganger::Plugin>> plugin;
 
 		////
 		// parameters for server setup
@@ -69,7 +72,6 @@ namespace Doppelganger
 		void joinWS(const std::variant<std::shared_ptr<PlainWebsocketSession>, std::shared_ptr<SSLWebsocketSession>> &session);
 		void leaveWS(const std::string &sessionUUID);
 		void broadcastWS(const std::string &APIName, const std::string &sourceUUID, const nlohmann::json &broadcast, const nlohmann::json &response);
-		// void broadcastMeshUpdate(const std::vector<std::string> &meshUUIDVec);
 
 		////
 		// parameter for user interface
