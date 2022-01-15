@@ -193,7 +193,7 @@ namespace Doppelganger
 			ss << actualVersion << ")"
 			   << " is already downloaded. We reuse it.";
 			std::visit([&ss](const auto &v)
-					   { v->logger.log(ss.str(), "ERROR"); },
+					   { v->logger.log(ss.str(), "SYSTEM"); },
 					   coreRoom);
 		}
 		installedVersion = version;
