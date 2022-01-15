@@ -118,7 +118,6 @@ namespace Doppelganger
 					if (plugin.find(name) != plugin.end() && version.size() > 0)
 					{
 						plugin.at(name)->install(shared_from_this(), version);
-						std::cout << "install room" << std::endl;
 					}
 					else
 					{

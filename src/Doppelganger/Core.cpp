@@ -365,7 +365,6 @@ namespace Doppelganger
 						if (plugin.at(name)->installedVersion.size() == 0)
 						{
 							plugin.at(name)->install(shared_from_this(), std::string("latest"));
-							std::cout << "install core" << std::endl;
 						}
 					}
 					else

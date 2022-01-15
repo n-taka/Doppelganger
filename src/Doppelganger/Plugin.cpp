@@ -71,9 +71,7 @@ namespace
 			}
 			else
 			{
-				std::cout << "A" << std::endl;
 				reinterpret_cast<APIPtr_t>(lpfnDllFunc)(room, parameters, response, broadcast);
-				std::cout << "B" << std::endl;
 #if defined(_WIN64)
 				FreeLibrary(handle);
 #elif defined(__APPLE__)
