@@ -45,13 +45,15 @@ namespace Doppelganger
 	class PlainWebsocketSession;
 	class SSLWebsocketSession;
 
-	class DECLSPEC Room
+	class DECLSPEC Room : public std::enable_shared_from_this<Room>
 	{
 	public:
 		Room(
 			const std::string &UUID,
 			const std::shared_ptr<Core> &core);
 		~Room() {}
+
+		void setup();
 
 	public:
 		const std::string UUID_;

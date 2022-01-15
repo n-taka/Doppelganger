@@ -543,6 +543,7 @@ namespace Doppelganger
 				}
 			}
 			const std::shared_ptr<Room> room = std::make_shared<Room>(roomUUID, core_);
+			room->setup();
 			core_->rooms[roomUUID] = room;
 			handleRequest(core_, room, parser_->release(), queue_);
 		}

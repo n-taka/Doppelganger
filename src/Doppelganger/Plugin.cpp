@@ -71,7 +71,9 @@ namespace
 			}
 			else
 			{
+				std::cout << "A" << std::endl;
 				reinterpret_cast<APIPtr_t>(lpfnDllFunc)(room, parameters, response, broadcast);
+				std::cout << "B" << std::endl;
 #if defined(_WIN64)
 				FreeLibrary(handle);
 #elif defined(__APPLE__)
@@ -92,15 +94,16 @@ namespace
 namespace Doppelganger
 {
 	Plugin::Plugin(
-		const std::variant<std::shared_ptr<Doppelganger::Core>, std::shared_ptr<Doppelganger::Room>> &coreRoom,
 		const std::string &name,
 		const nlohmann::json &parameters,
 		const fs::path &pluginsDir)
-		: coreRoom_(coreRoom), name_(name), parameters_(parameters), pluginsDir_(pluginsDir), hasModuleJS(false)
+		: name_(name), parameters_(parameters), pluginsDir_(pluginsDir), hasModuleJS(false)
 	{
 	}
 
-	void Plugin::install(const std::string &version)
+	void Plugin::install(
+		const std::variant<std::shared_ptr<Doppelganger::Core>, std::shared_ptr<Doppelganger::Room>> &coreRoom,
+		const std::string &version)
 	{
 		const std::string actualVersion((version == "latest") ? parameters_.at("versions").at(0).at("version").get<std::string>() : version);
 
@@ -143,7 +146,7 @@ namespace Doppelganger
 						   << " is NOT loaded correctly. (Download)";
 						std::visit([&ss](const auto &v)
 								   { v->logger.log(ss.str(), "ERROR"); },
-								   coreRoom_);
+								   coreRoom);
 						return;
 					}
 				}
@@ -162,7 +165,7 @@ namespace Doppelganger
 				   << " is NOT loaded correctly. (No such version)";
 				std::visit([&ss](const auto &v)
 						   { v->logger.log(ss.str(), "ERROR"); },
-						   coreRoom_);
+						   coreRoom);
 				return;
 			}
 			else
@@ -177,7 +180,7 @@ namespace Doppelganger
 				   << " is loaded.";
 				std::visit([&ss](const auto &v)
 						   { v->logger.log(ss.str(), "SYSTEM"); },
-						   coreRoom_);
+						   coreRoom);
 			}
 		}
 		else
@@ -193,7 +196,7 @@ namespace Doppelganger
 			   << " is already downloaded. We reuse it.";
 			std::visit([&ss](const auto &v)
 					   { v->logger.log(ss.str(), "ERROR"); },
-					   coreRoom_);
+					   coreRoom);
 		}
 		installedVersion = version;
 
@@ -208,15 +211,15 @@ namespace Doppelganger
 		// update installed plugin list "installed.json"
 		{
 			fs::path installedPluginJsonPath;
-			if (std::holds_alternative<std::shared_ptr<Doppelganger::Core>>(coreRoom_))
+			if (std::holds_alternative<std::shared_ptr<Doppelganger::Core>>(coreRoom))
 			{
-				const std::shared_ptr<Doppelganger::Core> &core = std::get<std::shared_ptr<Doppelganger::Core>>(coreRoom_);
+				const std::shared_ptr<Doppelganger::Core> &core = std::get<std::shared_ptr<Doppelganger::Core>>(coreRoom);
 				installedPluginJsonPath = core->DoppelgangerRootDir;
 				installedPluginJsonPath.append("plugin");
 			}
 			else // std::shared_ptr<Doppelganger::Room>
 			{
-				const std::shared_ptr<Doppelganger::Room> &room = std::get<std::shared_ptr<Doppelganger::Room>>(coreRoom_);
+				const std::shared_ptr<Doppelganger::Room> &room = std::get<std::shared_ptr<Doppelganger::Room>>(coreRoom);
 				installedPluginJsonPath = room->dataDir;
 			}
 			installedPluginJsonPath.append("installed.json");
@@ -261,10 +264,7 @@ namespace Doppelganger
 				std::stringstream ss;
 				ss << "Plugin \"" << name_ << "\" (" << installedVersion << ")"
 				   << " is NOT called correctly.";
-				std::visit([&ss](const auto &v)
-						   { v->logger.log(ss.str(), "ERROR"); },
-						   coreRoom_);
-				return;
+				room->logger.log(ss.str(), "ERROR");
 			}
 		}
 	}

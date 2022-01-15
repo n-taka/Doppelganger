@@ -166,8 +166,6 @@ namespace Doppelganger
 
 	void Core::setup()
 	{
-		////
-		// setup for resourceDir/workingDir
 		{
 #if defined(_WIN64)
 			// For windows, we use "%USERPROFILE%\AppData\Local\Doppelganger"
@@ -227,6 +225,9 @@ namespace Doppelganger
 				// no config file is found. (e.g. use Doppelganger first time)
 				generateDefaultConfigJson(configOrig);
 				std::cout << "No config file found. We use default config." << std::endl;
+				std::ofstream ofs(configPath.string());
+				ofs << configOrig.dump(4);
+				ofs.close();
 			}
 			config = configOrig;
 		}
@@ -304,7 +305,7 @@ namespace Doppelganger
 			{
 				const std::string &name = pluginEntry.key();
 				const nlohmann::json &pluginInfo = pluginEntry.value();
-				plugin[name] = std::make_shared<Doppelganger::Plugin>(shared_from_this(), name, pluginInfo, pluginsDir);
+				plugin[name] = std::make_shared<Doppelganger::Plugin>(name, pluginInfo, pluginsDir);
 			}
 
 			// install plugins
@@ -332,7 +333,7 @@ namespace Doppelganger
 
 					if (plugin.find(name) != plugin.end() && version.size() > 0)
 					{
-						plugin.at(name)->install(version);
+						plugin.at(name)->install(shared_from_this(), version);
 					}
 					else
 					{
@@ -363,7 +364,8 @@ namespace Doppelganger
 					{
 						if (plugin.at(name)->installedVersion.size() == 0)
 						{
-							plugin.at(name)->install(std::string("latest"));
+							plugin.at(name)->install(shared_from_this(), std::string("latest"));
+							std::cout << "install core" << std::endl;
 						}
 					}
 					else

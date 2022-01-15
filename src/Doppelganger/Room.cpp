@@ -16,6 +16,10 @@ namespace Doppelganger
 			   const std::shared_ptr<Core> &core)
 		: UUID_(UUID), core_(core)
 	{
+	}
+
+	void Room::setup()
+	{
 		//////
 		// initialize edit history parameters
 		editHistory.index = 0;
@@ -82,8 +86,6 @@ namespace Doppelganger
 		// plugin
 		if (core_->config.contains("plugin"))
 		{
-			nlohmann::json &pluginJson = core_->config.at("plugin");
-
 			// install plugins
 			fs::path installedPluginJsonPath(dataDir);
 			installedPluginJsonPath.append("installed.json");
@@ -115,7 +117,8 @@ namespace Doppelganger
 
 					if (plugin.find(name) != plugin.end() && version.size() > 0)
 					{
-						plugin.at(name)->install(version);
+						plugin.at(name)->install(shared_from_this(), version);
+						std::cout << "install room" << std::endl;
 					}
 					else
 					{
