@@ -171,8 +171,7 @@ namespace
 	}
 
 	template <class Body, class Allocator, class Send>
-	void handleRequest(const std::shared_ptr<Doppelganger::Core> &core,
-					   const std::shared_ptr<Doppelganger::Room> &room,
+	void handleRequest(const std::shared_ptr<Doppelganger::Room> &room,
 					   http::request<Body, http::basic_fields<Allocator>> &&req,
 					   Send &&send)
 	{
@@ -274,7 +273,7 @@ namespace
 					{
 						// resource
 
-						fs::path completePath(core->DoppelgangerRootDir);
+						fs::path completePath(Doppelganger::Core::getInstance().DoppelgangerRootDir);
 						for (int pIdx = 2; pIdx < reqPathVec.size(); ++pIdx)
 						{
 							completePath.append(reqPathVec.at(pIdx));
@@ -408,7 +407,7 @@ namespace
 				else
 				{
 					// return 301 (moved permanently)
-					std::string location = core->config.at("server").at("completeURL").get<std::string>();
+					std::string location = Doppelganger::Core::getInstance().completeURL;
 					location += "/";
 					location += room->UUID_;
 					location += "/html/index.html";
@@ -418,7 +417,7 @@ namespace
 			else
 			{
 				// return 301 (moved permanently)
-				std::string location = core->config.at("server").at("completeURL").get<std::string>();
+				std::string location = Doppelganger::Core::getInstance().completeURL;
 				location += "/";
 				location += room->UUID_;
 				location += "/html/index.html";
@@ -428,7 +427,7 @@ namespace
 		else
 		{
 			// return 301 (moved permanently)
-			std::string location = core->config.at("server").at("completeURL").get<std::string>();
+			std::string location = Doppelganger::Core::getInstance().completeURL;
 			location += "/";
 			location += room->UUID_;
 			location += "/html/index.html";
@@ -463,14 +462,13 @@ namespace Doppelganger
 
 		std::stringstream s;
 		s << what << ": " << ec.message();
-		core_->logger.log(s.str(), "ERROR");
+		Core::getInstance().logger.log(s.str(), "ERROR");
 	}
 
 	template <class Derived>
 	HTTPSession<Derived>::HTTPSession(
-		const std::shared_ptr<Core> &core,
 		beast::flat_buffer buffer)
-		: queue_(*this), core_(core), buffer_(std::move(buffer))
+		: queue_(*this), buffer_(std::move(buffer))
 	{
 	}
 
@@ -519,7 +517,7 @@ namespace Doppelganger
 		{
 			std::stringstream s;
 			s << "Request received: \"" << parser_->get().target().to_string() << "\"";
-			core_->logger.log(s.str(), "SYSTEM");
+			Core::getInstance().logger.log(s.str(), "SYSTEM");
 		}
 
 		if (roomUUID == "favicon.ico")
@@ -527,7 +525,7 @@ namespace Doppelganger
 			// do nothing
 			// TODO: prepare favion.ico
 		}
-		else if (roomUUID.size() <= 0 || core_->rooms.find(roomUUID) == core_->rooms.end())
+		else if (roomUUID.size() <= 0 || Core::getInstance().rooms.find(roomUUID) == Core::getInstance().rooms.end())
 		{
 			// create new room
 			if (roomUUID.size() <= 0)
@@ -542,14 +540,14 @@ namespace Doppelganger
 					roomUUID = "room-" + roomUUID;
 				}
 			}
-			const std::shared_ptr<Room> room = std::make_shared<Room>(roomUUID, core_);
+			const std::shared_ptr<Room> room = std::make_shared<Room>(roomUUID);
 			room->setup();
-			core_->rooms[roomUUID] = room;
-			handleRequest(core_, room, parser_->release(), queue_);
+			Core::getInstance().rooms[roomUUID] = room;
+			handleRequest(room, parser_->release(), queue_);
 		}
 		else
 		{
-			const std::shared_ptr<Room> &room = core_->rooms.at(roomUUID);
+			const std::shared_ptr<Room> &room = Core::getInstance().rooms.at(roomUUID);
 			// See if it is a WebSocket Upgrade
 			if (boost::beast::websocket::is_upgrade(parser_->get()))
 			{
@@ -566,7 +564,7 @@ namespace Doppelganger
 			else
 			{
 				// Send the response
-				handleRequest(core_, room, parser_->release(), queue_);
+				handleRequest(room, parser_->release(), queue_);
 				return;
 			}
 		}
@@ -635,7 +633,7 @@ namespace Doppelganger
 
 	template PlainHTTPSession &HTTPSession<PlainHTTPSession>::derived();
 	template void HTTPSession<PlainHTTPSession>::fail(boost::system::error_code, char const *);
-	template HTTPSession<PlainHTTPSession>::HTTPSession(const std::shared_ptr<Core> &, beast::flat_buffer);
+	template HTTPSession<PlainHTTPSession>::HTTPSession(beast::flat_buffer);
 	template void HTTPSession<PlainHTTPSession>::doRead();
 	template void HTTPSession<PlainHTTPSession>::onRead(boost::beast::error_code, std::size_t);
 	template void HTTPSession<PlainHTTPSession>::onWrite(bool, boost::beast::error_code, std::size_t);
@@ -645,7 +643,7 @@ namespace Doppelganger
 
 	template Doppelganger::SSLHTTPSession &Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::derived();
 	template void Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::fail(boost::system::error_code, char const *);
-	template HTTPSession<SSLHTTPSession>::HTTPSession(const std::shared_ptr<Core> &, beast::flat_buffer);
+	template HTTPSession<SSLHTTPSession>::HTTPSession(beast::flat_buffer);
 	template void Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::doRead();
 	template void Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::onRead(beast::error_code, std::size_t);
 	template void Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::onWrite(bool, beast::error_code, std::size_t);

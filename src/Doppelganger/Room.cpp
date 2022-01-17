@@ -12,9 +12,8 @@
 
 namespace Doppelganger
 {
-	Room::Room(const std::string &UUID,
-			   const std::shared_ptr<Core> &core)
-		: UUID_(UUID), core_(core)
+	Room::Room(const std::string &UUID)
+		: UUID_(UUID)
 	{
 	}
 
@@ -42,10 +41,18 @@ namespace Doppelganger
 		}
 
 		////
+		// config.json
+		nlohmann::json config;
+		{
+			std::lock_guard<std::mutex> lock(mutexConfig);
+			getCurrentConfig(config);
+		}
+
+		////
 		// directory for Room
 		// Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/
 		{
-			dataDir = core_->DoppelgangerRootDir;
+			dataDir = Core::getInstance().DoppelgangerRootDir;
 			dataDir.append("data");
 			std::string dirName("");
 			dirName += Util::getCurrentTimestampAsString(false);
@@ -58,11 +65,9 @@ namespace Doppelganger
 		////
 		// log
 		// Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/log
-		if (core_->config.contains("log"))
+		if (config.contains("log"))
 		{
-			nlohmann::json &logJson = core_->config.at("log");
-			logger.initialize(dataDir, logJson);
-
+			logger.initialize(shared_from_this());
 			{
 				std::stringstream ss;
 				ss << "New room \"" << UUID_ << "\" is created.";
@@ -73,10 +78,8 @@ namespace Doppelganger
 		////
 		// output
 		// Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/output
-		if (core_->config.contains("output"))
+		if (config.contains("output"))
 		{
-			nlohmann::json &outputJson = core_->config.at("output");
-			// output["type"] == "storage"|"download"
 			fs::path outputDir = dataDir;
 			outputDir.append("output");
 			fs::create_directories(outputDir);
@@ -84,31 +87,25 @@ namespace Doppelganger
 
 		////
 		// plugin
-		if (core_->config.contains("plugin"))
+		// TODO!!!!
+		if (config.contains("plugin"))
 		{
-			// install plugins
-			fs::path installedPluginJsonPath(dataDir);
-			installedPluginJsonPath.append("installed.json");
-			if (!fs::exists(installedPluginJsonPath))
+			// get plugin catalogue
+			nlohmann::json pluginCatalogue;
+			Plugin::getPluginCatalogue(config.at("plugin").at("listURL"), pluginCatalogue);
+
+			// initialize Doppelganger::Plugin instances
+			for (const auto &pluginEntry : pluginCatalogue.items())
 			{
-				fs::path coreInstalledPluginJsonPath(core_->DoppelgangerRootDir);
-				coreInstalledPluginJsonPath.append("plugin");
-				coreInstalledPluginJsonPath.append("installed.json");
-				fs::copy_file(coreInstalledPluginJsonPath, installedPluginJsonPath);
-				plugin = core_->plugin;
+				const std::string &name = pluginEntry.key();
+				const nlohmann::json &pluginInfo = pluginEntry.value();
+				plugin[name] = std::make_shared<Doppelganger::Plugin>(name, pluginInfo);
 			}
 
+			// install plugins
 			{
-				std::ifstream ifs(installedPluginJsonPath.string());
-				const nlohmann::json installedPluginJson = nlohmann::json::parse(ifs);
-				ifs.close();
-
-				// we erase previous installed plugin array.
-				// following Doppelganger::Plugin::install updates intalled.json
-				const nlohmann::json emptyArray = nlohmann::json::array();
-				std::ofstream ofs(installedPluginJsonPath.string());
-				ofs << emptyArray.dump(4);
-				ofs.close();
+				const nlohmann::json installedPluginJson = config.at("plugin").at("installed");
+				config.at("plugin").at("installed") = nlohmann::json::array();
 
 				for (const auto &pluginToBeInstalled : installedPluginJson)
 				{
@@ -128,28 +125,53 @@ namespace Doppelganger
 					}
 				}
 			}
+
+			// install non-optional plugins
+			for (const auto &pluginEntry : pluginCatalogue.items())
+			{
+				const std::string &name = pluginEntry.key();
+				const nlohmann::json &pluginInfo = pluginEntry.value();
+				const bool &optional = pluginInfo.at("optional").get<bool>();
+				if (!optional)
+				{
+					if (plugin.find(name) != plugin.end())
+					{
+						if (plugin.at(name)->installedVersion.size() == 0)
+						{
+							plugin.at(name)->install(shared_from_this(), std::string("latest"));
+						}
+					}
+					else
+					{
+						std::stringstream ss;
+						ss << "Non-optional plugin \"" << name << "\" (latest)"
+						   << " is NOT found.";
+						logger.log(ss.str(), "ERROR");
+					}
+				}
+			}
 		}
 	}
 
 	void Room::joinWS(const std::variant<std::shared_ptr<PlainWebsocketSession>, std::shared_ptr<SSLWebsocketSession>> &session)
 	{
-		std::lock_guard<std::mutex> lock(serverParams.mutex);
+		std::lock_guard<std::mutex> lock(mutexWS);
 		std::visit([&](const auto &session_)
-				   { serverParams.websocketSessions[session_->UUID_] = session_; },
+				   { websocketSessions[session_->UUID_] = session_; },
 				   session);
 	}
 
 	void Room::leaveWS(const std::string &sessionUUID)
 	{
-		std::lock_guard<std::mutex> lock(serverParams.mutex);
-		serverParams.websocketSessions.erase(sessionUUID);
+		std::lock_guard<std::mutex> lock(mutexWS);
+		websocketSessions.erase(sessionUUID);
 		// todo
 		// update cursors
 	}
 
 	void Room::broadcastWS(const std::string &APIName, const std::string &sourceUUID, const nlohmann::json &broadcast, const nlohmann::json &response)
 	{
-		std::lock_guard<std::mutex> lock(serverParams.mutex);
+		std::lock_guard<std::mutex> lock(mutexWS);
 		nlohmann::json broadcastJson = nlohmann::json::object();
 		nlohmann::json responseJson = nlohmann::json::object();
 		if (!broadcast.empty())
@@ -167,7 +189,7 @@ namespace Doppelganger
 		const std::shared_ptr<const std::string> broadcastMessage = std::make_shared<const std::string>(broadcastJson.dump());
 		const std::shared_ptr<const std::string> responseMessage = std::make_shared<const std::string>(responseJson.dump());
 
-		for (const auto &uuid_session : serverParams.websocketSessions)
+		for (const auto &uuid_session : websocketSessions)
 		{
 			const std::string &sessionUUID = uuid_session.first;
 			const std::variant<std::shared_ptr<PlainWebsocketSession>, std::shared_ptr<SSLWebsocketSession>> &session = uuid_session.second;
@@ -207,6 +229,39 @@ namespace Doppelganger
 		editHistory.diffFromNext.emplace_back(diffInv);
 		editHistory.diffFromPrev.emplace_back(diff);
 		editHistory.index = editHistory.diffFromNext.size();
+	}
+
+	void Room::getCurrentConfig(nlohmann::json &config) const
+	{
+		fs::path configPath(dataDir);
+		configPath.append("config.json");
+		if (fs::exists(configPath))
+		{
+			// we could directly use std::filesystem::path, but we could not directly boost::filesystem::path
+			std::ifstream ifs(configPath.string());
+			config = nlohmann::json::parse(ifs);
+			ifs.close();
+		}
+		else
+		{
+			// no config file is found.
+			// we copy from core
+			std::cout << "No config file for Room found. We copy from Core." << std::endl;
+			{
+				std::lock_guard<std::mutex> lock(Core::getInstance().mutexConfig);
+				Core::getInstance().getCurrentConfig(config);
+			}
+			updateConfig(config);
+		}
+	}
+
+	void Room::updateConfig(const nlohmann::json &config) const
+	{
+		fs::path configPath(dataDir);
+		configPath.append("config.json");
+		std::ofstream ofs(configPath.string());
+		ofs << config.dump(4);
+		ofs.close();
 	}
 } // namespace
 

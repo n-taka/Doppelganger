@@ -18,12 +18,10 @@ namespace Doppelganger
 	// SSLHTTPSession
 	////
 	SSLHTTPSession::SSLHTTPSession(
-		const std::shared_ptr<Core> &core,
 		beast::tcp_stream &&stream,
 		ssl::context &ctx,
 		beast::flat_buffer &&buffer)
 		: HTTPSession<SSLHTTPSession>(
-			  core,
 			  std::move(buffer)),
 		  stream_(std::move(stream), ctx)
 	{

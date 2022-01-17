@@ -22,8 +22,6 @@ namespace Doppelganger
 	namespace ssl = boost::asio::ssl; // from <boost/asio/ssl.hpp>
 	using tcp = boost::asio::ip::tcp; // from <boost/asio/ip/tcp.hpp>
 
-	class Core;
-
 	// Handles an HTTP server connection.
 	// This uses the Curiously Recurring Template Pattern so that
 	// the same code works with both SSL streams and regular sockets.
@@ -113,8 +111,6 @@ namespace Doppelganger
 		// construct it from scratch it at the beginning of each new message.
 		boost::optional<http::request_parser<http::string_body>> parser_;
 
-		const std::shared_ptr<Core> core_;
-
 	protected:
 		beast::flat_buffer buffer_;
 
@@ -123,7 +119,6 @@ namespace Doppelganger
 	public:
 		// Construct the session
 		HTTPSession(
-			const std::shared_ptr<Core> &core,
 			beast::flat_buffer buffer);
 
 		void doRead();
@@ -143,7 +138,6 @@ namespace Doppelganger
 	public:
 		// Create the session
 		PlainHTTPSession(
-			const std::shared_ptr<Core> &core,
 			beast::tcp_stream &&stream,
 			beast::flat_buffer &&buffer);
 
@@ -172,7 +166,6 @@ namespace Doppelganger
 	public:
 		// Create the http_session
 		SSLHTTPSession(
-			const std::shared_ptr<Core> &core,
 			beast::tcp_stream &&stream,
 			ssl::context &ctx,
 			beast::flat_buffer &&buffer);

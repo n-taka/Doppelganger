@@ -2,6 +2,8 @@
 #define LOGGER_CPP
 
 #include "Doppelganger/Logger.h"
+#include "Doppelganger/Core.h"
+#include "Doppelganger/Room.h"
 #include "Doppelganger/Util/getCurrentTimestampAsString.h"
 
 #include <sstream>
@@ -11,38 +13,41 @@
 namespace Doppelganger
 {
 	void Logger::initialize(
-		const fs::path &dataDir,
-		const nlohmann::json &config)
+		const std::variant<std::shared_ptr<Doppelganger::Core>, std::shared_ptr<Doppelganger::Room>> parent)
 	{
-		logLevel.clear();
-		logType.clear();
+		parent_ = parent;
 
-		logDir = dataDir;
-		logDir.append("log");
-		logDir.make_preferred();
-		fs::create_directories(logDir);
-
-		for (const auto &level : config.at("level"))
-		{
-			logLevel[level.get<std::string>()] = true;
-		}
-		for (const auto &type : config.at("type"))
-		{
-			logType[type.get<std::string>()] = true;
-		}
-
-		// prepare log directory and log.txt
-		if (logType["FILE"])
-		{
-			logFile = logDir;
-			logFile.append("log.txt");
-		}
+		std::visit([](const auto &p)
+				   {
+						// create directory for log
+						fs::path logDir = p->dataDir;
+						logDir.append("log");
+						fs::create_directories(logDir); },
+				   parent_);
 	}
 
 	void Logger::log(
 		const std::string &content,
-		const std::string &level)
+		const std::string &level) const
 	{
+		nlohmann::json config;
+		fs::path logDir;
+		fs::path logFile;
+		std::visit([&config, &logDir, &logFile](const auto &p)
+				   {
+					   	{
+							std::lock_guard<std::mutex> lock(p->mutexConfig);
+							p->getCurrentConfig(config);
+					   	}
+				   		fs::path logDir = p->dataDir;
+						logDir.append("log");
+						logFile = logDir;
+						logFile.append("log.txt"); },
+				   parent_);
+		std::unordered_map<std::string, bool> logLevel;
+		std::unordered_map<std::string, bool> logType;
+		getLevelAndType(config, logLevel, logType);
+
 		if (logLevel[level])
 		{
 			std::stringstream logText;
@@ -82,8 +87,26 @@ namespace Doppelganger
 		}
 	}
 
-	void Logger::log(const fs::path &path, const std::string &level, const bool removeOriginal)
+	void Logger::log(const fs::path &path, const std::string &level, const bool removeOriginal) const
 	{
+		nlohmann::json config;
+		fs::path logDir;
+		fs::path logFile;
+		std::visit([&config, &logDir, &logFile](const auto &p)
+				   {
+					   	{
+							std::lock_guard<std::mutex> lock(p->mutexConfig);
+							p->getCurrentConfig(config);
+					   	}
+				   		fs::path logDir = p->dataDir;
+						logDir.append("log");
+						logFile = logDir;
+						logFile.append("log.txt"); },
+				   parent_);
+		std::unordered_map<std::string, bool> logLevel;
+		std::unordered_map<std::string, bool> logType;
+		getLevelAndType(config, logLevel, logType);
+
 		if (logLevel[level])
 		{
 			{
@@ -105,6 +128,28 @@ namespace Doppelganger
 					log(s.str(), "ERROR");
 				}
 			}
+		}
+	}
+
+	void Logger::getLevelAndType(
+		const nlohmann::json &config,
+		std::unordered_map<std::string, bool> &logLevel,
+		std::unordered_map<std::string, bool> &logType)
+	{
+		// set of strings -> boolean
+		// {"SYSTEM", "APICALL", "WSCALL", "ERROR", "MISC", "DEBUG"} -> boolean
+		logLevel.clear();
+		// set of strings -> boolean
+		// {"STDOUT", "FILE"} -> boolean
+		logType.clear();
+
+		for (const auto &level : config.at("log").at("level"))
+		{
+			logLevel[level.get<std::string>()] = true;
+		}
+		for (const auto &type : config.at("log").at("type"))
+		{
+			logType[type.get<std::string>()] = true;
 		}
 	}
 }

@@ -27,10 +27,15 @@ namespace fs = std::filesystem;
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+// todo variant requires C++17
+#include <variant>
 #include <nlohmann/json.hpp>
 
 namespace Doppelganger
 {
+	class Core;
+	class Room;
+
 	class DECLSPEC Logger
 	{
 	public:
@@ -38,31 +43,23 @@ namespace Doppelganger
 		~Logger(){};
 
 		void initialize(
-			const fs::path &dataDir,
-			const nlohmann::json &config);
-
+			const std::variant<std::shared_ptr<Doppelganger::Core>, std::shared_ptr<Doppelganger::Room>> parent);
 		void log(
 			const std::string &content,
-			const std::string &level);
+			const std::string &level) const;
 		void log(
 			const fs::path &path,
 			const std::string &level,
-			const bool removeOriginal);
+			const bool removeOriginal) const;
 
-		std::unordered_set<std::string> suppressedAPICall;
 		// where we put log
-		fs::path logDir;
+		std::variant<std::shared_ptr<Doppelganger::Core>, std::shared_ptr<Doppelganger::Room>> parent_;
 
 	private:
-		// set of strings -> boolean
-		// {"SYSTEM", "APICALL", "WSCALL", "ERROR", "MISC", "DEBUG"} -> boolean
-		std::unordered_map<std::string, bool> logLevel;
-		// set of strings -> boolean
-		// {"STDOUT", "FILE"} -> boolean
-		std::unordered_map<std::string, bool> logType;
-
-		// where we put log
-		fs::path logFile;
+		static void getLevelAndType(
+			const nlohmann::json &config,
+			std::unordered_map<std::string, bool> &logLevel,
+			std::unordered_map<std::string, bool> &logType);
 	};
 }
 

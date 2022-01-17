@@ -27,6 +27,7 @@ namespace fs = std::filesystem;
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <mutex>
 
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
@@ -44,6 +45,8 @@ namespace fs = std::filesystem;
 #include <nlohmann/json.hpp>
 #include "Doppelganger/Logger.h"
 
+#include <iostream>
+
 namespace Doppelganger
 {
 	class Room;
@@ -54,27 +57,54 @@ namespace Doppelganger
 	class DECLSPEC Core : public std::enable_shared_from_this<Core>
 	{
 	public:
-		Core(boost::asio::io_context &ioc,
-			 boost::asio::ssl::context &ctx);
+		Core()
+		{
+		std::cout << "Core constructed..." << std::endl;
+		}
 
+		static Core &getInstance()
+		{
+			static Core core;
+			return core;
+		}
+
+		////
+		// setup functions
 		void setup();
+
+		////
+		// start Doppelganger
 		void run();
 
-		nlohmann::json configOrig, config;
 		Logger logger;
 		std::unordered_map<std::string, std::shared_ptr<Doppelganger::Room>> rooms;
-		std::unordered_map<std::string, std::shared_ptr<Doppelganger::Plugin>> plugin;
+
+		////
+		// path for directories
 		// Doppelganger/
 		fs::path DoppelgangerRootDir;
 		// Doppelganger/data/YYYYMMDDTHHMMSS-Core/
 		fs::path dataDir;
 
-		// for graceful shutdown
-		boost::asio::io_context &ioc_;
-		boost::asio::ssl::context &ctx_;
+		////
+		// mutex for config.json
+		std::mutex mutexConfig;
+		// access to config.json
+		void getCurrentConfig(nlohmann::json &config) const;
+		void updateConfig(const nlohmann::json &config) const;
+
+		////
+		// boost::asio
+		boost::asio::io_context ioc_{std::max<int>(1, std::thread::hardware_concurrency())};
+		boost::asio::ssl::context ctx_{boost::asio::ssl::context::tlsv12};
+		std::string completeURL;
 
 	private:
+		void loadServerCertificate(const fs::path &certificatePath, const fs::path &privateKeyPath);
+		static void generateDefaultConfigJson(nlohmann::json &config);
 		std::shared_ptr<Listener> listener;
+		// protocol is specified on the fly
+		std::string protocol;
 	};
 }
 

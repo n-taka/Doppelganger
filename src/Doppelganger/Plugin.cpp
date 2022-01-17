@@ -93,9 +93,8 @@ namespace Doppelganger
 {
 	Plugin::Plugin(
 		const std::string &name,
-		const nlohmann::json &parameters,
-		const fs::path &pluginsDir)
-		: name_(name), parameters_(parameters), pluginsDir_(pluginsDir), hasModuleJS(false)
+		const nlohmann::json &parameters)
+		: name_(name), parameters_(parameters)
 	{
 	}
 
@@ -105,7 +104,8 @@ namespace Doppelganger
 	{
 		const std::string actualVersion((version == "latest") ? parameters_.at("versions").at(0).at("version").get<std::string>() : version);
 
-		pluginDir = pluginsDir_;
+		pluginDir = Core::getInstance().DoppelgangerRootDir;
+		pluginDir.append("plugin");
 		std::string dirName("");
 		dirName += name_;
 		dirName += "_";
@@ -121,7 +121,8 @@ namespace Doppelganger
 				if (pluginVersion == actualVersion)
 				{
 					const std::string &pluginURL = versionEntry.at("URL").get<std::string>();
-					fs::path zipPath(pluginsDir_);
+					fs::path zipPath(Core::getInstance().DoppelgangerRootDir);
+					zipPath.append("plugin");
 					zipPath.append("tmp.zip");
 					if (Util::download(pluginURL, zipPath))
 					{
@@ -207,36 +208,17 @@ namespace Doppelganger
 		}
 
 		// update installed plugin list "installed.json"
-		{
-			fs::path installedPluginJsonPath;
-			if (std::holds_alternative<std::shared_ptr<Doppelganger::Core>>(coreRoom))
-			{
-				const std::shared_ptr<Doppelganger::Core> &core = std::get<std::shared_ptr<Doppelganger::Core>>(coreRoom);
-				installedPluginJsonPath = core->DoppelgangerRootDir;
-				installedPluginJsonPath.append("plugin");
-			}
-			else // std::shared_ptr<Doppelganger::Room>
-			{
-				const std::shared_ptr<Doppelganger::Room> &room = std::get<std::shared_ptr<Doppelganger::Room>>(coreRoom);
-				installedPluginJsonPath = room->dataDir;
-			}
-			installedPluginJsonPath.append("installed.json");
-
-			nlohmann::json installedPluginJson;
-
-			std::ifstream ifs(installedPluginJsonPath.string());
-			installedPluginJson = nlohmann::json::parse(ifs);
-			ifs.close();
-
-			nlohmann::json pluginInfo = nlohmann::json::object();
-			pluginInfo["name"] = name_;
-			pluginInfo["version"] = installedVersion;
-			installedPluginJson.push_back(pluginInfo);
-
-			std::ofstream ofs(installedPluginJsonPath.string());
-			ofs << installedPluginJson.dump(4);
-			ofs.close();
-		}
+		std::visit([this](const auto &cr)
+				   {
+						std::lock_guard<std::mutex> lock(cr->mutexConfig);
+						nlohmann::json config;
+						cr->getCurrentConfig(config);
+						nlohmann::json pluginInfo = nlohmann::json::object();
+						pluginInfo["name"] = this->name_;
+						pluginInfo["version"] = this->installedVersion;
+						config.at("plugin").at("installed").push_back(pluginInfo);
+						cr->updateConfig(config); },
+				   coreRoom);
 	}
 
 	void Plugin::pluginProcess(const std::shared_ptr<Doppelganger::Room> &room, const nlohmann::json &parameters, nlohmann::json &response, nlohmann::json &broadcast)
@@ -263,6 +245,32 @@ namespace Doppelganger
 				ss << "Plugin \"" << name_ << "\" (" << installedVersion << ")"
 				   << " is NOT called correctly.";
 				room->logger.log(ss.str(), "ERROR");
+			}
+		}
+	}
+
+	void Plugin::getPluginCatalogue(
+		const nlohmann::json &listURLJson,
+		nlohmann::json &pluginCatalogue)
+	{
+		pluginCatalogue = nlohmann::json::object();
+
+		for (const auto &listUrl : listURLJson)
+		{
+			fs::path listJsonPath(Core::getInstance().DoppelgangerRootDir);
+			listJsonPath.append("plugin");
+			listJsonPath.append("tmp.json");
+			Util::download(listUrl.get<std::string>(), listJsonPath);
+			std::ifstream ifs(listJsonPath.string());
+			if (ifs)
+			{
+				nlohmann::json listJson = nlohmann::json::parse(ifs);
+				ifs.close();
+				fs::remove_all(listJsonPath);
+				for (const auto &el : listJson.items())
+				{
+					pluginCatalogue[el.key()] = el.value();
+				}
 			}
 		}
 	}

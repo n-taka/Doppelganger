@@ -60,7 +60,6 @@ namespace Doppelganger
 	class DECLSPEC Listener : public std::enable_shared_from_this<Listener>
 	{
 	private:
-		const std::shared_ptr<Core> core_;
 		net::io_context &ioc_;
 		ssl::context &ctx_;
 
@@ -73,18 +72,17 @@ namespace Doppelganger
 
 			std::stringstream s;
 			s << what << ": " << ec.message();
-			core_->logger.log(s.str(), "ERROR");
+			Core::getInstance().logger.log(s.str(), "ERROR");
 		}
 
 	public:
 		tcp::acceptor acceptor_;
 
 		Listener(
-			const std::shared_ptr<Core> &core,
 			net::io_context &ioc,
 			ssl::context &ctx,
 			tcp::endpoint &endpoint)
-			: core_(core), ioc_(ioc), ctx_(ctx), acceptor_(net::make_strand(ioc))
+			: ioc_(ioc), ctx_(ctx), acceptor_(net::make_strand(ioc))
 		{
 			beast::error_code ec;
 
@@ -149,7 +147,6 @@ namespace Doppelganger
 			{
 				// Create the detector http_session and run it
 				std::make_shared<SSLDetector>(
-					core_,
 					std::move(socket),
 					ctx_)
 					->run();

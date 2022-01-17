@@ -21,9 +21,7 @@
 
 #if defined(_WIN64)
 #include <shlobj_core.h>
-#endif
-
-#if defined(__APPLE__)
+#elif defined(__APPLE__)
 #include "CoreFoundation/CoreFoundation.h"
 #include "sysdir.h"
 #include <stdlib.h>
@@ -49,9 +47,7 @@ namespace
 		return path;
 	}
 }
-#endif
-
-#if defined(__linux__)
+#elif defined(__linux__)
 #include <unistd.h>
 #include <limits.h>
 #include <cstdlib>
@@ -59,113 +55,14 @@ namespace
 #include <pwd.h>
 #endif
 
-namespace
-{
-	void loadServerCertificate(boost::asio::ssl::context &ctx, const fs::path &certificatePath, const fs::path &privateKeyPath)
-	{
-
-		const std::string dh =
-			"-----BEGIN DH PARAMETERS-----\n"
-			"MIIBCAKCAQEAiPqG0guWzJK/5BENNAhWoxVDNUjEc7FtkVxtwjXYrUUcvL2Db5ni\n"
-			"MlhPqsEtY8n7n0vTcZjvpHuyVgChSXIrw17OYrtjDONz0MtZygKVN99DNVzmhsvX\n"
-			"Km7J55r48ktqSzNwJSxRe3GE1Kv3Q8P3KwDHlmDfKXMKs29gUFElus5J9n7YFzJ6\n"
-			"aNOCjxJRSMKM9P0pdSE/acQTQzlMHEk/9ndJfINxLcagt8OMlqroFl3mOvSpIV0a\n"
-			"EJ/jJZlH+LEUqrPX7ZnnSeHOH2AOODagMPf07iGWIuEhS4IcY3AmD5V1HZqAg/y2\n"
-			"JoiGl/8+RNpL1HlmZXwNXVv4zUIHirskCwIBAg==\n"
-			"-----END DH PARAMETERS-----";
-
-		ctx.set_password_callback(
-			[](std::size_t,
-			   boost::asio::ssl::context_base::password_purpose)
-			{
-				return "test";
-			});
-
-		// we only support TLS
-		// we always generate dh params every time
-		ctx.set_options(
-			boost::asio::ssl::context::default_workarounds |
-			boost::asio::ssl::context::no_sslv2 |
-			boost::asio::ssl::context::no_sslv3 |
-			boost::asio::ssl::context::single_dh_use);
-
-		ctx.use_certificate_chain_file(certificatePath.string());
-
-		ctx.use_private_key_file(privateKeyPath.string(), boost::asio::ssl::context::file_format::pem);
-
-		// we always generate dh params every time
-		ctx.use_tmp_dh(
-			boost::asio::buffer(dh.data(), dh.size()));
-	}
-
-	void generateDefaultConfigJson(nlohmann::json &config)
-	{
-		config = nlohmann::json::object();
-		{
-			config["browser"] = nlohmann::json::object();
-			{
-				config["browser"]["openAs"] = std::string("default");
-				config["browser"]["openOnStartup"] = true;
-				config["browser"]["path"] = std::string("");
-				config["browser"]["type"] = std::string("default");
-			}
-			config["log"] = nlohmann::json::object();
-			{
-				config["log"]["level"] = nlohmann::json::array();
-				{
-					config["log"]["level"].push_back(std::string("SYSTEM"));
-					config["log"]["level"].push_back(std::string("APICALL"));
-					config["log"]["level"].push_back(std::string("WSCALL"));
-					config["log"]["level"].push_back(std::string("ERROR"));
-					config["log"]["level"].push_back(std::string("MISC"));
-					config["log"]["level"].push_back(std::string("DEBUG"));
-				}
-				config["log"]["type"] = nlohmann::json::array();
-				{
-					config["log"]["type"].push_back(std::string("STDOUT"));
-					config["log"]["type"].push_back(std::string("FILE"));
-				}
-			}
-			config["output"] = nlohmann::json::object();
-			{
-				config["output"]["type"] = std::string("storage");
-			}
-			config["plugin"] = nlohmann::json::object();
-			{
-				config["plugin"]["listURL"] = nlohmann::json::array();
-				{
-					config["plugin"]["listURL"].push_back(std::string("https://n-taka.info/nextcloud/s/XqGGYPo8J2rwc9S/download/pluginList_Essential.json"));
-					config["plugin"]["listURL"].push_back(std::string("https://n-taka.info/nextcloud/s/PgccNTmPECPXSgQ/download/pluginList_Basic.json"));
-					config["plugin"]["listURL"].push_back(std::string("https://n-taka.info/nextcloud/s/PWPR7YDXKoMeP66/download/pluginList_TORIDE.json"));
-				}
-			}
-			config["server"] = nlohmann::json::object();
-			{
-				config["server"]["host"] = std::string("127.0.0.1");
-				config["server"]["port"] = 0;
-				config["server"]["protocol"] = std::string("http");
-				config["server"]["certificateFiles"] = nlohmann::json::object();
-				{
-					config["server"]["certificateFiles"]["certificate"] = std::string("");
-					config["server"]["certificateFiles"]["privateKey"] = std::string("");
-				}
-			}
-		}
-	}
-}
-
 // https://github.com/boostorg/beast/blob/develop/example/http/server/async/http_server_async.cpp
 
 namespace Doppelganger
 {
-	Core::Core(boost::asio::io_context &ioc,
-			   boost::asio::ssl::context &ctx)
-		: ioc_(ioc), ctx_(ctx)
-	{
-	}
-
 	void Core::setup()
 	{
+		////
+		// path for DoppelgangerRoot
 		{
 #if defined(_WIN64)
 			// For windows, we use "%USERPROFILE%\AppData\Local\Doppelganger"
@@ -210,26 +107,10 @@ namespace Doppelganger
 
 		////
 		// config.json
+		nlohmann::json config;
 		{
-			fs::path configPath(DoppelgangerRootDir);
-			configPath.append("config.json");
-			if (fs::exists(configPath))
-			{
-				// we could directly use std::filesystem::path, but we could not directly boost::filesystem::path
-				std::ifstream ifs(configPath.string());
-				configOrig = nlohmann::json::parse(ifs);
-				ifs.close();
-			}
-			else
-			{
-				// no config file is found. (e.g. use Doppelganger first time)
-				generateDefaultConfigJson(configOrig);
-				std::cout << "No config file found. We use default config." << std::endl;
-				std::ofstream ofs(configPath.string());
-				ofs << configOrig.dump(4);
-				ofs.close();
-			}
-			config = configOrig;
+			std::lock_guard<std::mutex> lock(mutexConfig);
+			getCurrentConfig(config);
 		}
 
 		////
@@ -250,8 +131,7 @@ namespace Doppelganger
 		// Doppelganger/data/YYYYMMDDTHHMMSS-Core/log
 		if (config.contains("log"))
 		{
-			nlohmann::json &logJson = config.at("log");
-			logger.initialize(dataDir, logJson);
+			logger.initialize(shared_from_this());
 		}
 
 		////
@@ -259,8 +139,6 @@ namespace Doppelganger
 		// Doppelganger/data/YYYYMMDDTHHMMSS-Core/output
 		if (config.contains("output"))
 		{
-			nlohmann::json &outputJson = config.at("output");
-			// output["type"] == "storage"|"download"
 			fs::path outputDir = dataDir;
 			outputDir.append("output");
 			fs::create_directories(outputDir);
@@ -270,118 +148,17 @@ namespace Doppelganger
 		// plugin
 		if (config.contains("plugin"))
 		{
-			nlohmann::json &pluginJson = config.at("plugin");
+			const nlohmann::json &pluginJson = config.at("plugin");
 
 			fs::path pluginsDir = DoppelgangerRootDir;
 			pluginsDir.append("plugin");
 			fs::create_directories(pluginsDir);
-
-			// download and parse plugin list
-			nlohmann::json pluginListJson = nlohmann::json::object();
-			if (pluginJson.contains("listURL"))
-			{
-				for (const auto &listUrl : pluginJson.at("listURL"))
-				{
-					fs::path listJsonPath(pluginsDir);
-					listJsonPath.make_preferred();
-					listJsonPath.append("tmp.json");
-					Util::download(listUrl.get<std::string>(), listJsonPath);
-					std::ifstream ifs(listJsonPath.string());
-					if (ifs)
-					{
-						nlohmann::json listJson = nlohmann::json::parse(ifs);
-						ifs.close();
-						fs::remove_all(listJsonPath);
-						for (const auto &el : listJson.items())
-						{
-							pluginListJson[el.key()] = el.value();
-						}
-					}
-				}
-			}
-
-			// initialize Doppelganger::Plugin instances
-			for (const auto &pluginEntry : pluginListJson.items())
-			{
-				const std::string &name = pluginEntry.key();
-				const nlohmann::json &pluginInfo = pluginEntry.value();
-				plugin[name] = std::make_shared<Doppelganger::Plugin>(name, pluginInfo, pluginsDir);
-			}
-
-			// install plugins
-			// installed plugins are stored in config["plugin"]["dir"]/installed.json
-			fs::path installedPluginJsonPath(DoppelgangerRootDir);
-			installedPluginJsonPath.append("plugin");
-			installedPluginJsonPath.append("installed.json");
-			if (fs::exists(installedPluginJsonPath))
-			{
-				std::ifstream ifs(installedPluginJsonPath.string());
-				const nlohmann::json installedPluginJson = nlohmann::json::parse(ifs);
-				ifs.close();
-
-				// we erase previous installed plugin array.
-				// following Doppelganger::Plugin::install updates intalled.json
-				const nlohmann::json emptyArray = nlohmann::json::array();
-				std::ofstream ofs(installedPluginJsonPath.string());
-				ofs << emptyArray.dump(4);
-				ofs.close();
-
-				for (const auto &pluginToBeInstalled : installedPluginJson)
-				{
-					const std::string &name = pluginToBeInstalled.at("name").get<std::string>();
-					const std::string &version = pluginToBeInstalled.at("version").get<std::string>();
-
-					if (plugin.find(name) != plugin.end() && version.size() > 0)
-					{
-						plugin.at(name)->install(shared_from_this(), version);
-					}
-					else
-					{
-						std::stringstream ss;
-						ss << "Plugin \"" << name << "\" (" << version << ")"
-						   << " is NOT found.";
-						logger.log(ss.str(), "ERROR");
-					}
-				}
-			}
-			else
-			{
-				const nlohmann::json emptyArray = nlohmann::json::array();
-				std::ofstream ofs(installedPluginJsonPath.string());
-				ofs << emptyArray.dump(4);
-				ofs.close();
-			}
-
-			// install non-optional plugins
-			for (const auto &pluginEntry : pluginListJson.items())
-			{
-				const std::string &name = pluginEntry.key();
-				const nlohmann::json &pluginInfo = pluginEntry.value();
-				const bool &optional = pluginInfo.at("optional").get<bool>();
-				if (!optional)
-				{
-					if (plugin.find(name) != plugin.end())
-					{
-						if (plugin.at(name)->installedVersion.size() == 0)
-						{
-							plugin.at(name)->install(shared_from_this(), std::string("latest"));
-						}
-					}
-					else
-					{
-						std::stringstream ss;
-						ss << "Non-optional plugin \"" << name << "\" (latest)"
-						   << " is NOT found.";
-						logger.log(ss.str(), "ERROR");
-					}
-				}
-			}
 		}
 
 		// initialize server (and certificates)
 		if (config.contains("server"))
 		{
-			nlohmann::json &serverJson = config.at("server");
+			const nlohmann::json &serverJson = config.at("server");
 
 			boost::system::error_code ec;
 
@@ -404,9 +181,9 @@ namespace Doppelganger
 
 			boost::asio::ip::tcp::endpoint endpoint = endpointIterator->endpoint();
 
-			if (serverJson.at("protocol").get<std::string>() == "https")
+			protocol = serverJson.at("protocol").get<std::string>();
+			if (protocol == "https")
 			{
-
 				if (serverJson.contains("certificateFiles"))
 				{
 					fs::path certificatePath, privateKeyPath;
@@ -420,7 +197,7 @@ namespace Doppelganger
 					}
 					if (fs::exists(certificatePath) && fs::exists(privateKeyPath))
 					{
-						loadServerCertificate(ctx_, certificatePath, privateKeyPath);
+						loadServerCertificate(certificatePath, privateKeyPath);
 					}
 					else
 					{
@@ -441,32 +218,46 @@ namespace Doppelganger
 							ss << privateKeyPath;
 							logger.log(ss.str(), "ERROR");
 						}
-						serverJson.at("protocol") = std::string("http");
+						protocol = std::string("http");
 					}
 				}
+				else
+				{
+					protocol = std::string("http");
+				}
 			}
+			listener = std::make_shared<Listener>(ioc_, ctx_, endpoint);
+		}
 
-			listener = std::make_shared<Listener>(shared_from_this(), ioc_, ctx_, endpoint);
-
-			serverJson["port"] = listener->acceptor_.local_endpoint().port();
-			std::stringstream completeURL;
-			completeURL << serverJson.at("protocol").get<std::string>();
-			completeURL << "://";
-			completeURL << serverJson.at("host").get<std::string>();
-			completeURL << ":";
-			completeURL << serverJson.at("port").get<int>();
-			serverJson["completeURL"] = completeURL.str();
+		{
+			// some update could happen
+			//   e.g. "https" is specified and no valid certificates are specified
+			std::lock_guard<std::mutex> lock(mutexConfig);
+			updateConfig(config);
 		}
 	}
 
 	void Core::run()
 	{
+		nlohmann::json config;
+		{
+			std::lock_guard<std::mutex> lock(mutexConfig);
+			getCurrentConfig(config);
+		}
+
 		// start servers
+		{
+			completeURL = protocol;
+			completeURL += "://";
+			completeURL += config.at("server").at("host").get<std::string>();
+			completeURL += ":";
+			completeURL += listener->acceptor_.local_endpoint().port();
+		}
 		{
 			listener->run();
 
 			std::stringstream s;
-			s << "Listening for requests at : " << config.at("server").at("completeURL").get<std::string>();
+			s << "Listening for requests at : " << completeURL;
 			logger.log(s.str(), "SYSTEM");
 		}
 		////
@@ -673,7 +464,7 @@ namespace Doppelganger
 					// no command line switch
 				}
 				// URL
-				cmd << config.at("server").at("completeURL").get<std::string>();
+				cmd << completeURL;
 #if defined(__APPLE__)
 				if (browserJson.at("type").get<std::string>() != "default" && browserJson.at("type").get<std::string>() != "safari")
 				{
@@ -689,6 +480,128 @@ namespace Doppelganger
 				browserJson["cmd"] = cmd.str();
 				logger.log(cmd.str(), "SYSTEM");
 				system(cmd.str().c_str());
+			}
+		}
+	}
+
+	void Core::getCurrentConfig(nlohmann::json &config) const
+	{
+		fs::path configPath(DoppelgangerRootDir);
+		configPath.append("config.json");
+		if (fs::exists(configPath))
+		{
+			// we could directly use std::filesystem::path, but we could not directly boost::filesystem::path
+			std::ifstream ifs(configPath.string());
+			config = nlohmann::json::parse(ifs);
+			ifs.close();
+		}
+		else
+		{
+			// no config file is found. (e.g. use Doppelganger first time)
+			generateDefaultConfigJson(config);
+			std::cout << "No config file found. We use default config." << std::endl;
+			updateConfig(config);
+		}
+	}
+
+	void Core::updateConfig(const nlohmann::json &config) const
+	{
+		fs::path configPath(DoppelgangerRootDir);
+		configPath.append("config.json");
+		std::ofstream ofs(configPath.string());
+		ofs << config.dump(4);
+		ofs.close();
+	}
+
+	void Core::loadServerCertificate(const fs::path &certificatePath, const fs::path &privateKeyPath)
+	{
+
+		const std::string dh =
+			"-----BEGIN DH PARAMETERS-----\n"
+			"MIIBCAKCAQEAiPqG0guWzJK/5BENNAhWoxVDNUjEc7FtkVxtwjXYrUUcvL2Db5ni\n"
+			"MlhPqsEtY8n7n0vTcZjvpHuyVgChSXIrw17OYrtjDONz0MtZygKVN99DNVzmhsvX\n"
+			"Km7J55r48ktqSzNwJSxRe3GE1Kv3Q8P3KwDHlmDfKXMKs29gUFElus5J9n7YFzJ6\n"
+			"aNOCjxJRSMKM9P0pdSE/acQTQzlMHEk/9ndJfINxLcagt8OMlqroFl3mOvSpIV0a\n"
+			"EJ/jJZlH+LEUqrPX7ZnnSeHOH2AOODagMPf07iGWIuEhS4IcY3AmD5V1HZqAg/y2\n"
+			"JoiGl/8+RNpL1HlmZXwNXVv4zUIHirskCwIBAg==\n"
+			"-----END DH PARAMETERS-----";
+
+		ctx_.set_password_callback(
+			[](std::size_t,
+			   boost::asio::ssl::context_base::password_purpose)
+			{
+				return "test";
+			});
+
+		// we only support TLS
+		// we always generate dh params every time
+		ctx_.set_options(
+			boost::asio::ssl::context::default_workarounds |
+			boost::asio::ssl::context::no_sslv2 |
+			boost::asio::ssl::context::no_sslv3 |
+			boost::asio::ssl::context::single_dh_use);
+
+		ctx_.use_certificate_chain_file(certificatePath.string());
+
+		ctx_.use_private_key_file(privateKeyPath.string(), boost::asio::ssl::context::file_format::pem);
+
+		// we always generate dh params every time
+		ctx_.use_tmp_dh(
+			boost::asio::buffer(dh.data(), dh.size()));
+	}
+
+	void Core::generateDefaultConfigJson(nlohmann::json &config)
+	{
+		config = nlohmann::json::object();
+		{
+			config["browser"] = nlohmann::json::object();
+			{
+				config["browser"]["openAs"] = std::string("default");
+				config["browser"]["openOnStartup"] = true;
+				config["browser"]["path"] = std::string("");
+				config["browser"]["type"] = std::string("default");
+			}
+			config["log"] = nlohmann::json::object();
+			{
+				config["log"]["level"] = nlohmann::json::array();
+				{
+					config["log"]["level"].push_back(std::string("SYSTEM"));
+					config["log"]["level"].push_back(std::string("APICALL"));
+					config["log"]["level"].push_back(std::string("WSCALL"));
+					config["log"]["level"].push_back(std::string("ERROR"));
+					config["log"]["level"].push_back(std::string("MISC"));
+					config["log"]["level"].push_back(std::string("DEBUG"));
+				}
+				config["log"]["type"] = nlohmann::json::array();
+				{
+					config["log"]["type"].push_back(std::string("STDOUT"));
+					config["log"]["type"].push_back(std::string("FILE"));
+				}
+			}
+			config["output"] = nlohmann::json::object();
+			{
+				config["output"]["type"] = std::string("storage");
+			}
+			config["plugin"] = nlohmann::json::object();
+			{
+				config["plugin"]["listURL"] = nlohmann::json::array();
+				{
+					config["plugin"]["listURL"].push_back(std::string("https://n-taka.info/nextcloud/s/XqGGYPo8J2rwc9S/download/pluginList_Essential.json"));
+					config["plugin"]["listURL"].push_back(std::string("https://n-taka.info/nextcloud/s/PgccNTmPECPXSgQ/download/pluginList_Basic.json"));
+					config["plugin"]["listURL"].push_back(std::string("https://n-taka.info/nextcloud/s/PWPR7YDXKoMeP66/download/pluginList_TORIDE.json"));
+				}
+				config["plugin"]["installed"] = nlohmann::json::array();
+			}
+			config["server"] = nlohmann::json::object();
+			{
+				config["server"]["host"] = std::string("127.0.0.1");
+				config["server"]["port"] = 0;
+				config["server"]["protocol"] = std::string("http");
+				config["server"]["certificateFiles"] = nlohmann::json::object();
+				{
+					config["server"]["certificateFiles"]["certificate"] = std::string("");
+					config["server"]["certificateFiles"]["privateKey"] = std::string("");
+				}
 			}
 		}
 	}

@@ -40,7 +40,6 @@ namespace fs = std::filesystem;
 
 namespace Doppelganger
 {
-	class Core;
 	class Plugin;
 	class PlainWebsocketSession;
 	class SSLWebsocketSession;
@@ -49,28 +48,29 @@ namespace Doppelganger
 	{
 	public:
 		Room(
-			const std::string &UUID,
-			const std::shared_ptr<Core> &core);
+			const std::string &UUID);
 		~Room() {}
 
 		void setup();
 
 	public:
 		const std::string UUID_;
-		const std::shared_ptr<Core> core_;
 		Logger logger;
 		// Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/
 		fs::path dataDir;
 		std::unordered_map<std::string, std::shared_ptr<Doppelganger::Plugin>> plugin;
 
 		////
+		// mutex for config.json
+		std::mutex mutexConfig;
+		// access to config.json
+		void getCurrentConfig(nlohmann::json &config) const;
+		void updateConfig(const nlohmann::json &config) const;
+
+		////
 		// parameters for server setup
-		struct serverParameters
-		{
-			std::unordered_map<std::string, std::variant<std::shared_ptr<PlainWebsocketSession>, std::shared_ptr<SSLWebsocketSession>>> websocketSessions;
-			std::mutex mutex;
-		};
-		serverParameters serverParams;
+		std::unordered_map<std::string, std::variant<std::shared_ptr<PlainWebsocketSession>, std::shared_ptr<SSLWebsocketSession>>> websocketSessions;
+		std::mutex mutexWS;
 		void joinWS(const std::variant<std::shared_ptr<PlainWebsocketSession>, std::shared_ptr<SSLWebsocketSession>> &session);
 		void leaveWS(const std::string &sessionUUID);
 		void broadcastWS(const std::string &APIName, const std::string &sourceUUID, const nlohmann::json &broadcast, const nlohmann::json &response);

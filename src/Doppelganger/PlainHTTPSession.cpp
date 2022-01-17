@@ -12,17 +12,13 @@ namespace Doppelganger
 	namespace beast = boost::beast;			// from <boost/beast.hpp>
 	using tcp = boost::asio::ip::tcp;		// from <boost/asio/ip/tcp.hpp>
 
-	class Core;
-
 	////
 	// PlainHTTPSession
 	////
 	PlainHTTPSession::PlainHTTPSession(
-		const std::shared_ptr<Core> &core,
 		beast::tcp_stream &&stream,
 		beast::flat_buffer &&buffer)
 		: HTTPSession<PlainHTTPSession>(
-			  core,
 			  std::move(buffer)),
 		  stream_(std::move(stream))
 	{
