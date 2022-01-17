@@ -43,14 +43,6 @@ namespace Doppelganger
 		}
 
 		////
-		// config.json
-		nlohmann::json config;
-		{
-			std::lock_guard<std::mutex> lock(mutexConfig);
-			getCurrentConfig(config);
-		}
-
-		////
 		// directory for Room
 		// Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/
 		{
@@ -62,6 +54,14 @@ namespace Doppelganger
 			dirName += UUID_;
 			dataDir.append(dirName);
 			fs::create_directories(dataDir);
+		}
+
+		////
+		// config.json
+		nlohmann::json config;
+		{
+			std::lock_guard<std::mutex> lock(mutexConfig);
+			getCurrentConfig(config);
 		}
 
 		////
@@ -106,16 +106,15 @@ namespace Doppelganger
 			// install plugins
 			{
 				const nlohmann::json installedPluginJson = config.at("plugin").at("installed");
-				config.at("plugin").at("installed") = nlohmann::json::array();
 
-				for (const auto &pluginToBeInstalled : installedPluginJson)
+				for (const auto &pluginToBeInstalled : installedPluginJson.items())
 				{
-					const std::string &name = pluginToBeInstalled.at("name").get<std::string>();
-					const std::string &version = pluginToBeInstalled.at("version").get<std::string>();
+					const std::string &name = pluginToBeInstalled.key();
+					const std::string &version = pluginToBeInstalled.value().at("version").get<std::string>();
 
 					if (plugin.find(name) != plugin.end() && version.size() > 0)
 					{
-						plugin.at(name)->install(shared_from_this(), version);
+						plugin.at(name)->install(shared_from_this(), version, false);
 					}
 					else
 					{
@@ -139,7 +138,7 @@ namespace Doppelganger
 					{
 						if (plugin.at(name)->installedVersion.size() == 0)
 						{
-							plugin.at(name)->install(shared_from_this(), std::string("latest"));
+							plugin.at(name)->install(shared_from_this(), std::string("latest"), true);
 						}
 					}
 					else

@@ -235,13 +235,6 @@ namespace Doppelganger
 			}
 			listener = std::make_shared<Listener>(shared_from_this(), ioc_, ctx_, endpoint);
 		}
-
-		{
-			// some update could happen
-			//   e.g. "https" is specified and no valid certificates are specified
-			std::lock_guard<std::mutex> lock(mutexConfig);
-			updateConfig(config);
-		}
 	}
 
 	void Core::run()
@@ -623,7 +616,7 @@ namespace Doppelganger
 					config["plugin"]["listURL"].push_back(std::string("https://n-taka.info/nextcloud/s/PgccNTmPECPXSgQ/download/pluginList_Basic.json"));
 					config["plugin"]["listURL"].push_back(std::string("https://n-taka.info/nextcloud/s/PWPR7YDXKoMeP66/download/pluginList_TORIDE.json"));
 				}
-				config["plugin"]["installed"] = nlohmann::json::array();
+				config["plugin"]["installed"] = nlohmann::json::object();
 			}
 			config["server"] = nlohmann::json::object();
 			{

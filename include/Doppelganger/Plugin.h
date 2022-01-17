@@ -26,8 +26,6 @@ namespace fs = std::filesystem;
 
 #include <memory>
 #include <string>
-// todo variant requires C++17
-#include <variant>
 #include <nlohmann/json.hpp>
 
 namespace Doppelganger
@@ -54,8 +52,9 @@ namespace Doppelganger
 		bool hasModuleJS;
 
 		void install(
-			const std::variant<std::shared_ptr<Doppelganger::Core>, std::shared_ptr<Doppelganger::Room>> &coreRoom,
-			const std::string &version);
+			const std::shared_ptr<Doppelganger::Room> &room,
+			const std::string &version,
+			const bool persistent);
 		void pluginProcess(
 			const std::shared_ptr<Doppelganger::Room> &room,
 			const nlohmann::json &parameters,

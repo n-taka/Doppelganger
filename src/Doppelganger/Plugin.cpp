@@ -100,8 +100,9 @@ namespace Doppelganger
 	}
 
 	void Plugin::install(
-		const std::variant<std::shared_ptr<Doppelganger::Core>, std::shared_ptr<Doppelganger::Room>> &coreRoom,
-		const std::string &version)
+		const std::shared_ptr<Doppelganger::Room> &room,
+		const std::string &version,
+		const bool persistent)
 	{
 		const std::string actualVersion((version == "latest") ? parameters_.at("versions").at(0).at("version").get<std::string>() : version);
 
@@ -144,9 +145,7 @@ namespace Doppelganger
 						}
 						ss << actualVersion << ")"
 						   << " is NOT loaded correctly. (Download)";
-						std::visit([&ss](const auto &v)
-								   { v->logger.log(ss.str(), "ERROR"); },
-								   coreRoom);
+						room->logger.log(ss.str(), "ERROR");
 						return;
 					}
 				}
@@ -163,9 +162,7 @@ namespace Doppelganger
 				}
 				ss << actualVersion << ")"
 				   << " is NOT loaded correctly. (No such version)";
-				std::visit([&ss](const auto &v)
-						   { v->logger.log(ss.str(), "ERROR"); },
-						   coreRoom);
+				room->logger.log(ss.str(), "ERROR");
 				return;
 			}
 			else
@@ -178,9 +175,7 @@ namespace Doppelganger
 				}
 				ss << actualVersion << ")"
 				   << " is loaded.";
-				std::visit([&ss](const auto &v)
-						   { v->logger.log(ss.str(), "SYSTEM"); },
-						   coreRoom);
+				room->logger.log(ss.str(), "SYSTEM");
 			}
 		}
 		else
@@ -194,9 +189,7 @@ namespace Doppelganger
 			}
 			ss << actualVersion << ")"
 			   << " is already downloaded. We reuse it.";
-			std::visit([&ss](const auto &v)
-					   { v->logger.log(ss.str(), "SYSTEM"); },
-					   coreRoom);
+			room->logger.log(ss.str(), "SYSTEM");
 		}
 		installedVersion = version;
 
@@ -209,17 +202,23 @@ namespace Doppelganger
 		}
 
 		// update installed plugin list "installed.json"
-		std::visit([this](const auto &cr)
-				   {
-						std::lock_guard<std::mutex> lock(cr->mutexConfig);
-						nlohmann::json config;
-						cr->getCurrentConfig(config);
-						nlohmann::json pluginInfo = nlohmann::json::object();
-						pluginInfo["name"] = this->name_;
-						pluginInfo["version"] = this->installedVersion;
-						config.at("plugin").at("installed").push_back(pluginInfo);
-						cr->updateConfig(config); },
-				   coreRoom);
+		{
+			std::lock_guard<std::mutex> lock(room->mutexConfig);
+			nlohmann::json config;
+			room->getCurrentConfig(config);
+			config.at("plugin").at("installed")[name_] = nlohmann::json::object();
+			config.at("plugin").at("installed")[name_]["version"] = installedVersion;
+			room->updateConfig(config);
+		}
+		if (persistent)
+		{
+			std::lock_guard<std::mutex> lock(core_->mutexConfig);
+			nlohmann::json config;
+			core_->getCurrentConfig(config);
+			config.at("plugin").at("installed")[name_] = nlohmann::json::object();
+			config.at("plugin").at("installed")[name_]["version"] = installedVersion;
+			core_->updateConfig(config);
+		}
 	}
 
 	void Plugin::pluginProcess(const std::shared_ptr<Doppelganger::Room> &room, const nlohmann::json &parameters, nlohmann::json &response, nlohmann::json &broadcast)
