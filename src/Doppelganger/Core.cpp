@@ -251,7 +251,7 @@ namespace Doppelganger
 			completeURL += "://";
 			completeURL += config.at("server").at("host").get<std::string>();
 			completeURL += ":";
-			completeURL += listener->acceptor_.local_endpoint().port();
+			completeURL += std::to_string(listener->acceptor_.local_endpoint().port());
 		}
 		{
 			listener->run();
