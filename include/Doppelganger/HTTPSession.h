@@ -16,6 +16,8 @@
 
 namespace Doppelganger
 {
+	class Core;
+
 	namespace beast = boost::beast;	  // from <boost/beast.hpp>
 	namespace http = beast::http;	  // from <boost/beast/http.hpp>
 	namespace net = boost::asio;	  // from <boost/asio.hpp>
@@ -111,6 +113,8 @@ namespace Doppelganger
 		// construct it from scratch it at the beginning of each new message.
 		boost::optional<http::request_parser<http::string_body>> parser_;
 
+		const std::shared_ptr<Core> core_;
+
 	protected:
 		beast::flat_buffer buffer_;
 
@@ -119,6 +123,7 @@ namespace Doppelganger
 	public:
 		// Construct the session
 		HTTPSession(
+			const std::shared_ptr<Core> &core,
 			beast::flat_buffer buffer);
 
 		void doRead();
@@ -138,6 +143,7 @@ namespace Doppelganger
 	public:
 		// Create the session
 		PlainHTTPSession(
+			const std::shared_ptr<Core> &core,
 			beast::tcp_stream &&stream,
 			beast::flat_buffer &&buffer);
 
@@ -166,6 +172,7 @@ namespace Doppelganger
 	public:
 		// Create the http_session
 		SSLHTTPSession(
+			const std::shared_ptr<Core> &core,
 			beast::tcp_stream &&stream,
 			ssl::context &ctx,
 			beast::flat_buffer &&buffer);

@@ -45,8 +45,6 @@ namespace fs = std::filesystem;
 #include <nlohmann/json.hpp>
 #include "Doppelganger/Logger.h"
 
-#include <iostream>
-
 namespace Doppelganger
 {
 	class Room;
@@ -57,16 +55,8 @@ namespace Doppelganger
 	class DECLSPEC Core : public std::enable_shared_from_this<Core>
 	{
 	public:
-		Core()
-		{
-		std::cout << "Core constructed..." << std::endl;
-		}
-
-		static Core &getInstance()
-		{
-			static Core core;
-			return core;
-		}
+		Core(boost::asio::io_context &ioc,
+			 boost::asio::ssl::context &ctx);
 
 		////
 		// setup functions
@@ -93,10 +83,14 @@ namespace Doppelganger
 		void getCurrentConfig(nlohmann::json &config) const;
 		void updateConfig(const nlohmann::json &config) const;
 
+		void getPluginCatalogue(
+			const nlohmann::json &listURLJson,
+			nlohmann::json &pluginCatalogue);
+
 		////
 		// boost::asio
-		boost::asio::io_context ioc_{std::max<int>(1, std::thread::hardware_concurrency())};
-		boost::asio::ssl::context ctx_{boost::asio::ssl::context::tlsv12};
+		boost::asio::io_context &ioc_;
+		boost::asio::ssl::context &ctx_;
 		std::string completeURL;
 
 	private:

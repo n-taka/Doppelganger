@@ -49,27 +49,29 @@ namespace Doppelganger
 	class DECLSPEC SSLDetector : public std::enable_shared_from_this<SSLDetector>
 	{
 	private:
+		const std::shared_ptr<Core> core_;
 		beast::tcp_stream stream_;
 		ssl::context &ctx_;
 		beast::flat_buffer buffer_;
 
 		void fail(boost::system::error_code ec, char const *what)
 		{
-			if(ec == net::ssl::error::stream_truncated)
+			if (ec == net::ssl::error::stream_truncated)
 			{
 				return;
 			}
 
 			std::stringstream s;
 			s << what << ": " << ec.message();
-			Core::getInstance().logger.log(s.str(), "ERROR");
+			core_->logger.log(s.str(), "ERROR");
 		}
 
 	public:
 		explicit SSLDetector(
+			const std::shared_ptr<Core> &core,
 			tcp::socket &&socket,
 			ssl::context &ctx)
-			: stream_(std::move(socket)), ctx_(ctx)
+			: core_(core), stream_(std::move(socket)), ctx_(ctx)
 		{
 		}
 
@@ -111,6 +113,7 @@ namespace Doppelganger
 			{
 				// Launch SSL session
 				std::make_shared<SSLHTTPSession>(
+					core_,
 					std::move(stream_),
 					ctx_,
 					std::move(buffer_))
@@ -120,6 +123,7 @@ namespace Doppelganger
 			{
 				// Launch plain session
 				std::make_shared<PlainHTTPSession>(
+					core_,
 					std::move(stream_),
 					std::move(buffer_))
 					->run();

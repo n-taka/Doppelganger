@@ -40,6 +40,7 @@ namespace fs = std::filesystem;
 
 namespace Doppelganger
 {
+	class Core;
 	class Plugin;
 	class PlainWebsocketSession;
 	class SSLWebsocketSession;
@@ -48,6 +49,8 @@ namespace Doppelganger
 	{
 	public:
 		Room(
+
+			const std::shared_ptr<Core> &core,
 			const std::string &UUID);
 		~Room() {}
 
@@ -55,6 +58,7 @@ namespace Doppelganger
 
 	public:
 		const std::string UUID_;
+		const std::shared_ptr<Core> core_;
 		Logger logger;
 		// Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/
 		fs::path dataDir;

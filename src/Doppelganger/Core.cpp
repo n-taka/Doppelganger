@@ -59,6 +59,13 @@ namespace
 
 namespace Doppelganger
 {
+	Core::Core(boost::asio::io_context &ioc,
+			 boost::asio::ssl::context &ctx)
+			 : ioc_(ioc), ctx_(ctx)
+	{
+
+	}
+
 	void Core::setup()
 	{
 		////
@@ -226,7 +233,7 @@ namespace Doppelganger
 					protocol = std::string("http");
 				}
 			}
-			listener = std::make_shared<Listener>(ioc_, ctx_, endpoint);
+			listener = std::make_shared<Listener>(shared_from_this(), ioc_, ctx_, endpoint);
 		}
 
 		{
@@ -548,6 +555,32 @@ namespace Doppelganger
 		// we always generate dh params every time
 		ctx_.use_tmp_dh(
 			boost::asio::buffer(dh.data(), dh.size()));
+	}
+
+	void Core::getPluginCatalogue(
+		const nlohmann::json &listURLJson,
+		nlohmann::json &pluginCatalogue)
+	{
+		pluginCatalogue = nlohmann::json::object();
+
+		for (const auto &listUrl : listURLJson)
+		{
+			fs::path listJsonPath(DoppelgangerRootDir);
+			listJsonPath.append("plugin");
+			listJsonPath.append("tmp.json");
+			Util::download(listUrl.get<std::string>(), listJsonPath);
+			std::ifstream ifs(listJsonPath.string());
+			if (ifs)
+			{
+				nlohmann::json listJson = nlohmann::json::parse(ifs);
+				ifs.close();
+				fs::remove_all(listJsonPath);
+				for (const auto &el : listJson.items())
+				{
+					pluginCatalogue[el.key()] = el.value();
+				}
+			}
+		}
 	}
 
 	void Core::generateDefaultConfigJson(nlohmann::json &config)

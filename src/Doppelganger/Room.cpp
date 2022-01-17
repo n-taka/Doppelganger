@@ -12,8 +12,10 @@
 
 namespace Doppelganger
 {
-	Room::Room(const std::string &UUID)
-		: UUID_(UUID)
+	Room::Room(
+		const std::shared_ptr<Core> &core,
+		const std::string &UUID)
+		: UUID_(UUID), core_(core)
 	{
 	}
 
@@ -52,7 +54,7 @@ namespace Doppelganger
 		// directory for Room
 		// Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/
 		{
-			dataDir = Core::getInstance().DoppelgangerRootDir;
+			dataDir = core_->DoppelgangerRootDir;
 			dataDir.append("data");
 			std::string dirName("");
 			dirName += Util::getCurrentTimestampAsString(false);
@@ -87,19 +89,18 @@ namespace Doppelganger
 
 		////
 		// plugin
-		// TODO!!!!
 		if (config.contains("plugin"))
 		{
 			// get plugin catalogue
 			nlohmann::json pluginCatalogue;
-			Plugin::getPluginCatalogue(config.at("plugin").at("listURL"), pluginCatalogue);
+			core_->getPluginCatalogue(config.at("plugin").at("listURL"), pluginCatalogue);
 
 			// initialize Doppelganger::Plugin instances
 			for (const auto &pluginEntry : pluginCatalogue.items())
 			{
 				const std::string &name = pluginEntry.key();
 				const nlohmann::json &pluginInfo = pluginEntry.value();
-				plugin[name] = std::make_shared<Doppelganger::Plugin>(name, pluginInfo);
+				plugin[name] = std::make_shared<Doppelganger::Plugin>(core_, name, pluginInfo);
 			}
 
 			// install plugins
@@ -248,8 +249,8 @@ namespace Doppelganger
 			// we copy from core
 			std::cout << "No config file for Room found. We copy from Core." << std::endl;
 			{
-				std::lock_guard<std::mutex> lock(Core::getInstance().mutexConfig);
-				Core::getInstance().getCurrentConfig(config);
+				std::lock_guard<std::mutex> lock(core_->mutexConfig);
+				core_->getCurrentConfig(config);
 			}
 			updateConfig(config);
 		}

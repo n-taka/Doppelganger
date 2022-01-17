@@ -39,12 +39,14 @@ namespace Doppelganger
 	{
 	public:
 		Plugin(
+			const std::shared_ptr<Doppelganger::Core> &core,
 			const std::string &name,
 			const nlohmann::json &parameters);
 		~Plugin() {}
 
 		////
 		// parameter for this plugin
+		std::shared_ptr<Doppelganger::Core> core_;
 		const std::string name_;
 		const nlohmann::json parameters_;
 		fs::path pluginDir;
@@ -59,10 +61,6 @@ namespace Doppelganger
 			const nlohmann::json &parameters,
 			nlohmann::json &response,
 			nlohmann::json &broadcast);
-
-		static void getPluginCatalogue(
-			const nlohmann::json &listURLJson,
-			nlohmann::json &catalogue);
 	};
 } // namespace
 
