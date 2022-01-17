@@ -60,7 +60,7 @@ namespace Doppelganger
 	class DECLSPEC Listener : public std::enable_shared_from_this<Listener>
 	{
 	private:
-		const std::shared_ptr<Core> &core_;
+		const std::shared_ptr<Core> core_;
 		net::io_context &ioc_;
 		ssl::context &ctx_;
 

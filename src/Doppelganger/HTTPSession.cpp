@@ -515,13 +515,13 @@ namespace Doppelganger
 			return fail(ec, "read (HTTP)");
 		}
 
-		std::string roomUUID = parseRoomUUID(parser_->get());
 		{
 			std::stringstream s;
 			s << "Request received: \"" << parser_->get().target().to_string() << "\"";
 			core_->logger.log(s.str(), "SYSTEM");
 		}
 
+		std::string roomUUID = parseRoomUUID(parser_->get());
 		if (roomUUID == "favicon.ico")
 		{
 			// do nothing

@@ -49,7 +49,6 @@ namespace Doppelganger
 	{
 	public:
 		Room(
-
 			const std::shared_ptr<Core> &core,
 			const std::string &UUID);
 		~Room() {}
