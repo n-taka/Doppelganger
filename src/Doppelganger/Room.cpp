@@ -127,6 +127,7 @@ namespace Doppelganger
 			}
 
 			// install non-optional plugins
+			//   non-optional plugins are always installed to Core
 			for (const auto &pluginEntry : pluginCatalogue.items())
 			{
 				const std::string &name = pluginEntry.key();
@@ -251,10 +252,13 @@ namespace Doppelganger
 				std::lock_guard<std::mutex> lock(core_->mutexConfig);
 				core_->getCurrentConfig(config);
 			}
+			// remove core-only config
+			config.erase("browser");
+			config.erase("server");
 			updateConfig(config);
 		}
 	}
-
+ 
 	void Room::updateConfig(const nlohmann::json &config) const
 	{
 		fs::path configPath(dataDir);

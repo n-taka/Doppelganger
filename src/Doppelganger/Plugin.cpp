@@ -206,8 +206,10 @@ namespace Doppelganger
 			std::lock_guard<std::mutex> lock(room->mutexConfig);
 			nlohmann::json config;
 			room->getCurrentConfig(config);
+			const int priority = config.at("plugin").at("installed").size();
 			config.at("plugin").at("installed")[name_] = nlohmann::json::object();
 			config.at("plugin").at("installed")[name_]["version"] = installedVersion;
+			config.at("plugin").at("installed")[name_]["priority"] = priority;
 			room->updateConfig(config);
 		}
 		if (persistent)
@@ -215,8 +217,10 @@ namespace Doppelganger
 			std::lock_guard<std::mutex> lock(core_->mutexConfig);
 			nlohmann::json config;
 			core_->getCurrentConfig(config);
+			const int priority = config.at("plugin").at("installed").size();
 			config.at("plugin").at("installed")[name_] = nlohmann::json::object();
 			config.at("plugin").at("installed")[name_]["version"] = installedVersion;
+			config.at("plugin").at("installed")[name_]["priority"] = priority;
 			core_->updateConfig(config);
 		}
 	}
