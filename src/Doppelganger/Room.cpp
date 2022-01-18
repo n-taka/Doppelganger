@@ -106,6 +106,7 @@ namespace Doppelganger
 			// install plugins
 			{
 				const nlohmann::json installedPluginJson = config.at("plugin").at("installed");
+				config.at("plugin").at("installed") = nlohmann::json::object();
 
 				for (const auto &pluginToBeInstalled : installedPluginJson.items())
 				{
