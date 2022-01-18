@@ -62,6 +62,10 @@ namespace Doppelganger
 		{
 			std::lock_guard<std::mutex> lock(mutexConfig);
 			getCurrentConfig(config);
+			nlohmann::json configTmp = config;
+			// we flush "installed" because Plugin::install depends on the number of entries in "installed"
+			configTmp.at("plugin").at("installed") = nlohmann::json::object();
+			updateConfig(configTmp);
 		}
 
 		////
@@ -106,7 +110,6 @@ namespace Doppelganger
 			// install plugins
 			{
 				const nlohmann::json installedPluginJson = config.at("plugin").at("installed");
-				config.at("plugin").at("installed") = nlohmann::json::object();
 
 				for (const auto &pluginToBeInstalled : installedPluginJson.items())
 				{
@@ -259,7 +262,7 @@ namespace Doppelganger
 			updateConfig(config);
 		}
 	}
- 
+
 	void Room::updateConfig(const nlohmann::json &config) const
 	{
 		fs::path configPath(dataDir);
