@@ -110,20 +110,27 @@ namespace Doppelganger
 			// install plugins
 			{
 				const nlohmann::json installedPluginJson = config.at("plugin").at("installed");
-
-				for (const auto &pluginToBeInstalled : installedPluginJson.items())
+				std::vector<std::string> sortedInstalledPluginName(installedPluginJson.size());
+				for (const auto &installedPlugin : installedPluginJson.items())
 				{
-					const std::string &name = pluginToBeInstalled.key();
-					const std::string &version = pluginToBeInstalled.value().at("version").get<std::string>();
+					const std::string &name = installedPlugin.key();
+					const nlohmann::json &value = installedPlugin.value();
+					const int index = value.at("priority").get<int>();
+					sortedInstalledPluginName.at(index) = name;
+				}
 
-					if (plugin.find(name) != plugin.end() && version.size() > 0)
+				for (const auto &pluginName : sortedInstalledPluginName)
+				{
+					const std::string &version = installedPluginJson.at(pluginName).at("version").get<std::string>();
+
+					if (plugin.find(pluginName) != plugin.end() && version.size() > 0)
 					{
-						plugin.at(name)->install(shared_from_this(), version, false);
+						plugin.at(pluginName)->install(shared_from_this(), version, false);
 					}
 					else
 					{
 						std::stringstream ss;
-						ss << "Plugin \"" << name << "\" (" << version << ")"
+						ss << "Plugin \"" << pluginName << "\" (" << version << ")"
 						   << " is NOT found.";
 						logger.log(ss.str(), "ERROR");
 					}
