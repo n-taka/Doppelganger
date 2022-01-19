@@ -135,6 +135,8 @@ namespace Doppelganger
 		////
 		// custom data
 		std::unordered_map<std::string, boost::any> customData;
+		// mutex for all customData is inefficient but easy to work with...
+		std::mutex mutexCustomData;
 	};
 } // namespace
 

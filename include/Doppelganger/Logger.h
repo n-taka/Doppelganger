@@ -49,8 +49,7 @@ namespace Doppelganger
 			const std::string &level) const;
 		void log(
 			const fs::path &path,
-			const std::string &level,
-			const bool removeOriginal) const;
+			const std::string &level) const;
 
 		// where we put log
 		std::variant<std::shared_ptr<Doppelganger::Core>, std::shared_ptr<Doppelganger::Room>> parent_;

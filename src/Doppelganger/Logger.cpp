@@ -31,9 +31,8 @@ namespace Doppelganger
 		const std::string &level) const
 	{
 		nlohmann::json config;
-		fs::path logDir;
-		fs::path logFile;
-		std::visit([&config, &logDir, &logFile](const auto &p)
+		fs::path logTextFile;
+		std::visit([&config, &logTextFile](const auto &p)
 				   {
 					   	{
 							std::lock_guard<std::mutex> lock(p->mutexConfig);
@@ -41,8 +40,8 @@ namespace Doppelganger
 					   	}
 				   		fs::path logDir = p->dataDir;
 						logDir.append("log");
-						logFile = logDir;
-						logFile.append("log.txt"); },
+						logTextFile = logDir;
+						logTextFile.append("log.txt"); },
 				   parent_);
 		std::unordered_map<std::string, bool> logLevel;
 		std::unordered_map<std::string, bool> logType;
@@ -80,28 +79,27 @@ namespace Doppelganger
 			}
 			if (logType["FILE"])
 			{
-				std::ofstream ofs(logFile.string(), std::ios_base::out | std::ios_base::app);
+				std::ofstream ofs(logTextFile.string(), std::ios_base::out | std::ios_base::app);
 				ofs << logText.str();
 				ofs.close();
 			}
 		}
 	}
 
-	void Logger::log(const fs::path &path, const std::string &level, const bool removeOriginal) const
+	void Logger::log(
+		const fs::path &path,
+		const std::string &level) const
 	{
 		nlohmann::json config;
 		fs::path logDir;
-		fs::path logFile;
-		std::visit([&config, &logDir, &logFile](const auto &p)
+		std::visit([&config, &logDir](const auto &p)
 				   {
 					   	{
 							std::lock_guard<std::mutex> lock(p->mutexConfig);
 							p->getCurrentConfig(config);
 					   	}
-				   		fs::path logDir = p->dataDir;
-						logDir.append("log");
-						logFile = logDir;
-						logFile.append("log.txt"); },
+				   		logDir = p->dataDir;
+						logDir.append("log"); },
 				   parent_);
 		std::unordered_map<std::string, bool> logLevel;
 		std::unordered_map<std::string, bool> logType;
@@ -112,11 +110,9 @@ namespace Doppelganger
 			{
 				try
 				{
-					fs::copy(path, logDir);
-					if (removeOriginal)
-					{
-						fs::remove_all(path);
-					}
+					fs::path logFile(logDir);
+					logFile /= path.filename();
+					fs::rename(path, logFile);
 					std::stringstream s;
 					s << "temporary file " << path.filename().string() << " is stored in " << logDir.string();
 					log(s.str(), level);
