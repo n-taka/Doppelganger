@@ -2,13 +2,10 @@
 #define PLUGIN_CPP
 
 #include "Doppelganger/Plugin.h"
-#include "Doppelganger/Core.h"
-#include "Doppelganger/Room.h"
-#include "Doppelganger/Util/download.h"
-#include "Doppelganger/Util/unzip.h"
+
 #include <string>
+#include <sstream>
 #include <fstream>
-#include <streambuf>
 #if defined(_WIN64)
 #include "windows.h"
 #include "libloaderapi.h"
@@ -18,23 +15,30 @@
 #include <dlfcn.h>
 #endif
 
+#include "Doppelganger/Util/download.h"
+#include "Doppelganger/Util/unzip.h"
+#include "Doppelganger/Util/log.h"
+
 namespace
 {
 	////
 	// typedef for loading API from dll/lib
 #if defined(_WIN64)
-	typedef void(__stdcall *APIPtr_t)(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &, nlohmann::json &, nlohmann::json &);
+	using APIPtr_t = void(__stdcall *)(const char *, const char *, char *, char *, char *);
+	using DeallocatePtr_t = void(__stdcall *)();
 #elif defined(__APPLE__)
-	typedef void (*APIPtr_t)(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &, nlohmann::json &, nlohmann::json &);
+	using APIPtr_t = void (*)(const char *, const char *, char *, char *, char *);
+	using DeallocatePtr_t = void (*)();
 #elif defined(__linux__)
-	typedef void (*APIPtr_t)(const std::shared_ptr<Doppelganger::Room> &, const nlohmann::json &, nlohmann::json &, nlohmann::json &);
+	using APIPtr_t = void (*)(const char *, const char *, char *, char *, char *);
+	using DeallocatePtr_t = void (*)();
 #endif
 
-	bool functionCall(
+	void functionCall(
 		const fs::path &dllPath,
 		const std::string &functionName,
-		const std::shared_ptr<Doppelganger::Room> &room,
-		const nlohmann::json &parameters,
+		nlohmann::json &config,
+		const nlohmann::json &parameter,
 		nlohmann::json &response,
 		nlohmann::json &broadcast)
 	{
@@ -51,70 +55,67 @@ namespace
 		if (handle != NULL)
 		{
 #if defined(_WIN64)
-			FARPROC lpfnDllFunc = GetProcAddress(handle, functionName.c_str());
+			FARPROC pluginFunc = GetProcAddress(handle, functionName.c_str());
+			FARPROC deallocateFunc = GetProcAddress(handle, "deallocate");
 #elif defined(__APPLE__)
-			void *lpfnDllFunc = dlsym(handle, functionName.c_str());
+			void *pluginFunc = dlsym(handle, functionName.c_str());
+			void *deallocateFunc = dlsym(handle, "deallocate");
 #elif defined(__linux__)
-			void *lpfnDllFunc = dlsym(handle, functionName.c_str());
+			void *pluginFunc = dlsym(handle, functionName.c_str());
+			void *deallocateFunc = dlsym(handle, "deallocate");
 #endif
-			if (!lpfnDllFunc)
+			if (pluginFunc && deallocateFunc)
 			{
-				// error
-#if defined(_WIN64)
-				FreeLibrary(handle);
-#elif defined(__APPLE__)
-				dlclose(handle);
-#elif defined(__linux__)
-				dlclose(handle);
-#endif
-				return false;
+				// setup buffers
+				const char *configChar = config.dump().c_str();
+				const char *parameterChar = parameter.dump().c_str();
+				char *modifiedConfigChar = nullptr;
+				char *responseChar = nullptr;
+				char *broadcastChar = nullptr;
+				// pluginFunc
+				reinterpret_cast<APIPtr_t>(pluginFunc)(configChar, parameterChar, modifiedConfigChar, responseChar, broadcastChar);
+				// read results (todo: check, does parse() performs deep copy?)
+				// todo: do we use .update() for config?
+				config = nlohmann::json::parse(modifiedConfigChar);
+				response.update(nlohmann::json::parse(responseChar));
+				broadcast.update(nlohmann::json::parse(broadcastChar));
+				// deallocation
+				reinterpret_cast<DeallocatePtr_t>(deallocateFunc)();
 			}
-			else
-			{
-				reinterpret_cast<APIPtr_t>(lpfnDllFunc)(room, parameters, response, broadcast);
 #if defined(_WIN64)
-				FreeLibrary(handle);
+			FreeLibrary(handle);
 #elif defined(__APPLE__)
-				dlclose(handle);
+			dlclose(handle);
 #elif defined(__linux__)
-				dlclose(handle);
+			dlclose(handle);
 #endif
-				return true;
-			}
 		}
-		else
-		{
-			return false;
-		}
-	};
+	}
 }
 
 namespace Doppelganger
 {
 	Plugin::Plugin(
-		const std::shared_ptr<Doppelganger::Core> &core,
 		const std::string &name,
 		const nlohmann::json &parameters)
-		: core_(core), name_(name), parameters_(parameters)
+		: name_(name), parameters_(parameters)
 	{
 	}
 
 	void Plugin::install(
-		const std::shared_ptr<Doppelganger::Room> &room,
-		const std::string &version,
-		const bool persistent)
+		nlohmann::json &config,
+		const std::string &version)
 	{
 		const std::string actualVersion((version == "latest") ? parameters_.at("versions").at(0).at("version").get<std::string>() : version);
 
-		pluginDir = core_->DoppelgangerRootDir;
-		pluginDir.append("plugin");
+		pluginDir_ = fs::path(config.at("plugin").at("dir").get<std::string>());
 		std::string dirName("");
 		dirName += name_;
 		dirName += "_";
 		dirName += actualVersion;
-		pluginDir.append(dirName);
+		pluginDir_.append(dirName);
 
-		if (!fs::exists(pluginDir))
+		if (!fs::exists(pluginDir_))
 		{
 			bool versionFound = false;
 			for (const auto &versionEntry : parameters_.at("versions"))
@@ -123,12 +124,11 @@ namespace Doppelganger
 				if (pluginVersion == actualVersion)
 				{
 					const std::string &pluginURL = versionEntry.at("URL").get<std::string>();
-					fs::path zipPath(core_->DoppelgangerRootDir);
-					zipPath.append("plugin");
+					fs::path zipPath(config.at("plugin").at("dir").get<std::string>());
 					zipPath.append("tmp.zip");
 					if (Util::download(pluginURL, zipPath))
 					{
-						Util::unzip(zipPath, pluginDir);
+						Util::unzip(zipPath, pluginDir_);
 						// erase temporary file
 						fs::remove_all(zipPath);
 						versionFound = true;
@@ -145,7 +145,7 @@ namespace Doppelganger
 						}
 						ss << actualVersion << ")"
 						   << " is NOT loaded correctly. (Download)";
-						room->logger.log(ss.str(), "ERROR");
+						Util::log(ss.str(), "ERROR", config);
 						return;
 					}
 				}
@@ -162,7 +162,7 @@ namespace Doppelganger
 				}
 				ss << actualVersion << ")"
 				   << " is NOT loaded correctly. (No such version)";
-				room->logger.log(ss.str(), "ERROR");
+				Util::log(ss.str(), "ERROR", config);
 				return;
 			}
 			else
@@ -175,7 +175,7 @@ namespace Doppelganger
 				}
 				ss << actualVersion << ")"
 				   << " is loaded.";
-				room->logger.log(ss.str(), "SYSTEM");
+				Util::log(ss.str(), "SYSTEM", config);
 			}
 		}
 		else
@@ -189,45 +189,36 @@ namespace Doppelganger
 			}
 			ss << actualVersion << ")"
 			   << " is already downloaded. We reuse it.";
-			room->logger.log(ss.str(), "SYSTEM");
+			Util::log(ss.str(), "SYSTEM", config);
 		}
-		installedVersion = version;
+		installedVersion_ = version;
 
 		// javascript module (if exists)
 		{
 			const std::string moduleName("module.js");
-			fs::path modulePath(pluginDir);
+			fs::path modulePath(pluginDir_);
 			modulePath.append(moduleName);
-			hasModuleJS = fs::exists(modulePath);
+			hasModuleJS_ = fs::exists(modulePath);
 		}
 
 		// update installed plugin list "installed.json"
 		{
-			std::lock_guard<std::mutex> lock(room->mutexConfig);
-			nlohmann::json config;
-			room->getCurrentConfig(config);
 			const int priority = config.at("plugin").at("installed").size();
 			config.at("plugin").at("installed")[name_] = nlohmann::json::object();
-			config.at("plugin").at("installed")[name_]["version"] = installedVersion;
+			config.at("plugin").at("installed")[name_]["version"] = installedVersion_;
 			config.at("plugin").at("installed")[name_]["priority"] = priority;
-			room->updateConfig(config);
-		}
-		if (persistent)
-		{
-			std::lock_guard<std::mutex> lock(core_->mutexConfig);
-			nlohmann::json config;
-			core_->getCurrentConfig(config);
-			const int priority = config.at("plugin").at("installed").size();
-			config.at("plugin").at("installed")[name_] = nlohmann::json::object();
-			config.at("plugin").at("installed")[name_]["version"] = installedVersion;
-			config.at("plugin").at("installed")[name_]["priority"] = priority;
-			core_->updateConfig(config);
 		}
 	}
 
-	void Plugin::pluginProcess(const std::shared_ptr<Doppelganger::Room> &room, const nlohmann::json &parameters, nlohmann::json &response, nlohmann::json &broadcast)
+	void Plugin::pluginProcess(
+		nlohmann::json &configCore,
+		nlohmann::json &configRoom,
+		nlohmann::json &configMesh,
+		const nlohmann::json &parameters,
+		nlohmann::json &response,
+		nlohmann::json &broadcast)
 	{
-		fs::path dllPath(pluginDir);
+		fs::path dllPath(pluginDir_);
 		std::string dllName(name_);
 #if defined(_WIN64)
 		dllPath.append("Windows");
@@ -243,12 +234,29 @@ namespace Doppelganger
 		// c++ functions (.dll/.so) (if exists)
 		if (fs::exists(dllPath))
 		{
-			if (!functionCall(dllPath, "pluginProcess", room, parameters, response, broadcast))
+			functionCall(dllPath, "pluginProcessCore", configCore, parameters, response, broadcast);
+			functionCall(dllPath, "pluginProcessRoom", configRoom, parameters, response, broadcast);
+			functionCall(dllPath, "pluginProcessMesh", configMesh, parameters, response, broadcast);
+		}
+	}
+
+	void Plugin::getCatalogue(
+		const nlohmann::json &config,
+		nlohmann::json &catalogue)
+	{
+		catalogue = nlohmann::json::object();
+
+		for (const auto &listUrl : config.at("plugin").at("listURL"))
+		{
+			fs::path listJsonPath(config.at("plugin").at("dir").get<std::string>());
+			listJsonPath.append("tmp.json");
+			Util::download(listUrl.get<std::string>(), listJsonPath);
+			std::ifstream ifs(listJsonPath.string());
+			if (ifs)
 			{
-				std::stringstream ss;
-				ss << "Plugin \"" << name_ << "\" (" << installedVersion << ")"
-				   << " is NOT called correctly.";
-				room->logger.log(ss.str(), "ERROR");
+				catalogue.update(nlohmann::json::parse(ifs));
+				ifs.close();
+				fs::remove_all(listJsonPath);
 			}
 		}
 	}

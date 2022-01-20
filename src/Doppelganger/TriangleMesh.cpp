@@ -2,8 +2,6 @@
 #define TRIANGLEMESH_CPP
 
 #include "Doppelganger/TriangleMesh.h"
-#include "Doppelganger/Util/encodeEigenMatrixToBase64.h"
-#include "Doppelganger/Util/decodeBase64ToEigenMatrix.h"
 
 #include "igl/barycenter.h"
 #include "igl/signed_distance.h"
@@ -13,6 +11,9 @@
 #include "igl/per_vertex_normals.h"
 #include "igl/triangle_triangle_adjacency.h"
 #include "igl/vertex_triangle_adjacency.h"
+
+#include "Doppelganger/Util/encodeEigenMatrixToBase64.h"
+#include "Doppelganger/Util/decodeBase64ToEigenMatrix.h"
 
 namespace Doppelganger
 {
