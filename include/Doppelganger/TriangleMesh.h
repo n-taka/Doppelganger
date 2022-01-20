@@ -1,84 +1,87 @@
 #ifndef TRIANGLEMESH_H
 #define TRIANGLEMESH_H
 
-#if defined(_WIN64)
-#ifdef DLL_EXPORT
-#define DECLSPEC __declspec(dllexport)
-#else
-#define DECLSPEC __declspec(dllimport)
-#endif
-#elif defined(__APPLE__)
-#define DECLSPEC
-#elif defined(__linux__)
-#define DECLSPEC
-#endif
-
-#include "Eigen/Core"
-
-#include <boost/any.hpp>
+#include <Eigen/Core>
 #include <nlohmann/json.hpp>
 #include <vector>
 #include <string>
-#include <unordered_map>
 
 namespace Doppelganger
 {
-	class DECLSPEC triangleMesh
+	class TriangleMesh
 	{
 	public:
-		// constructors/destructors
-		triangleMesh(const std::string &UUID_)
-			: UUID(UUID_)
-		{
-			visibility = true;
-			RGBA.resize(1, 4);
-			RGBA(0, 0) = static_cast<double>(241.0 / 255.0);
-			RGBA(0, 1) = static_cast<double>(140.0 / 255.0);
-			RGBA(0, 2) = static_cast<double>(69.0 / 255.0);
-			RGBA(0, 3) = static_cast<double>(1.0);
-		};
-		triangleMesh() : triangleMesh(std::string("")){};
-		~triangleMesh(){};
+		// constructor
+		TriangleMesh();
 
-		// dump to json
-		nlohmann::json dumpToJson(const bool &sendToClient) const;
-		void restoreFromJson(const nlohmann::json &json);
-		void projectMeshAttributes(const std::shared_ptr<triangleMesh> &source);
+		void projectMeshAttributes(const std::shared_ptr<TriangleMesh> &source);
 
 	public:
-		std::string name;
-		const std::string UUID;
-		bool visibility;
+		std::string name_;
+		std::string UUID_;
+		bool visibility_;
 		// geometry
-		Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> V;
-		Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> F;
-		Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> VN;
-		Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> FN;
+		Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> V_;
+		Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> F_;
+		Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> VN_;
+		Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> FN_;
 		// face group
-		Eigen::Matrix<int, Eigen::Dynamic, 1> FG;
+		Eigen::Matrix<int, Eigen::Dynamic, 1> FG_;
 		// color/texture
 		// In this library, RGB value is always [0.0, 1.0].
-		Eigen::Matrix<double, 1, Eigen::Dynamic> RGBA;
-		Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> VC;
-		Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> FC;
-		Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> TC;
-		Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> FTC;
-		std::vector<std::string> mtlFileName;
-		typedef struct Texture_
+		Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> VC_;
+		Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> FC_;
+		Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> TC_;
+		Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> FTC_;
+		std::vector<std::string> mtlFileName_;
+		struct Texture
 		{
-			std::string fileName;
-			std::string fileFormat;
-			Eigen::Matrix<uint32_t, Eigen::Dynamic, Eigen::Dynamic> texData;
-		} Texture;
-		std::vector<Texture> textures;
+			std::string fileName_;
+			std::string fileFormat_;
+			Eigen::Matrix<uint32_t, Eigen::Dynamic, Eigen::Dynamic> texData_;
+		};
+		std::vector<Texture> textures_;
 		// Halfedge data structure
-		Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> TT;
-		Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> TTi;
-		std::vector<std::vector<int>> VF;
-		std::vector<std::vector<int>> VFi;
+		Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> TT_;
+		Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> TTi_;
+		std::vector<std::vector<int>> VF_;
+		std::vector<std::vector<int>> VFi_;
 
-		std::unordered_map<std::string, boost::any> customData;
+		nlohmann::json extension_;
 	};
+
+	////
+	// nlohmann::json conversion
+	////
+	void to_json(nlohmann::json &json, const TriangleMesh &mesh);
+	void to_json(nlohmann::json &json, const TriangleMesh &mesh, const bool toClient);
+	void from_json(const nlohmann::json &json, TriangleMesh &mesh);
 }
+
+////
+// json format for Doppelganger::TrinagleMesh
+////
+// {
+//   "name": name of this mesh,
+//   "UUID": UUID of this mesh,
+//   "visibility": visibility of this mesh,
+//   "V": base64-encoded vertices (#V),
+//   "F": base64-encoded facets (#F),
+//   "VC": base64-encoded vertex colors (#V),
+//   "FC": base64-encoded vertices (#F, only for edit history),
+//   "TC": base64-encoded texture coordinates (#V),
+//   "FTC": base64-encoded vertices (#F, only for edit history),
+//   "textures": [
+//     {
+// 	     "name": original filename for this texture
+// 	     "fileFormat": original file format for this texture
+// 	     "width" = width of this texture
+// 	     "height" = height of this texture
+// 	     "texData" = base64-encoded texture data
+//     },
+//     ...
+//   ],
+//   "extension": json for extension (used by plugins)
+// }
 
 #endif
