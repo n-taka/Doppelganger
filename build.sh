@@ -10,7 +10,7 @@ if [ "$(uname)" == "Darwin" ]; then
     # copy custom triplet file (for supporting Mojave)
     cp "${triplet}.cmake" "submodule/vcpkg/triplets/${triplet}.cmake"
 elif [ "$(expr substr $(uname -s) 1 10)" == "MINGW64_NT" ]; then
-    triplet="${triplet}64-windows-static"
+    triplet="${triplet}64-windows"
 elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
     triplet="${triplet}64-linux"
 else
@@ -22,23 +22,23 @@ fi
 # build project
 ############
 if [ "$(uname)" == "Darwin" ]; then
-    cmake -B build -S . -DVCPKG_TARGET_TRIPLET="${triplet}"  -DCMAKE_BUILD_TYPE="Release" -DCMAKE_INSTALL_PREFIX=Doppelganger_install
+    cmake -B build -S . -DVCPKG_TARGET_TRIPLET="${triplet}" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_INSTALL_PREFIX=Doppelganger_install
     cmake --build build --config "Release"
-    cmake --install build
+    cmake --install build --config "Release"
 elif [ "$(expr substr $(uname -s) 1 10)" == "MINGW64_NT" ]; then
-    subst X: .
-    cd X:
-    cmake -B build -S . -DVCPKG_TARGET_TRIPLET="${triplet}"  -DCMAKE_BUILD_TYPE="Release" -DCMAKE_INSTALL_PREFIX=Doppelganger_install
-    cmake --build build --config "Release"
-    cmake --install build
+    # subst X: .
+    # cd X:
+    cmake -B build -S . -DVCPKG_TARGET_TRIPLET="${triplet}" -DCMAKE_BUILD_TYPE="Debug" -DCMAKE_INSTALL_PREFIX=Doppelganger_install
+    cmake --build build --config "Debug"
+    cmake --install build --config "Debug"
     # revert subst command
     # "/" symbol was comprehended as separator for path in MINGW. Thus, we need to explicitly use "//"
     # echo "unbind ./submodule as X:"
-    subst X: //D
+    # subst X: //D
 elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
-    cmake -B build -S . -DVCPKG_TARGET_TRIPLET="${triplet}"  -DCMAKE_BUILD_TYPE="Release" -DCMAKE_INSTALL_PREFIX=Doppelganger_install
+    cmake -B build -S . -DVCPKG_TARGET_TRIPLET="${triplet}" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_INSTALL_PREFIX=Doppelganger_install
     cmake --build build --config "Release"
-    cmake --install build
+    cmake --install build --config "Release"
 else
     echo "This OS is not supported..."
     exit 1

@@ -7,6 +7,7 @@
 #include "Doppelganger/WebsocketSession.h"
 #include "Doppelganger/Util/getCurrentTimestampAsString.h"
 
+#include <iostream>
 #include <fstream>
 #include <sstream>
 

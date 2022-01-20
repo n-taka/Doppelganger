@@ -14,7 +14,6 @@
 #endif
 
 #include "Eigen/Core"
-#include "igl/AABB.h"
 
 #include <boost/any.hpp>
 #include <nlohmann/json.hpp>
@@ -77,16 +76,6 @@ namespace Doppelganger
 		Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> TTi;
 		std::vector<std::vector<int>> VF;
 		std::vector<std::vector<int>> VFi;
-		// AABB
-		igl::AABB<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>, 3> AABB;
-		// PCA
-		Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> principalComponent;
-		// Curvature
-		Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> PD1;
-		Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> PD2;
-		Eigen::Matrix<double, Eigen::Dynamic, 1> PV1;
-		Eigen::Matrix<double, Eigen::Dynamic, 1> PV2;
-		Eigen::Matrix<double, Eigen::Dynamic, 1> K;
 
 		std::unordered_map<std::string, boost::any> customData;
 	};

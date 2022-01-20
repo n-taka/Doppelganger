@@ -17,6 +17,7 @@
 
 #include <fstream>
 #include <sstream>
+#include <iostream>
 #include <nlohmann/json.hpp>
 
 #if defined(_WIN64)

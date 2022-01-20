@@ -370,13 +370,6 @@ namespace Doppelganger
 			{
 				igl::triangle_triangle_adjacency(F, TT, TTi);
 				igl::vertex_triangle_adjacency(V, F, VF, VFi);
-				AABB.init(V, F);
-				principalComponent.resize(0, V.cols());
-				PD1.resize(0, V.cols());
-				PD2.resize(0, V.cols());
-				PV1.resize(0, 1);
-				PV2.resize(0, 1);
-				K.resize(0, 1);
 			}
 		}
 	}

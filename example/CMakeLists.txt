@@ -38,7 +38,7 @@ endif()
 if (APPLE)
     # nothing!
 elseif (WIN32)
-    add_custom_command(TARGET example POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE_DIR:example>/../../Release/Doppelganger.dll" "$<TARGET_FILE_DIR:example>")
+    add_custom_command(TARGET example POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE_DIR:example>/../../$<CONFIG>/Doppelganger.dll" "$<TARGET_FILE_DIR:example>")
 else ()
     add_custom_command(TARGET example POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE_DIR:example>/../libDoppelganger.so" "$<TARGET_FILE_DIR:example>")
 endif ()
