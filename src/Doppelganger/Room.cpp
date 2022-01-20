@@ -2,115 +2,115 @@
 #define ROOM_CPP
 
 #include "Doppelganger/Room.h"
-#include "Doppelganger/Core.h"
-#include "Doppelganger/Plugin.h"
-#include "Doppelganger/WebsocketSession.h"
-#include "Doppelganger/Util/getCurrentTimestampAsString.h"
 
 #include <iostream>
 #include <fstream>
 #include <sstream>
 
+#include "Doppelganger/Plugin.h"
+#include "Doppelganger/WebsocketSession.h"
+#include "Doppelganger/Util/getCurrentTimestampAsString.h"
+#include "Doppelganger/Util/log.h"
+
 namespace Doppelganger
 {
-	Room::Room(
-		const std::shared_ptr<Core> &core,
-		const std::string &UUID)
-		: UUID_(UUID), core_(core)
+	Room::Room()
 	{
 	}
 
-	void Room::setup()
+	void Room::setup(
+		const std::string &UUID,
+		nlohmann::json &configCore)
 	{
-		//////
-		// initialize edit history parameters
-		editHistory.index = 0;
-		{
-			const nlohmann::json empty = nlohmann::json::object();
-			editHistory.diffFromPrev.emplace_back(empty);
-		}
+		// basically, we inherit configCore
+		config_ = configCore;
 
-		//////
-		// initialize user interface parameters
-		{
-			interfaceParams.cameraTarget << 0, 0, 0;
-			interfaceParams.cameraPosition << -30, 40, 30;
-			interfaceParams.cameraUp << 0, 1, 0;
-			interfaceParams.cameraZoom = 1.0;
-			interfaceParams.cameraTargetTimestamp = 0;
-			interfaceParams.cameraPositionTimestamp = 0;
-			interfaceParams.cameraUpTimestamp = 0;
-			interfaceParams.cameraZoomTimestamp = 0;
-		}
+		// meta info
+		config_["UUID"] = UUID;
+		config_["active"] = true;
 
-		////
-		// directory for Room
-		// Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/
+		// directories
+		// dataDir: Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/
 		{
-			dataDir = core_->DoppelgangerRootDir;
+			fs::path dataDir(config_.at("DoppelgangerRootDir").get<std::string>());
 			dataDir.append("data");
 			std::string dirName("");
 			dirName += Util::getCurrentTimestampAsString(false);
 			dirName += "-";
-			dirName += UUID_;
+			dirName += config_.at("UUID").get<std::string>();
 			dataDir.append(dirName);
 			fs::create_directories(dataDir);
+			config_["dataDir"] = dataDir.string();
 		}
-
-		////
-		// config.json
-		nlohmann::json config;
+		// log: Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/log
 		{
-			std::lock_guard<std::mutex> lock(mutexConfig);
-			getCurrentConfig(config);
-			nlohmann::json configTmp = config;
-			// we flush "installed" because Plugin::install depends on the number of entries in "installed"
-			configTmp.at("plugin").at("installed") = nlohmann::json::object();
-			updateConfig(configTmp);
+			fs::path logDir(config_.at("dataDir").get<std::string>());
+			logDir.append("log");
+			fs::create_directories(logDir);
+			config_["log"]["dir"] = logDir.string();
 		}
-
-		////
-		// log
-		// Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/log
-		if (config.contains("log"))
+		// output: Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/output
 		{
-			logger.initialize(shared_from_this());
-			{
-				std::stringstream ss;
-				ss << "New room \"" << UUID_ << "\" is created.";
-				logger.log(ss.str(), "SYSTEM");
-			}
-		}
-
-		////
-		// output
-		// Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/output
-		if (config.contains("output"))
-		{
-			fs::path outputDir = dataDir;
+			fs::path outputDir(config_.at("dataDir").get<std::string>());
 			outputDir.append("output");
 			fs::create_directories(outputDir);
+			config_["output"]["dir"] = outputDir.string();
 		}
 
-		////
+		// interface
+		// camera
+		{
+			config_["camera"] = nlohmann::json::object();
+			config_["camera"]["target"] = nlohmann::json::object();
+			config_["camera"]["target"]["x"] = 0.0;
+			config_["camera"]["target"]["y"] = 0.0;
+			config_["camera"]["target"]["z"] = 0.0;
+			config_["camera"]["target"]["timestamp"] = 0;
+			config_["camera"]["position"] = nlohmann::json::object();
+			config_["camera"]["position"]["x"] = -30.0;
+			config_["camera"]["position"]["y"] = 40.0;
+			config_["camera"]["position"]["z"] = 30.0;
+			config_["camera"]["position"]["timestamp"] = 0;
+			config_["camera"]["up"] = nlohmann::json::object();
+			config_["camera"]["up"]["x"] = 0.0;
+			config_["camera"]["up"]["y"] = 1.0;
+			config_["camera"]["up"]["z"] = 0.0;
+			config_["camera"]["up"]["timestamp"] = 0;
+			config_["camera"]["zoom"] = nlohmann::json::object();
+			config_["camera"]["zoom"]["value"] = 1.0;
+			config_["camera"]["zoom"]["timestamp"] = 0;
+		}
+		// cursor
+		{
+			config_["cursor"] = nlohmann::json::object();
+		}
+
+		// history
+		{
+			config_["history"] = nlohmann::json::object();
+			config_["history"]["currentIndex"] = 0;
+			config_["history"]["diffFromPrev"] = nlohmann::json::array();
+			config_["history"]["diffFromNext"] = nlohmann::json::array();
+			config_["history"]["diffFromPrev"].emplace_back(nlohmann::json::object());
+		}
+
 		// plugin
-		if (config.contains("plugin"))
 		{
 			// get plugin catalogue
-			nlohmann::json pluginCatalogue;
-			core_->getPluginCatalogue(config.at("plugin").at("listURL"), pluginCatalogue);
+			nlohmann::json catalogue;
+			Plugin::getCatalogue(config_, catalogue);
 
 			// initialize Doppelganger::Plugin instances
-			for (const auto &pluginEntry : pluginCatalogue.items())
+			for (const auto &pluginEntry : catalogue.items())
 			{
 				const std::string &name = pluginEntry.key();
 				const nlohmann::json &pluginInfo = pluginEntry.value();
-				plugin[name] = std::make_shared<Doppelganger::Plugin>(core_, name, pluginInfo);
+				plugin_[name] = std::make_unique<Doppelganger::Plugin>(name, pluginInfo);
 			}
 
 			// install plugins
 			{
-				const nlohmann::json installedPluginJson = config.at("plugin").at("installed");
+				const nlohmann::json installedPluginJson = config_.at("plugin").at("installed");
 				std::vector<std::string> sortedInstalledPluginName(installedPluginJson.size());
 				for (const auto &installedPlugin : installedPluginJson.items())
 				{
@@ -124,34 +124,35 @@ namespace Doppelganger
 				{
 					const std::string &version = installedPluginJson.at(pluginName).at("version").get<std::string>();
 
-					if (plugin.find(pluginName) != plugin.end() && version.size() > 0)
+					if (plugin_.find(pluginName) != plugin_.end() && version.size() > 0)
 					{
-						plugin.at(pluginName)->install(shared_from_this(), version, false);
+						plugin_.at(pluginName)->install(config_, version);
 					}
 					else
 					{
 						std::stringstream ss;
 						ss << "Plugin \"" << pluginName << "\" (" << version << ")"
 						   << " is NOT found.";
-						logger.log(ss.str(), "ERROR");
+						Util::log(ss.str(), "ERROR", config_);
 					}
 				}
 			}
 
 			// install non-optional plugins
-			//   non-optional plugins are always installed to Core
-			for (const auto &pluginEntry : pluginCatalogue.items())
+			//   note: non-optional plugins are always installed to both Core and Room
+			for (const auto &pluginEntry : catalogue.items())
 			{
 				const std::string &name = pluginEntry.key();
 				const nlohmann::json &pluginInfo = pluginEntry.value();
 				const bool &optional = pluginInfo.at("optional").get<bool>();
 				if (!optional)
 				{
-					if (plugin.find(name) != plugin.end())
+					if (plugin_.find(name) != plugin_.end())
 					{
-						if (plugin.at(name)->installedVersion.size() == 0)
+						if (plugin_.at(name)->installedVersion_.size() == 0)
 						{
-							plugin.at(name)->install(shared_from_this(), std::string("latest"), true);
+							plugin_.at(name)->install(configCore, std::string("latest"));
+							plugin_.at(name)->install(config_, std::string("latest"));
 						}
 					}
 					else
@@ -159,58 +160,63 @@ namespace Doppelganger
 						std::stringstream ss;
 						ss << "Non-optional plugin \"" << name << "\" (latest)"
 						   << " is NOT found.";
-						logger.log(ss.str(), "ERROR");
+						Util::log(ss.str(), "ERROR", config_);
 					}
 				}
 			}
 		}
+
+		// log
+		{
+			std::stringstream ss;
+			ss << "New room \"" << config_.at("UUID").get<std::string>() << "\" is created.";
+			Util::log(ss.str(), "SYSTEM", config_);
+		}
 	}
 
-	void Room::joinWS(const std::variant<std::shared_ptr<PlainWebsocketSession>, std::shared_ptr<SSLWebsocketSession>> &session)
+	void Room::joinWS(const WSSession &session)
 	{
-		std::lock_guard<std::mutex> lock(mutexWS);
-		std::visit([&](const auto &session_)
-				   { websocketSessions[session_->UUID_] = session_; },
+		std::lock_guard<std::mutex> lock(mutexWS_);
+		std::visit([this](const auto &session_)
+				   { websocketSessions_[session_->UUID_] = session_; },
 				   session);
 	}
 
 	void Room::leaveWS(const std::string &sessionUUID)
 	{
-		std::lock_guard<std::mutex> lock(mutexWS);
-		websocketSessions.erase(sessionUUID);
-		// todo
+		std::lock_guard<std::mutex> lock(mutexWS_);
+		websocketSessions_.erase(sessionUUID);
+		// todo?
 		// update cursors
 	}
 
 	void Room::broadcastWS(const std::string &APIName, const std::string &sourceUUID, const nlohmann::json &broadcast, const nlohmann::json &response)
 	{
-		std::lock_guard<std::mutex> lock(mutexWS);
+		std::lock_guard<std::mutex> lock(mutexWS_);
 		nlohmann::json broadcastJson = nlohmann::json::object();
 		nlohmann::json responseJson = nlohmann::json::object();
 		if (!broadcast.empty())
 		{
 			broadcastJson["API"] = APIName;
-			// broadcastJson["sessionUUID"] = sourceUUID;
 			broadcastJson["parameters"] = broadcast;
 		}
 		if (!response.empty())
 		{
 			responseJson["API"] = APIName;
-			// responseJson["sessionUUID"] = sourceUUID;
 			responseJson["parameters"] = response;
 		}
 		const std::shared_ptr<const std::string> broadcastMessage = std::make_shared<const std::string>(broadcastJson.dump());
 		const std::shared_ptr<const std::string> responseMessage = std::make_shared<const std::string>(responseJson.dump());
 
-		for (const auto &uuid_session : websocketSessions)
+		for (const auto &uuid_session : websocketSessions_)
 		{
 			const std::string &sessionUUID = uuid_session.first;
-			const std::variant<std::shared_ptr<PlainWebsocketSession>, std::shared_ptr<SSLWebsocketSession>> &session = uuid_session.second;
+			const WSSession &session = uuid_session.second;
 			if (sessionUUID != sourceUUID)
 			{
 				if (!broadcast.empty())
 				{
-					std::visit([&](const auto &session_)
+					std::visit([&broadcastMessage](const auto &session_)
 							   { session_->send(broadcastMessage); },
 							   session);
 				}
@@ -219,7 +225,7 @@ namespace Doppelganger
 			{
 				if (!response.empty())
 				{
-					std::visit([&](const auto &session_)
+					std::visit([&responseMessage](const auto &session_)
 							   { session_->send(responseMessage); },
 							   session);
 				}
@@ -227,58 +233,22 @@ namespace Doppelganger
 		}
 	}
 
-	void Room::storeHistory(const nlohmann::json &diff, const nlohmann::json &diffInv)
-	{
-		// erase future elements in the edit history
-		if (editHistory.index + 0 < editHistory.diffFromNext.size())
-		{
-			editHistory.diffFromNext.erase(editHistory.diffFromNext.begin() + (editHistory.index + 0), editHistory.diffFromNext.end());
-		}
-		if (editHistory.index + 1 < editHistory.diffFromPrev.size())
-		{
-			editHistory.diffFromPrev.erase(editHistory.diffFromPrev.begin() + (editHistory.index + 1), editHistory.diffFromPrev.end());
-		}
-		// store diff/diffInv
-		editHistory.diffFromNext.emplace_back(diffInv);
-		editHistory.diffFromPrev.emplace_back(diff);
-		editHistory.index = editHistory.diffFromNext.size();
-	}
-
-	void Room::getCurrentConfig(nlohmann::json &config) const
-	{
-		fs::path configPath(dataDir);
-		configPath.append("config.json");
-		if (fs::exists(configPath))
-		{
-			// we could directly use std::filesystem::path, but we could not directly boost::filesystem::path
-			std::ifstream ifs(configPath.string());
-			config = nlohmann::json::parse(ifs);
-			ifs.close();
-		}
-		else
-		{
-			// no config file is found.
-			// we copy from core
-			std::cout << "No config file for Room found. We copy from Core." << std::endl;
-			{
-				std::lock_guard<std::mutex> lock(core_->mutexConfig);
-				core_->getCurrentConfig(config);
-			}
-			// remove core-only config
-			config.erase("browser");
-			config.erase("server");
-			updateConfig(config);
-		}
-	}
-
-	void Room::updateConfig(const nlohmann::json &config) const
-	{
-		fs::path configPath(dataDir);
-		configPath.append("config.json");
-		std::ofstream ofs(configPath.string());
-		ofs << config.dump(4);
-		ofs.close();
-	}
-} // namespace
+	// void Room::storeHistory(const nlohmann::json &diff, const nlohmann::json &diffInv)
+	// {
+	// 	// erase future elements in the edit history
+	// 	if (editHistory.index + 0 < editHistory.diffFromNext.size())
+	// 	{
+	// 		editHistory.diffFromNext.erase(editHistory.diffFromNext.begin() + (editHistory.index + 0), editHistory.diffFromNext.end());
+	// 	}
+	// 	if (editHistory.index + 1 < editHistory.diffFromPrev.size())
+	// 	{
+	// 		editHistory.diffFromPrev.erase(editHistory.diffFromPrev.begin() + (editHistory.index + 1), editHistory.diffFromPrev.end());
+	// 	}
+	// 	// store diff/diffInv
+	// 	editHistory.diffFromNext.emplace_back(diffInv);
+	// 	editHistory.diffFromPrev.emplace_back(diff);
+	// 	editHistory.index = editHistory.diffFromNext.size();
+	// }
+}
 
 #endif
