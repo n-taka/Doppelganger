@@ -15,7 +15,7 @@ namespace Doppelganger
 	// SSLWebsocketSession
 	////
 	SSLWebsocketSession::SSLWebsocketSession(
-		const std::shared_ptr<Room> &room,
+		const std::weak_ptr<Room> &room,
 		const std::string &UUID,
 		beast::ssl_stream<beast::tcp_stream> &&stream)
 		: WebsocketSession<SSLWebsocketSession>(room, UUID), ws_(std::move(stream))

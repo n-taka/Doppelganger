@@ -15,7 +15,7 @@ namespace Doppelganger
 	// PlainWebsocketSession
 	////
 	PlainWebsocketSession::PlainWebsocketSession(
-		const std::shared_ptr<Room> &room,
+		const std::weak_ptr<Room> &room,
 		const std::string &UUID,
 		beast::tcp_stream &&stream)
 		: WebsocketSession<PlainWebsocketSession>(room, UUID), ws_(std::move(stream))
