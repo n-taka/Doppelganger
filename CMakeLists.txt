@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.15)
 
-# ##############################################
-# ### we use MT for users without C++ runtime
-# ##############################################
-# if (WIN32)
-#     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-# endif ()
+##############################################
+### we use MT for users without C++ runtime
+##############################################
+if (WIN32)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif ()
 
 
 ##############################################
@@ -158,8 +158,6 @@ if (WIN32)
     target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
     # our target is windows 10 or newer
     target_compile_definitions(${PROJECT_NAME} PUBLIC _WIN32_WINNT=0x0A00)
-    # for window, we need to export symbols
-    target_compile_definitions(${PROJECT_NAME} PUBLIC DLL_EXPORT)
     # our codes heavily depend on template...
     add_definitions(/bigobj)
 elseif (APPLE)
