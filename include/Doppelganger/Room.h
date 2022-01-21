@@ -30,6 +30,8 @@ namespace Doppelganger
 			const std::string &UUID,
 			nlohmann::json &configCore);
 
+		void applyCurrentConfig();
+
 		void joinWS(const WSSession &session);
 		void leaveWS(const std::string &sessionUUID);
 		void broadcastWS(const std::string &APIName, const std::string &sourceUUID, const nlohmann::json &broadcast, const nlohmann::json &response);

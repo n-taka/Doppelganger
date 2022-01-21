@@ -29,34 +29,11 @@ namespace Doppelganger
 		config_["UUID"] = UUID;
 		config_["active"] = true;
 
-		// directories
-		// dataDir: Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/
-		{
-			fs::path dataDir(config_.at("DoppelgangerRootDir").get<std::string>());
-			dataDir.append("data");
-			std::string dirName("");
-			dirName += Util::getCurrentTimestampAsString(false);
-			dirName += "-";
-			dirName += config_.at("UUID").get<std::string>();
-			dataDir.append(dirName);
-			fs::create_directories(dataDir);
-			config_["dataDir"] = dataDir.string();
-		}
-		// log: Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/log
-		{
-			fs::path logDir(config_.at("dataDir").get<std::string>());
-			logDir.append("log");
-			fs::create_directories(logDir);
-			config_["log"]["dir"] = logDir.string();
-		}
-		// output: Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/output
-		{
-			fs::path outputDir(config_.at("dataDir").get<std::string>());
-			outputDir.append("output");
-			fs::create_directories(outputDir);
-			config_["output"]["dir"] = outputDir.string();
-		}
+		// wipe out the settings for Core
+		config_.at("data").at("dir") = std::string("");
+		config_.at("data").at("initialized") = false;
 
+		// add Room specific parameters
 		// interface
 		// camera
 		{
@@ -94,6 +71,58 @@ namespace Doppelganger
 			config_["history"]["diffFromPrev"].emplace_back(nlohmann::json::object());
 		}
 
+		// apply current config
+		applyCurrentConfig();
+
+		// log
+		{
+			std::stringstream ss;
+			ss << "New room \"" << config_.at("UUID").get<std::string>() << "\" is created.";
+			Util::log(ss.str(), "SYSTEM", config_);
+		}
+	}
+
+	void Room::applyCurrentConfig()
+	{
+		if (!config_.at("active").get<bool>())
+		{
+			// shutdown...
+			// TODO: close websocket sessions, etc...
+			return;
+		}
+
+		// path for DoppelgangerRoot
+		const fs::path DoppelgangerRootDir(config_.at("DoppelgangerRootDir").get<std::string>());
+
+		// dataDir: Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/
+		if (!config_.at("data").at("initialized").get<bool>())
+		{
+			fs::path dataDir(DoppelgangerRootDir);
+			dataDir.append("data");
+			std::string dirName("");
+			dirName += Util::getCurrentTimestampAsString(false);
+			dirName += "-";
+			dirName += config_.at("UUID").get<std::string>();
+			dataDir.append(dirName);
+			fs::create_directories(dataDir);
+			config_.at("data").at("dir") = dataDir.string();
+			config_.at("data").at("initialized") = true;
+		}
+
+		// log: Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/log
+		{
+			fs::path logDir(config_.at("data").at("dir").get<std::string>());
+			logDir.append("log");
+			fs::create_directories(logDir);
+		}
+
+		// output: Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/output
+		{
+			fs::path outputDir(config_.at("data").at("dir").get<std::string>());
+			outputDir.append("output");
+			fs::create_directories(outputDir);
+		}
+
 		// plugin
 		{
 			// get plugin catalogue
@@ -110,7 +139,7 @@ namespace Doppelganger
 
 			// install plugins
 			{
-				const nlohmann::json installedPluginJson = config_.at("plugin").at("installed");
+				const nlohmann::ordered_json installedPluginJson = config_.at("plugin").at("installed");
 				std::vector<std::string> sortedInstalledPluginName(installedPluginJson.size());
 				for (const auto &installedPlugin : installedPluginJson.items())
 				{
@@ -120,18 +149,20 @@ namespace Doppelganger
 					sortedInstalledPluginName.at(index) = name;
 				}
 
-				for (const auto &pluginName : sortedInstalledPluginName)
+				for (const auto &plugin : installedPluginJson.items())
 				{
-					const std::string &version = installedPluginJson.at(pluginName).at("version").get<std::string>();
+					const std::string &name = plugin.key();
+					const nlohmann::json &info = plugin.value();
+					const std::string &version = info.at("version").get<std::string>();
 
-					if (plugin_.find(pluginName) != plugin_.end() && version.size() > 0)
+					if (plugin_.find(name) != plugin_.end() && version.size() > 0)
 					{
-						plugin_.at(pluginName)->install(config_, version);
+						plugin_.at(name)->install(config_, version);
 					}
 					else
 					{
 						std::stringstream ss;
-						ss << "Plugin \"" << pluginName << "\" (" << version << ")"
+						ss << "Plugin \"" << name << "\" (" << version << ")"
 						   << " is NOT found.";
 						Util::log(ss.str(), "ERROR", config_);
 					}
@@ -151,7 +182,6 @@ namespace Doppelganger
 					{
 						if (plugin_.at(name)->installedVersion_.size() == 0)
 						{
-							plugin_.at(name)->install(configCore, std::string("latest"));
 							plugin_.at(name)->install(config_, std::string("latest"));
 						}
 					}
@@ -164,13 +194,6 @@ namespace Doppelganger
 					}
 				}
 			}
-		}
-
-		// log
-		{
-			std::stringstream ss;
-			ss << "New room \"" << config_.at("UUID").get<std::string>() << "\" is created.";
-			Util::log(ss.str(), "SYSTEM", config_);
 		}
 	}
 
