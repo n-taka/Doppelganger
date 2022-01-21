@@ -2,13 +2,12 @@
 #define CORE_CPP
 
 #include "Doppelganger/Core.h"
-#include "Doppelganger/Logger.h"
-#include "Doppelganger/Room.h"
 #include "Doppelganger/HTTPSession.h"
 #include "Doppelganger/Plugin.h"
 #include "Doppelganger/Listener.h"
 #include "Doppelganger/Util/download.h"
 #include "Doppelganger/Util/getCurrentTimestampAsString.h"
+#include "Doppelganger/Util/log.h"
 
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/ssl/context.hpp>
@@ -61,16 +60,16 @@ namespace
 namespace Doppelganger
 {
 	Core::Core(boost::asio::io_context &ioc,
-			 boost::asio::ssl::context &ctx)
-			 : ioc_(ioc), ctx_(ctx)
+			   boost::asio::ssl::context &ctx)
+		: ioc_(ioc), ctx_(ctx)
 	{
-
 	}
 
 	void Core::setup()
 	{
 		////
 		// path for DoppelgangerRoot
+		fs::path DoppelgangerRootDir;
 		{
 #if defined(_WIN64)
 			// For windows, we use "%USERPROFILE%\AppData\Local\Doppelganger"
@@ -113,153 +112,40 @@ namespace Doppelganger
 #endif
 		}
 
-		////
-		// config.json
-		nlohmann::json config;
 		{
-			std::lock_guard<std::mutex> lock(mutexConfig);
-			getCurrentConfig(config);
-		}
-
-		////
-		// directory for Core
-		// Doppelganger/data/YYYYMMDDTHHMMSS-Core/
-		{
-			dataDir = DoppelgangerRootDir;
-			dataDir.append("data");
-			std::string dirName("");
-			dirName += Util::getCurrentTimestampAsString(false);
-			dirName += "-Core";
-			dataDir.append(dirName);
-			fs::create_directories(dataDir);
-		}
-
-		////
-		// log
-		// Doppelganger/data/YYYYMMDDTHHMMSS-Core/log
-		if (config.contains("log"))
-		{
-			logger.initialize(shared_from_this());
-		}
-
-		////
-		// output
-		// Doppelganger/data/YYYYMMDDTHHMMSS-Core/output
-		if (config.contains("output"))
-		{
-			fs::path outputDir = dataDir;
-			outputDir.append("output");
-			fs::create_directories(outputDir);
-		}
-
-		////
-		// plugin
-		if (config.contains("plugin"))
-		{
-			const nlohmann::json &pluginJson = config.at("plugin");
-
-			fs::path pluginsDir = DoppelgangerRootDir;
-			pluginsDir.append("plugin");
-			fs::create_directories(pluginsDir);
-		}
-
-		// initialize server (and certificates)
-		if (config.contains("server"))
-		{
-			const nlohmann::json &serverJson = config.at("server");
-
-			boost::system::error_code ec;
-
-			boost::asio::ip::tcp::resolver resolver(ioc_);
-			boost::asio::ip::tcp::resolver::results_type endpointIterator = resolver.resolve(serverJson.at("host").get<std::string>(), std::to_string(serverJson.at("port").get<int>()), ec);
-			if (ec)
+			fs::path configPath(DoppelgangerRootDir);
+			configPath.append("config.json");
+			if (fs::exists(configPath))
 			{
-				{
-					std::stringstream ss;
-					ss << "Fail to resolve hostname \"" << serverJson.at("host").get<std::string>() << "\"";
-					logger.log(ss.str(), "ERROR");
-				}
-				{
-					std::stringstream ss;
-					ss << ec.message();
-					logger.log(ss.str(), "ERROR");
-				}
-				return;
+				// we could directly use std::filesystem::path, but we could not directly boost::filesystem::path
+				std::ifstream ifs(configPath.string());
+				config_ = nlohmann::json::parse(ifs);
+				ifs.close();
 			}
-
-			boost::asio::ip::tcp::endpoint endpoint = endpointIterator->endpoint();
-
-			protocol = serverJson.at("protocol").get<std::string>();
-			if (protocol == "https")
+			else
 			{
-				if (serverJson.contains("certificateFiles"))
-				{
-					fs::path certificatePath, privateKeyPath;
-					if (serverJson.at("certificateFiles").contains("certificate"))
-					{
-						certificatePath = fs::path(serverJson.at("certificateFiles").at("certificate").get<std::string>());
-					}
-					if (serverJson.at("certificateFiles").contains("privateKey"))
-					{
-						privateKeyPath = fs::path(serverJson.at("certificateFiles").at("privateKey").get<std::string>());
-					}
-					if (fs::exists(certificatePath) && fs::exists(privateKeyPath))
-					{
-						loadServerCertificate(certificatePath, privateKeyPath);
-					}
-					else
-					{
-						{
-							std::stringstream ss;
-							ss << "Protocol \"https\" is specified, but no valid certificate is found. We switch to \"http\".";
-							logger.log(ss.str(), "ERROR");
-						}
-						{
-							std::stringstream ss;
-							ss << "    certificate: ";
-							ss << certificatePath;
-							logger.log(ss.str(), "ERROR");
-						}
-						{
-							std::stringstream ss;
-							ss << "    privateKey: ";
-							ss << privateKeyPath;
-							logger.log(ss.str(), "ERROR");
-						}
-						protocol = std::string("http");
-					}
-				}
-				else
-				{
-					protocol = std::string("http");
-				}
+				// no config file is found. (e.g. use Doppelganger first time)
+				generateDefaultConfigJson(config_);
+				std::cout << "No config file found. We use default config." << std::endl;
 			}
-			listener = std::make_shared<Listener>(shared_from_this(), ioc_, ctx_, endpoint);
+			// store path to root dir
+			config_["DoppelgangerRootDir"] = DoppelgangerRootDir.string();
 		}
+
+		// apply current config
+		applyCurrentConfig();
 	}
 
 	void Core::run()
 	{
-		nlohmann::json config;
 		{
-			std::lock_guard<std::mutex> lock(mutexConfig);
-			getCurrentConfig(config);
-		}
+			listener_->run();
 
-		// start servers
-		{
-			completeURL = protocol;
-			completeURL += "://";
-			completeURL += config.at("server").at("host").get<std::string>();
-			completeURL += ":";
-			completeURL += std::to_string(listener->acceptor_.local_endpoint().port());
-		}
-		{
-			listener->run();
-
-			std::stringstream s;
-			s << "Listening for requests at : " << completeURL;
-			logger.log(s.str(), "SYSTEM");
+			{
+				std::stringstream ss;
+				ss << "Listening for requests at : " << config_.at("server").at("completeURL").get<std::string>();
+				Util::log(ss.str(), "SYSTEM", config_);
+			}
 		}
 		////
 		// open browser
@@ -268,34 +154,13 @@ namespace Doppelganger
 		// "browserPath" = path/to/executables
 		// "openAs" = "app"|"window"|"tab"|"default"
 		// "cmd" = "command to be executed. use response["cmd"]+URL"
-		if (config.contains("browser"))
 		{
-			nlohmann::json &browserJson = config.at("browser");
 			// by default, we open browser
-			if ((!browserJson.contains("openOnStartup") || browserJson.at("openOnStartup").get<bool>()) && config.at("server").at("host") == "127.0.0.1")
+			if (config_.at("browser").at("openOnStartup").get<bool>() &&
+				config_.at("server").at("host").get<std::string>() == "127.0.0.1")
 			{
-				browserJson["openOnStartup"] = true;
-				// by default, we use default browser (open/start command)
-				std::string browserType = std::string("default");
-				if (browserJson.contains("type"))
-				{
-					const std::string type = browserJson.at("type").get<std::string>();
-					if (type == "chrome" || type == "firefox" || type == "edge" || type == "safari")
-					{
-						browserType = type;
-					}
-				}
-				browserJson["type"] = browserType;
-
-				// path
-				if (browserJson.contains("path") && browserJson.at("path").get<std::string>().size() > 0)
-				{
-					// if browser is specified by the path, we ignore "type"
-					browserJson.at("type") = std::string("N/A");
-					// possibly, we need to verify the path ...
-				}
-				// update browserJson["path"]
-				if (browserJson.at("type").get<std::string>() == "chrome")
+				// update config_.at("browser").at("path")
+				if (config_.at("browser").at("type").get<std::string>() == "chrome")
 				{
 #if defined(_WIN64)
 					std::vector<fs::path> chromePaths({fs::path("C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"),
@@ -310,12 +175,12 @@ namespace Doppelganger
 						p.make_preferred();
 						if (fs::exists(p))
 						{
-							browserJson["path"] = p.string();
+							config_.at("browser").at("path") = p.string();
 							break;
 						}
 					}
 				}
-				else if (browserJson.at("type").get<std::string>() == "firefox")
+				else if (config_.at("browser").at("type").get<std::string>() == "firefox")
 				{
 #if defined(_WIN64)
 					std::vector<fs::path> firefoxPaths({fs::path("C:\\Program Files\\Mozilla Firefox\\firefox.exe"),
@@ -330,26 +195,26 @@ namespace Doppelganger
 						p.make_preferred();
 						if (fs::exists(p))
 						{
-							browserJson["path"] = p.string();
+							config_.at("browser").at("path") = p.string();
 							break;
 						}
 					}
 				}
-				else if (browserJson.at("type").get<std::string>() == "edge")
+				else if (config_.at("browser").at("type").get<std::string>() == "edge")
 				{
 					// only for windows
 					fs::path edgePath("C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe");
 					edgePath.make_preferred();
-					browserJson["path"] = edgePath.string();
+					config_.at("browser").at("path") = edgePath.string();
 				}
-				else if (browserJson.at("type").get<std::string>() == "safari")
+				else if (config_.at("browser").at("type").get<std::string>() == "safari")
 				{
-					browserJson["path"] = std::string("/Applications/Safari.app");
+					config_.at("browser").at("path") = std::string("/Applications/Safari.app");
 				}
-				else if (browserJson.at("type").get<std::string>() == "default")
+				else if (config_.at("browser").at("type").get<std::string>() == "default")
 				{
 					// do nothing
-					browserJson["path"] = std::string("");
+					config_.at("browser").at("path") = std::string("");
 				}
 				else
 				{
@@ -357,51 +222,45 @@ namespace Doppelganger
 					//   do nothing
 				}
 
-				////
-				// update openAs
-				if (!browserJson.contains("openAs") || browserJson.at("openAs").get<std::string>().size() == 0)
-				{
-					browserJson["openAs"] = std::string("default");
-				}
-				// update browserJson["openAs"]
-				if (browserJson.at("type").get<std::string>() == "chrome")
+				// update config_.at("browser").at("openAs")
+				if (config_.at("browser").at("type").get<std::string>() == "chrome")
 				{
 					// chrome supports "app"|"window"|"tab"|"default"
 					//   precisely speaking, "tab" and "default" are the same
 				}
-				else if (browserJson.at("type").get<std::string>() == "firefox")
+				else if (config_.at("browser").at("type").get<std::string>() == "firefox")
 				{
 					// firefox supports "window"|"tab"|"default"
 					//   precisely speaking, "tab" and "default" are the same
-					if (browserJson.at("openAs").get<std::string>() == "app")
+					if (config_.at("browser").at("openAs").get<std::string>() == "app")
 					{
-						browserJson.at("openAs") = std::string("window");
+						config_.at("browser").at("openAs") = std::string("window");
 					}
 				}
-				else if (browserJson.at("type").get<std::string>() == "edge")
+				else if (config_.at("browser").at("type").get<std::string>() == "edge")
 				{
 					// edge supports "app"|"window"|"tab"|"default"
 					//   precisely speaking, "tab" and "default" are the same
 				}
-				else if (browserJson.at("type").get<std::string>() == "safari")
+				else if (config_.at("browser").at("type").get<std::string>() == "safari")
 				{
 					// todo check which mode is supported by safari ...
-					if (browserJson.at("openAs").get<std::string>() == "app" || browserJson.at("openAs").get<std::string>() == "window")
+					if (config_.at("browser").at("openAs").get<std::string>() == "app" || config_.at("browser").at("openAs").get<std::string>() == "window")
 					{
-						browserJson.at("openAs") = std::string("tab");
+						config_.at("browser").at("openAs") = std::string("tab");
 					}
 					// safari supports "tab"|"default"
 					//   precisely speaking, "tab" and "default" are the same
 				}
-				else if (browserJson.at("type").get<std::string>() == "default")
+				else if (config_.at("browser").at("type").get<std::string>() == "default")
 				{
 					// for default browser (start/open command), we cannot know which type is supported ...
-					browserJson.at("openAs") = std::string("default");
+					config_.at("browser").at("openAs") = std::string("default");
 				}
 				else
 				{
 					// for N/A (specified by path), we cannot know which which type is supported ...
-					browserJson.at("openAs") = std::string("default");
+					config_.at("browser").at("openAs") = std::string("default");
 				}
 
 				////
@@ -412,51 +271,51 @@ namespace Doppelganger
 				// make sure that program runs in background.
 				cmd << "start ";
 				cmd << "\"\" ";
-				if (browserJson.at("type").get<std::string>() != "default")
+				if (config_.at("browser").at("type").get<std::string>() != "default")
 				{
 					cmd << "\"";
-					cmd << browserJson.at("path").get<std::string>();
+					cmd << config_.at("browser").at("path").get<std::string>();
 					cmd << "\"";
 					cmd << " ";
 				}
 #elif defined(__APPLE__)
-				if (browserJson.at("type").get<std::string>() == "default")
+				if (config_.at("browser").at("type").get<std::string>() == "default")
 				{
 					cmd << "open ";
 				}
-				else if (browserJson.at("type").get<std::string>() == "safari")
+				else if (config_.at("browser").at("type").get<std::string>() == "safari")
 				{
 					cmd << "open -a Safari.app ";
 				}
 				else
 				{
 					cmd << "\"";
-					cmd << browserJson.at("path").get<std::string>();
+					cmd << config_.at("browser").at("path").get<std::string>();
 					cmd << "\"";
 					cmd << " ";
 				}
 #elif defined(__linux__)
-				if (browserJson.at("type").get<std::string>() == "default")
+				if (config_.at("browser").at("type").get<std::string>() == "default")
 				{
 					cmd << "xdg-open ";
 				}
 				else
 				{
 					cmd << "\"";
-					cmd << browserJson.at("path").get<std::string>();
+					cmd << config_.at("browser").at("path").get<std::string>();
 					cmd << "\"";
 					cmd << " ";
 				}
 #endif
-				if (browserJson.at("openAs").get<std::string>() == "app")
+				if (config_.at("browser").at("openAs").get<std::string>() == "app")
 				{
 					cmd << "--app=";
 				}
-				else if (browserJson.at("openAs").get<std::string>() == "window")
+				else if (config_.at("browser").at("openAs").get<std::string>() == "window")
 				{
 					cmd << "--new-window ";
 				}
-				else if (browserJson.at("openAs").get<std::string>() == "tab")
+				else if (config_.at("browser").at("openAs").get<std::string>() == "tab")
 				{
 					// no command line switch
 				}
@@ -465,53 +324,230 @@ namespace Doppelganger
 					// no command line switch
 				}
 				// URL
-				cmd << completeURL;
+				cmd << config_.at("server").at("completeURL").get<std::string>();
 #if defined(__APPLE__)
-				if (browserJson.at("type").get<std::string>() != "default" && browserJson.at("type").get<std::string>() != "safari")
+				if (config_.at("browser").at("type").get<std::string>() != "default" && config_.at("browser").at("type").get<std::string>() != "safari")
 				{
 					cmd << " &";
 				}
 #elif defined(__linux__)
-				if (browserJson.at("type").get<std::string>() != "default")
+				if (config_.at("browser").at("type").get<std::string>() != "default")
 				{
 					cmd << " &";
 				}
 #endif
 
-				browserJson["cmd"] = cmd.str();
-				logger.log(cmd.str(), "SYSTEM");
+				config_.at("browser").at("cmd") = cmd.str();
+				Util::log(cmd.str(), "SYSTEM", config_);
 				system(cmd.str().c_str());
 			}
 		}
 	}
 
-	void Core::getCurrentConfig(nlohmann::json &config) const
+	void Core::applyCurrentConfig()
 	{
-		fs::path configPath(DoppelgangerRootDir);
-		configPath.append("config.json");
-		if (fs::exists(configPath))
+		if (!config_.at("active").get<bool>())
 		{
-			// we could directly use std::filesystem::path, but we could not directly boost::filesystem::path
-			std::ifstream ifs(configPath.string());
-			config = nlohmann::json::parse(ifs);
-			ifs.close();
+			// shutdown...
+			ioc_.stop();
+			// todo: close rooms, etc.
+			return;
 		}
-		else
+
+		// dataDir: Doppelganger/data/YYYYMMDDTHHMMSS-Core/
+		//   note: dataDir is NOT changed.
+		if (!config_.at("data").at("initialized").get<bool>())
 		{
-			// no config file is found. (e.g. use Doppelganger first time)
-			generateDefaultConfigJson(config);
-			std::cout << "No config file found. We use default config." << std::endl;
-			updateConfig(config);
+			fs::path dataDir(config_.at("DoppelgangerRootDir").get<std::string>());
+			dataDir.append("data");
+			std::string dirName("");
+			dirName += Util::getCurrentTimestampAsString(false);
+			dirName += "-Core";
+			dataDir.append(dirName);
+			fs::create_directories(dataDir);
+			config_.at("data").at("dir") = dataDir.string();
+			config_.at("data").at("initialized") = true;
+		}
+
+		// log: Doppelganger/data/YYYYMMDDTHHMMSS-Core/log
+		{
+			fs::path logDir(config_.at("data").at("dir").get<std::string>());
+			logDir.append("log");
+			fs::create_directories(logDir);
+		}
+
+		// output: Doppelganger/data/YYYYMMDDTHHMMSS-Core/output
+		{
+			fs::path outputDir(config_.at("data").at("dir").get<std::string>());
+			outputDir.append("output");
+			fs::create_directories(outputDir);
+		}
+
+		// plugin: Doppelganger/plugin
+		{
+			fs::path pluginDir(config_.at("DoppelgangerRootDir").get<std::string>());
+			pluginDir.append("plugin");
+			fs::create_directories(pluginDir);
+		}
+		{
+			// get plugin catalogue
+			nlohmann::json catalogue;
+			Plugin::getCatalogue(config_, catalogue);
+
+			// initialize Doppelganger::Plugin instances
+			for (const auto &pluginEntry : catalogue.items())
+			{
+				const std::string &name = pluginEntry.key();
+				const nlohmann::json &pluginInfo = pluginEntry.value();
+				plugin_[name] = std::make_unique<Doppelganger::Plugin>(name, pluginInfo);
+			}
+
+			// install plugins
+			{
+				const nlohmann::ordered_json installedPluginJson = config_.at("plugin").at("installed");
+				std::vector<std::string> sortedInstalledPluginName(installedPluginJson.size());
+				for (const auto &installedPlugin : installedPluginJson.items())
+				{
+					const std::string &name = installedPlugin.key();
+					const nlohmann::json &value = installedPlugin.value();
+					const int index = value.at("priority").get<int>();
+					sortedInstalledPluginName.at(index) = name;
+				}
+
+				for (const auto &plugin : installedPluginJson.items())
+				{
+					const std::string &name = plugin.key();
+					const nlohmann::json &info = plugin.value();
+					const std::string &version = info.at("version").get<std::string>();
+
+					if (plugin_.find(name) != plugin_.end() && version.size() > 0)
+					{
+						plugin_.at(name)->install(config_, version);
+					}
+					else
+					{
+						std::stringstream ss;
+						ss << "Plugin \"" << name << "\" (" << version << ")"
+						   << " is NOT found.";
+						Util::log(ss.str(), "ERROR", config_);
+					}
+				}
+			}
+
+			// install non-optional plugins
+			//   note: here, we install to Core, but installed plugin is NOT called...
+			for (const auto &pluginEntry : catalogue.items())
+			{
+				const std::string &name = pluginEntry.key();
+				const nlohmann::json &info = pluginEntry.value();
+				const bool &optional = info.at("optional").get<bool>();
+				if (!optional)
+				{
+					if (plugin_.find(name) != plugin_.end())
+					{
+						if (plugin_.at(name)->installedVersion_.size() == 0)
+						{
+							plugin_.at(name)->install(config_, std::string("latest"));
+						}
+					}
+					else
+					{
+						std::stringstream ss;
+						ss << "Non-optional plugin \"" << name << "\" (latest)"
+						   << " is NOT found.";
+						Util::log(ss.str(), "ERROR", config_);
+					}
+				}
+			}
+		}
+
+		// server
+		{
+			boost::system::error_code ec;
+
+			boost::asio::ip::tcp::resolver resolver(ioc_);
+			boost::asio::ip::tcp::resolver::results_type endpointIterator = resolver.resolve(config_.at("server").at("host").get<std::string>(), std::to_string(config_.at("server").at("port").get<int>()), ec);
+			if (ec)
+			{
+				{
+					std::stringstream ss;
+					ss << "Fail to resolve hostname \"" << config_.at("server").at("host").get<std::string>() << "\"";
+					Util::log(ss.str(), "ERROR", config_);
+				}
+				{
+					std::stringstream ss;
+					ss << ec.message();
+					Util::log(ss.str(), "ERROR", config_);
+				}
+				return;
+			}
+
+			boost::asio::ip::tcp::endpoint endpoint = endpointIterator->endpoint();
+
+			if (config_.at("server").at("protocol").get<std::string>() == "https")
+			{
+				if (config_.at("server").contains("certificateFiles"))
+				{
+					fs::path certificatePath, privateKeyPath;
+					if (config_.at("server").at("certificateFiles").contains("certificate"))
+					{
+						certificatePath = fs::path(config_.at("server").at("certificateFiles").at("certificate").get<std::string>());
+					}
+					if (config_.at("server").at("certificateFiles").contains("privateKey"))
+					{
+						privateKeyPath = fs::path(config_.at("server").at("certificateFiles").at("privateKey").get<std::string>());
+					}
+					if (fs::exists(certificatePath) && fs::exists(privateKeyPath))
+					{
+						loadServerCertificate(certificatePath, privateKeyPath);
+					}
+					else
+					{
+						{
+							std::stringstream ss;
+							ss << "Protocol \"https\" is specified, but no valid certificate is found. We switch to \"http\".";
+							Util::log(ss.str(), "ERROR", config_);
+						}
+						{
+							std::stringstream ss;
+							ss << "    certificate: ";
+							ss << certificatePath;
+							Util::log(ss.str(), "ERROR", config_);
+						}
+						{
+							std::stringstream ss;
+							ss << "    privateKey: ";
+							ss << privateKeyPath;
+							Util::log(ss.str(), "ERROR", config_);
+						}
+						config_.at("server").at("protocol") = std::string("http");
+					}
+				}
+				else
+				{
+					config_.at("server").at("protocol") = std::string("http");
+				}
+			}
+
+			// listener
+			listener_ = std::make_shared<Listener>(weak_from_this(), ioc_, ctx_, endpoint);
+			{
+				config_.at("server").at("port") = listener_->acceptor_.local_endpoint().port();
+
+				std::string completeURL("");
+				completeURL = config_.at("server").at("protocol").get<std::string>();
+				completeURL += "://";
+				completeURL += config_.at("server").at("host").get<std::string>();
+				completeURL += ":";
+				completeURL += std::to_string(config_.at("server").at("port").get<int>());
+				config_.at("server").at("completeURL") = completeURL;
+			}
 		}
 	}
 
-	void Core::updateConfig(const nlohmann::json &config) const
+	void Core::storeCurrentConfig() const
 	{
-		fs::path configPath(DoppelgangerRootDir);
-		configPath.append("config.json");
-		std::ofstream ofs(configPath.string());
-		ofs << config.dump(4);
-		ofs.close();
+		// todo
 	}
 
 	void Core::loadServerCertificate(const fs::path &certificatePath, const fs::path &privateKeyPath)
@@ -551,36 +587,11 @@ namespace Doppelganger
 			boost::asio::buffer(dh.data(), dh.size()));
 	}
 
-	void Core::getPluginCatalogue(
-		const nlohmann::json &listURLJson,
-		nlohmann::json &pluginCatalogue)
-	{
-		pluginCatalogue = nlohmann::json::object();
-
-		for (const auto &listUrl : listURLJson)
-		{
-			fs::path listJsonPath(DoppelgangerRootDir);
-			listJsonPath.append("plugin");
-			listJsonPath.append("tmp.json");
-			Util::download(listUrl.get<std::string>(), listJsonPath);
-			std::ifstream ifs(listJsonPath.string());
-			if (ifs)
-			{
-				nlohmann::json listJson = nlohmann::json::parse(ifs);
-				ifs.close();
-				fs::remove_all(listJsonPath);
-				for (const auto &el : listJson.items())
-				{
-					pluginCatalogue[el.key()] = el.value();
-				}
-			}
-		}
-	}
-
 	void Core::generateDefaultConfigJson(nlohmann::json &config)
 	{
 		config = nlohmann::json::object();
 		{
+			config["active"] = true;
 			config["browser"] = nlohmann::json::object();
 			{
 				config["browser"]["openAs"] = std::string("default");
@@ -588,21 +599,27 @@ namespace Doppelganger
 				config["browser"]["path"] = std::string("");
 				config["browser"]["type"] = std::string("default");
 			}
+			config["DoppelgangerRootDir"] = std::string("");
+			config["data"] = nlohmann::json::object();
+			{
+				config["data"]["dir"] = std::string("");
+				config["data"]["initialized"] = false;
+			}
 			config["log"] = nlohmann::json::object();
 			{
-				config["log"]["level"] = nlohmann::json::array();
+				config["log"]["level"] = nlohmann::json::object();
 				{
-					config["log"]["level"].push_back(std::string("SYSTEM"));
-					config["log"]["level"].push_back(std::string("APICALL"));
-					config["log"]["level"].push_back(std::string("WSCALL"));
-					config["log"]["level"].push_back(std::string("ERROR"));
-					config["log"]["level"].push_back(std::string("MISC"));
-					config["log"]["level"].push_back(std::string("DEBUG"));
+					config["log"]["level"]["SYSTEM"] = true;
+					config["log"]["level"]["APICALL"] = true;
+					config["log"]["level"]["WSCALL"] = true;
+					config["log"]["level"]["ERROR"] = true;
+					config["log"]["level"]["MISC"] = true;
+					config["log"]["level"]["DEBUG"] = true;
 				}
-				config["log"]["type"] = nlohmann::json::array();
+				config["log"]["type"] = nlohmann::json::object();
 				{
-					config["log"]["type"].push_back(std::string("STDOUT"));
-					config["log"]["type"].push_back(std::string("FILE"));
+					config["log"]["type"]["STDOUT"] = true;
+					config["log"]["type"]["FILE"] = true;
 				}
 			}
 			config["output"] = nlohmann::json::object();
@@ -617,7 +634,9 @@ namespace Doppelganger
 					config["plugin"]["listURL"].push_back(std::string("https://n-taka.info/nextcloud/s/PgccNTmPECPXSgQ/download/pluginList_Basic.json"));
 					config["plugin"]["listURL"].push_back(std::string("https://n-taka.info/nextcloud/s/PWPR7YDXKoMeP66/download/pluginList_TORIDE.json"));
 				}
-				config["plugin"]["installed"] = nlohmann::json::object();
+				// IMPORTANT
+				// we consider the order as the order of the installation
+				config["plugin"]["installed"] = nlohmann::ordered_json::object();
 			}
 			config["server"] = nlohmann::json::object();
 			{
@@ -629,6 +648,7 @@ namespace Doppelganger
 					config["server"]["certificateFiles"]["certificate"] = std::string("");
 					config["server"]["certificateFiles"]["privateKey"] = std::string("");
 				}
+				config["server"]["completeURL"] = std::string("");
 			}
 		}
 	}
