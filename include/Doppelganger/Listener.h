@@ -1,36 +1,11 @@
 #ifndef LISTENER_H
 #define LISTENER_H
 
-#if defined(_WIN64)
-#ifdef DLL_EXPORT
-#define DECLSPEC __declspec(dllexport)
-#else
-#define DECLSPEC __declspec(dllimport)
-#endif
-#elif defined(__APPLE__)
-#define DECLSPEC
-#elif defined(__linux__)
-#define DECLSPEC
-#endif
-
-#if defined(_WIN64)
-#include <filesystem>
-namespace fs = std::filesystem;
-#elif defined(__APPLE__)
-#include "boost/filesystem.hpp"
-namespace fs = boost::filesystem;
-#elif defined(__linux__)
-#include <filesystem>
-namespace fs = std::filesystem;
-#endif
-
 #include <algorithm>
 #include <cstdlib>
 #include <functional>
 #include <memory>
-#include <string>
-#include <thread>
-#include <vector>
+#include <sstream>
 
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
@@ -47,6 +22,7 @@ namespace fs = std::filesystem;
 
 #include "Doppelganger/Core.h"
 #include "Doppelganger/SSLDetector.h"
+#include "Doppelganger/Util/log.h"
 
 namespace Doppelganger
 {
@@ -60,7 +36,7 @@ namespace Doppelganger
 	class DECLSPEC Listener : public std::enable_shared_from_this<Listener>
 	{
 	private:
-		const std::shared_ptr<Core> core_;
+		const std::weak_ptr<Core> core_;
 		net::io_context &ioc_;
 		ssl::context &ctx_;
 
@@ -71,16 +47,18 @@ namespace Doppelganger
 				return;
 			}
 
-			std::stringstream s;
-			s << what << ": " << ec.message();
-			core_->logger.log(s.str(), "ERROR");
+			{
+				std::stringstream ss;
+				ss << what << ": " << ec.message();
+				Util::log(ss.str(), "ERROR", core_.lock()->config_);
+			}
 		}
 
 	public:
 		tcp::acceptor acceptor_;
 
 		Listener(
-			const std::shared_ptr<Core> &core,
+			const std::weak_ptr<Core> &core,
 			net::io_context &ioc,
 			ssl::context &ctx,
 			tcp::endpoint &endpoint)
