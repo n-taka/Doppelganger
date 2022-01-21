@@ -19,7 +19,7 @@ namespace Doppelganger
 	class PlainWebsocketSession;
 	class SSLWebsocketSession;
 
-	class Room : public std::enable_shared_from_this<Room>
+	class Room
 	{
 		using WSSession = std::variant<std::shared_ptr<PlainWebsocketSession>, std::shared_ptr<SSLWebsocketSession>>;
 

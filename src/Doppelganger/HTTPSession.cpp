@@ -25,12 +25,220 @@ namespace fs = std::filesystem;
 #endif
 
 #include "Doppelganger/Core.h"
-#include "Doppelganger/Logger.h"
 #include "Doppelganger/Room.h"
 #include "Doppelganger/HTTPSession.h"
 #include "Doppelganger/WebsocketSession.h"
 #include "Doppelganger/Plugin.h"
 #include "Doppelganger/Util/uuid.h"
+#include "Doppelganger/Util/log.h"
+
+namespace Doppelganger
+{
+	namespace beast = boost::beast;	  // from <boost/beast.hpp>
+	namespace http = beast::http;	  // from <boost/beast/http.hpp>
+	namespace net = boost::asio;	  // from <boost/asio.hpp>
+	using tcp = boost::asio::ip::tcp; // from <boost/asio/ip/tcp.hpp>
+
+	template <class Derived>
+	Derived &HTTPSession<Derived>::derived()
+	{
+		return static_cast<Derived &>(*this);
+	}
+
+	template <class Derived>
+	void HTTPSession<Derived>::fail(boost::system::error_code ec, char const *what)
+	{
+		if (ec == net::ssl::error::stream_truncated)
+		{
+			return;
+		}
+
+		{
+			std::stringstream ss;
+			ss << what << ": " << ec.message();
+			Util::log(ss.str(), "ERROR", core_.lock()->config_);
+		}
+	}
+
+	template <class Derived>
+	HTTPSession<Derived>::HTTPSession(
+		const std::weak_ptr<Core> &core,
+		beast::flat_buffer buffer)
+		: buffer_(std::move(buffer)), queue_(*this), core_(core)
+	{
+	}
+
+	template <class Derived>
+	void HTTPSession<Derived>::doRead()
+	{
+		parser_.emplace();
+		// disable parser body_limit
+		// this is not the best practice, but works
+		parser_->body_limit(boost::none);
+
+		// Set the timeout.
+		beast::get_lowest_layer(
+			derived().stream())
+			.expires_after(std::chrono::seconds(30));
+
+		http::async_read(
+			derived().stream(),
+			buffer_,
+			*parser_,
+			beast::bind_front_handler(
+				&HTTPSession::onRead,
+				derived().shared_from_this()));
+	}
+
+	template <class Derived>
+	void HTTPSession<Derived>::onRead(beast::error_code ec, std::size_t bytes_transferred)
+	{
+		boost::ignore_unused(bytes_transferred);
+
+		// This means they closed the connection
+		if (ec == http::error::end_of_stream)
+		{
+			return derived().doEof();
+		}
+
+		if (ec)
+		{
+			return fail(ec, "read (HTTP)");
+		}
+
+		{
+			std::stringstream ss;
+			ss << "Request received: \"" << parser_->get().target().to_string() << "\"";
+			Util::log(ss.str(), "SYSTEM", core_.lock()->config_);
+		}
+
+		std::string roomUUID = parseRoomUUID(parser_->get());
+		if (roomUUID == "favicon.ico")
+		{
+			// do nothing
+			// TODO: prepare favion.ico
+		}
+		else if (roomUUID.size() <= 0 || core_.lock()->rooms_.find(roomUUID) == core_.lock()->rooms_.end())
+		{
+			// create new room
+			if (roomUUID.size() <= 0)
+			{
+				roomUUID = Util::uuid("room-");
+			}
+			else
+			{
+				// add prefix
+				if (roomUUID.substr(0, 5) != "room-")
+				{
+					roomUUID = "room-" + roomUUID;
+				}
+			}
+			const std::shared_ptr<Room> room = std::make_shared<Room>();
+			room->setup(roomUUID, core_.lock()->config_);
+			core_.lock()->rooms_[roomUUID] = room;
+			handleRequest(core_, room, parser_->release(), queue_);
+		}
+		else
+		{
+			const std::shared_ptr<Room> &room = core_.lock()->rooms_.at(roomUUID);
+			// See if it is a WebSocket Upgrade
+			if (boost::beast::websocket::is_upgrade(parser_->get()))
+			{
+				// Disable the timeout.
+				// The websocket::stream uses its own timeout settings.
+				beast::get_lowest_layer(derived().stream()).expires_never();
+
+				// Create a websocket session, transferring ownership
+				// of both the socket and the HTTP request.
+				const std::string sessionUUID = Util::uuid("session-");
+				makeWebsocketSession(derived().release_stream(), room, sessionUUID, parser_->release());
+				return;
+			}
+			else
+			{
+				// Send the response
+				handleRequest(core_, room, parser_->release(), queue_);
+				return;
+			}
+		}
+
+		if (!queue_.isFull())
+		{
+			doRead();
+		}
+	}
+
+	template <class Derived>
+	void HTTPSession<Derived>::onWrite(bool close, beast::error_code ec, std::size_t bytes_transferred)
+	{
+		boost::ignore_unused(bytes_transferred);
+
+		if (ec)
+		{
+			return fail(ec, "write (HTTP)");
+		}
+
+		if (close)
+		{
+			// This means we should close the connection, usually because
+			// the response indicated the "Connection: close" semantic.
+			return derived().doEof();
+		}
+
+		if (queue_.onWrite())
+		{
+			doRead();
+		}
+	}
+
+	// HTTPSession::queue
+	template <class Derived>
+	HTTPSession<Derived>::queue::queue(HTTPSession<Derived> &self)
+		: self_(self)
+	{
+		static_assert(limit > 0, "queue limit must be positive");
+		items_.reserve(limit);
+	}
+
+	template <class Derived>
+	bool HTTPSession<Derived>::queue::isFull() const
+	{
+		return (items_.size() >= limit);
+	}
+
+	template <class Derived>
+	bool HTTPSession<Derived>::queue::onWrite()
+	{
+		BOOST_ASSERT(!items_.empty());
+		auto const wasFull = isFull();
+		items_.erase(items_.begin());
+		if (!items_.empty())
+		{
+			(*items_.front())();
+		}
+		return wasFull;
+	}
+
+	template PlainHTTPSession &HTTPSession<PlainHTTPSession>::derived();
+	template void HTTPSession<PlainHTTPSession>::fail(boost::system::error_code, char const *);
+	template HTTPSession<PlainHTTPSession>::HTTPSession(const std::weak_ptr<Core> &, beast::flat_buffer);
+	template void HTTPSession<PlainHTTPSession>::doRead();
+	template void HTTPSession<PlainHTTPSession>::onRead(boost::beast::error_code, std::size_t);
+	template void HTTPSession<PlainHTTPSession>::onWrite(bool, boost::beast::error_code, std::size_t);
+	template HTTPSession<PlainHTTPSession>::queue::queue(HTTPSession<PlainHTTPSession> &self);
+	template bool HTTPSession<PlainHTTPSession>::queue::isFull() const;
+	template bool HTTPSession<PlainHTTPSession>::queue::onWrite();
+
+	template Doppelganger::SSLHTTPSession &Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::derived();
+	template void Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::fail(boost::system::error_code, char const *);
+	template HTTPSession<SSLHTTPSession>::HTTPSession(const std::weak_ptr<Core> &, beast::flat_buffer);
+	template void Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::doRead();
+	template void Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::onRead(beast::error_code, std::size_t);
+	template void Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::onWrite(bool, beast::error_code, std::size_t);
+	template Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::queue::queue(Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession> &self);
+	template bool Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::queue::isFull() const;
+	template bool Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::queue::onWrite();
+};
 
 namespace
 {
@@ -170,9 +378,61 @@ namespace
 		return res;
 	}
 
+	template <class Send>
+	void openAndSendResource(const fs::path &completePath,
+							 Send &&send)
+	{
+		// Attempt to open the file
+		beast::error_code ec;
+		http::file_body::value_type body;
+		body.open(completePath.string().c_str(), beast::file_mode::scan, ec);
+
+		// Handle the case where the file doesn't exist
+		if (ec == boost::system::errc::no_such_file_or_directory)
+		{
+			return send(notFound(std::move(req), req.target()));
+		}
+		// Handle an unknown error
+		if (ec)
+		{
+			return send(serverError(std::move(req), ec.message()));
+		}
+
+		// Cache the size since we need it after the move
+		const auto size = body.size();
+
+		if (req.method() == http::verb::head)
+		{
+			// Respond to HEAD request
+			http::response<http::empty_body> res{http::status::ok, req.version()};
+			res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+			res.set(http::field::content_type, mime_type(completePath));
+			res.content_length(size);
+			res.keep_alive(req.keep_alive());
+			return send(std::move(res));
+		}
+		else if (req.method() == http::verb::get)
+		{
+			// Respond to GET request
+			http::response<http::file_body> res{
+				std::piecewise_construct,
+				std::make_tuple(std::move(body)),
+				std::make_tuple(http::status::ok, req.version())};
+			res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+			res.set(http::field::content_type, mime_type(completePath));
+			res.content_length(size);
+			res.keep_alive(req.keep_alive());
+			return send(std::move(res));
+		}
+		else
+		{
+			return send(badRequest(std::move(req), "Illegal request"));
+		}
+	}
+
 	template <class Body, class Allocator, class Send>
-	void handleRequest(const std::shared_ptr<Doppelganger::Core> &core,
-					   const std::shared_ptr<Doppelganger::Room> &room,
+	void handleRequest(const std::weak_ptr<Doppelganger::Core> &core,
+					   const std::weak_ptr<Doppelganger::Room> &room,
 					   http::request<Body, http::basic_fields<Allocator>> &&req,
 					   Send &&send)
 	{
@@ -217,130 +477,35 @@ namespace
 					if (reqPathVec.at(2) == "css" || reqPathVec.at(2) == "html" || reqPathVec.at(2) == "icon" || reqPathVec.at(2) == "js")
 					{
 						// resource
-						fs::path completePath(room->plugin.at("assets")->pluginDir);
+						fs::path completePath(room.lock()->plugin_.at("assets")->pluginDir_);
 						for (int pIdx = 2; pIdx < reqPathVec.size(); ++pIdx)
 						{
 							completePath.append(reqPathVec.at(pIdx));
 						}
 
-						// Attempt to open the file
-						beast::error_code ec;
-						http::file_body::value_type body;
-						body.open(completePath.string().c_str(), beast::file_mode::scan, ec);
-
-						// Handle the case where the file doesn't exist
-						if (ec == boost::system::errc::no_such_file_or_directory)
-						{
-							return send(notFound(std::move(req), req.target()));
-						}
-						// Handle an unknown error
-						if (ec)
-						{
-							return send(serverError(std::move(req), ec.message()));
-						}
-
-						// Cache the size since we need it after the move
-						const auto size = body.size();
-
-						if (req.method() == http::verb::head)
-						{
-							// Respond to HEAD request
-							http::response<http::empty_body> res{http::status::ok, req.version()};
-							res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-							res.set(http::field::content_type, mime_type(completePath));
-							res.content_length(size);
-							res.keep_alive(req.keep_alive());
-							return send(std::move(res));
-						}
-						else if (req.method() == http::verb::get)
-						{
-							// Respond to GET request
-							http::response<http::file_body> res{
-								std::piecewise_construct,
-								std::make_tuple(std::move(body)),
-								std::make_tuple(http::status::ok, req.version())};
-							res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-							res.set(http::field::content_type, mime_type(completePath));
-							res.content_length(size);
-							res.keep_alive(req.keep_alive());
-							return send(std::move(res));
-						}
-						else
-						{
-							return send(badRequest(std::move(req), "Illegal request"));
-						}
+						openAndSendResource(completePath, send);
 					}
 					else if (reqPathVec.at(2) == "plugin")
 					{
 						// resource
-
-						fs::path completePath(core->DoppelgangerRootDir);
+						fs::path completePath(core_.lock()->config_.at("DoppelgangerRootDir").get<std::string>());
 						for (int pIdx = 2; pIdx < reqPathVec.size(); ++pIdx)
 						{
 							completePath.append(reqPathVec.at(pIdx));
 						}
 
-						// Attempt to open the file
-						beast::error_code ec;
-						http::file_body::value_type body;
-						body.open(completePath.string().c_str(), beast::file_mode::scan, ec);
-
-						// Handle the case where the file doesn't exist
-						if (ec == beast::errc::no_such_file_or_directory)
-						{
-							return send(notFound(std::move(req), req.target()));
-						}
-						// Handle an unknown error
-						if (ec)
-						{
-							return send(serverError(std::move(req), ec.message()));
-						}
-
-						// Cache the size since we need it after the move
-						const auto size = body.size();
-
-						// Respond to HEAD request
-						if (req.method() == http::verb::head)
-						{
-							http::response<http::empty_body> res{http::status::ok, req.version()};
-							res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-							res.set(http::field::content_type, mime_type(completePath));
-							res.content_length(size);
-							res.keep_alive(req.keep_alive());
-							return send(std::move(res));
-						}
-						else if (req.method() == http::verb::get)
-						{
-							// Respond to GET request
-							http::response<http::file_body> res{
-								std::piecewise_construct,
-								std::make_tuple(std::move(body)),
-								std::make_tuple(http::status::ok, req.version())};
-							res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-							res.set(http::field::content_type, mime_type(completePath));
-							res.content_length(size);
-							res.keep_alive(req.keep_alive());
-							return send(std::move(res));
-						}
-						else
-						{
-							return send(badRequest(std::move(req), "Illegal request"));
-						}
+						openAndSendResource(completePath, send);
 					}
 					else
 					{
 						// API
 						try
 						{
-							std::string taskUUID;
 							{
-								std::lock_guard<std::mutex> lock(room->interfaceParams.mutex);
-								taskUUID = Doppelganger::Util::uuid("task-");
-								room->interfaceParams.taskUUIDInProgress.insert(taskUUID);
-
+								// todo update...
 								nlohmann::json broadcast = nlohmann::json::object();
 								nlohmann::json response = nlohmann::json::object();
-								broadcast["isBusy"] = (room->interfaceParams.taskUUIDInProgress.size() > 0);
+								broadcast["isBusy"] = true;
 								room->broadcastWS("isServerBusy", std::string(""), broadcast, response);
 							}
 
@@ -363,19 +528,29 @@ namespace
 								// logContent << parameters.at("sessionUUID").get<std::string>();
 								logContent << parameters.at("sessionUUID");
 								logContent << ")";
-								room->logger.log(logContent.str(), "APICALL");
+								Util::log(logContent.str(), "APICALL", room.lock()->config_);
 							}
 
-							nlohmann::json response, broadcast;
-							room->plugin.at(APIName)->pluginProcess(room, parameters.at("parameters"), response, broadcast);
+							nlohmann::json configMesh, response, broadcast;
+							// todo configMesh
+
+							room->plugin.at(APIName)->pluginProcess(
+								core.lock()->config_,
+								room.lock()->config_,
+								configMesh,
+								parameters.at("parameters"),
+								response,
+								broadcast);
 
 							{
-								std::lock_guard<std::mutex> lock(room->interfaceParams.mutex);
-								room->interfaceParams.taskUUIDInProgress.erase(taskUUID);
+								// todo update according to update of the configs
+							}
 
+							{
+								// todo update...
 								nlohmann::json broadcast = nlohmann::json::object();
 								nlohmann::json response = nlohmann::json::object();
-								broadcast["isBusy"] = (room->interfaceParams.taskUUIDInProgress.size() > 0);
+								broadcast["isBusy"] = false;
 								room->broadcastWS("isServerBusy", std::string(""), broadcast, response);
 							}
 
@@ -408,9 +583,9 @@ namespace
 				else
 				{
 					// return 301 (moved permanently)
-					std::string location = core->completeURL;
+					std::string location = core.lock()->config_.at("server").at("completeURL").get<std::string>();
 					location += "/";
-					location += room->UUID_;
+					location += room.lock()->config_.at("UUID").get<std::string>();
 					location += "/html/index.html";
 					return send(movedPermanently(std::move(req), location));
 				}
@@ -418,9 +593,9 @@ namespace
 			else
 			{
 				// return 301 (moved permanently)
-				std::string location = core->completeURL;
+				std::string location = core.lock()->config_.at("server").at("completeURL").get<std::string>();
 				location += "/";
-				location += room->UUID_;
+				location += room.lock()->config_.at("UUID").get<std::string>();
 				location += "/html/index.html";
 				return send(movedPermanently(std::move(req), location));
 			}
@@ -428,230 +603,13 @@ namespace
 		else
 		{
 			// return 301 (moved permanently)
-			std::string location = core->completeURL;
+			std::string location = core.lock()->config_.at("server").at("completeURL").get<std::string>();
 			location += "/";
-			location += room->UUID_;
+			location += room.lock()->config_.at("UUID").get<std::string>();
 			location += "/html/index.html";
 			return send(movedPermanently(std::move(req), location));
 		}
 	}
 }
-
-namespace Doppelganger
-{
-	namespace beast = boost::beast;	  // from <boost/beast.hpp>
-	namespace http = beast::http;	  // from <boost/beast/http.hpp>
-	namespace net = boost::asio;	  // from <boost/asio.hpp>
-	using tcp = boost::asio::ip::tcp; // from <boost/asio/ip/tcp.hpp>
-
-	////
-	// HTTPSession
-	////
-	template <class Derived>
-	Derived &HTTPSession<Derived>::derived()
-	{
-		return static_cast<Derived &>(*this);
-	}
-
-	template <class Derived>
-	void HTTPSession<Derived>::fail(boost::system::error_code ec, char const *what)
-	{
-		if (ec == net::ssl::error::stream_truncated)
-		{
-			return;
-		}
-
-		std::stringstream s;
-		s << what << ": " << ec.message();
-		core_->logger.log(s.str(), "ERROR");
-	}
-
-	template <class Derived>
-	HTTPSession<Derived>::HTTPSession(
-		const std::shared_ptr<Core> &core,
-		beast::flat_buffer buffer)
-		: queue_(*this), core_(core), buffer_(std::move(buffer))
-	{
-	}
-
-	template <class Derived>
-	void HTTPSession<Derived>::doRead()
-	{
-		// Construct a new parser for each message
-		parser_.emplace();
-
-		// Apply a reasonable limit to the allowed size
-		// of the body in bytes to prevent abuse.
-		parser_->body_limit(boost::none);
-
-		// Set the timeout.
-		beast::get_lowest_layer(
-			derived().stream())
-			.expires_after(std::chrono::seconds(30));
-
-		// Read a request using the parser-oriented interface
-		http::async_read(
-			derived().stream(),
-			buffer_,
-			*parser_,
-			beast::bind_front_handler(
-				&HTTPSession::onRead,
-				derived().shared_from_this()));
-	}
-
-	template <class Derived>
-	void HTTPSession<Derived>::onRead(beast::error_code ec, std::size_t bytes_transferred)
-	{
-		boost::ignore_unused(bytes_transferred);
-
-		// This means they closed the connection
-		if (ec == http::error::end_of_stream)
-		{
-			return derived().doEof();
-		}
-
-		if (ec)
-		{
-			return fail(ec, "read (HTTP)");
-		}
-
-		{
-			std::stringstream s;
-			s << "Request received: \"" << parser_->get().target().to_string() << "\"";
-			core_->logger.log(s.str(), "SYSTEM");
-		}
-
-		std::string roomUUID = parseRoomUUID(parser_->get());
-		if (roomUUID == "favicon.ico")
-		{
-			// do nothing
-			// TODO: prepare favion.ico
-		}
-		else if (roomUUID.size() <= 0 || core_->rooms.find(roomUUID) == core_->rooms.end())
-		{
-			// create new room
-			if (roomUUID.size() <= 0)
-			{
-				roomUUID = Util::uuid("room-");
-			}
-			else
-			{
-				// add prefix
-				if (roomUUID.substr(0, 5) != "room-")
-				{
-					roomUUID = "room-" + roomUUID;
-				}
-			}
-			const std::shared_ptr<Room> room = std::make_shared<Room>(core_, roomUUID);
-			room->setup();
-			core_->rooms[roomUUID] = room;
-			handleRequest(core_, room, parser_->release(), queue_);
-		}
-		else
-		{
-			const std::shared_ptr<Room> &room = core_->rooms.at(roomUUID);
-			// See if it is a WebSocket Upgrade
-			if (boost::beast::websocket::is_upgrade(parser_->get()))
-			{
-				// Disable the timeout.
-				// The websocket::stream uses its own timeout settings.
-				beast::get_lowest_layer(derived().stream()).expires_never();
-
-				// Create a websocket session, transferring ownership
-				// of both the socket and the HTTP request.
-				const std::string sessionUUID = Util::uuid("session-");
-				makeWebsocketSession(derived().release_stream(), room, sessionUUID, parser_->release());
-				return;
-			}
-			else
-			{
-				// Send the response
-				handleRequest(core_, room, parser_->release(), queue_);
-				return;
-			}
-		}
-
-		// If we aren't at the queue limit, try to pipeline another request
-		if (!queue_.isFull())
-		{
-			doRead();
-		}
-	}
-
-	template <class Derived>
-	void HTTPSession<Derived>::onWrite(bool close, beast::error_code ec, std::size_t bytes_transferred)
-	{
-		boost::ignore_unused(bytes_transferred);
-
-		if (ec)
-		{
-			return fail(ec, "write (HTTP)");
-		}
-
-		if (close)
-		{
-			// This means we should close the connection, usually because
-			// the response indicated the "Connection: close" semantic.
-			return derived().doEof();
-		}
-
-		// Inform the queue that a write completed
-		if (queue_.onWrite())
-		{
-			// Read another request
-			doRead();
-		}
-	}
-
-	////
-	// HTTPSession::queue
-	////
-	template <class Derived>
-	HTTPSession<Derived>::queue::queue(HTTPSession<Derived> &self)
-		: self_(self)
-	{
-		static_assert(limit > 0, "queue limit must be positive");
-		items_.reserve(limit);
-	}
-
-	template <class Derived>
-	bool HTTPSession<Derived>::queue::isFull() const
-	{
-		return (items_.size() >= limit);
-	}
-
-	template <class Derived>
-	bool HTTPSession<Derived>::queue::onWrite()
-	{
-		BOOST_ASSERT(!items_.empty());
-		auto const wasFull = isFull();
-		items_.erase(items_.begin());
-		if (!items_.empty())
-		{
-			(*items_.front())();
-		}
-		return wasFull;
-	}
-
-	template PlainHTTPSession &HTTPSession<PlainHTTPSession>::derived();
-	template void HTTPSession<PlainHTTPSession>::fail(boost::system::error_code, char const *);
-	template HTTPSession<PlainHTTPSession>::HTTPSession(const std::shared_ptr<Core> &, beast::flat_buffer);
-	template void HTTPSession<PlainHTTPSession>::doRead();
-	template void HTTPSession<PlainHTTPSession>::onRead(boost::beast::error_code, std::size_t);
-	template void HTTPSession<PlainHTTPSession>::onWrite(bool, boost::beast::error_code, std::size_t);
-	template HTTPSession<PlainHTTPSession>::queue::queue(HTTPSession<PlainHTTPSession> &self);
-	template bool HTTPSession<PlainHTTPSession>::queue::isFull() const;
-	template bool HTTPSession<PlainHTTPSession>::queue::onWrite();
-
-	template Doppelganger::SSLHTTPSession &Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::derived();
-	template void Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::fail(boost::system::error_code, char const *);
-	template HTTPSession<SSLHTTPSession>::HTTPSession(const std::shared_ptr<Core> &, beast::flat_buffer);
-	template void Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::doRead();
-	template void Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::onRead(beast::error_code, std::size_t);
-	template void Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::onWrite(bool, beast::error_code, std::size_t);
-	template Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::queue::queue(Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession> &self);
-	template bool Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::queue::isFull() const;
-	template bool Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::queue::onWrite();
-};
 
 #endif

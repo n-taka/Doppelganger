@@ -24,19 +24,25 @@ namespace Doppelganger
 	namespace ssl = boost::asio::ssl; // from <boost/asio/ssl.hpp>
 	using tcp = boost::asio::ip::tcp; // from <boost/asio/ip/tcp.hpp>
 
-	// Handles an HTTP server connection.
-	// This uses the Curiously Recurring Template Pattern so that
-	// the same code works with both SSL streams and regular sockets.
-
 	template <class Derived>
 	class HTTPSession
 	{
+	public:
+		HTTPSession(
+			const std::weak_ptr<Core> &core,
+			beast::flat_buffer buffer);
+
+		void doRead();
+		void onRead(beast::error_code ec, std::size_t bytes_transferred);
+		void onWrite(bool close, beast::error_code ec, std::size_t bytes_transferred);
+
+	protected:
+		beast::flat_buffer buffer_;
+		void fail(boost::system::error_code ec, char const *what);
+
 	private:
-		// Access the derived class, this is part of
-		// the Curiously Recurring Template Pattern idiom.
 		Derived &derived();
 
-		// This queue is used for HTTP pipelining.
 		class queue
 		{
 		private:
@@ -46,7 +52,6 @@ namespace Doppelganger
 				limit = 64
 			};
 
-			// The type-erased, saved work item
 			struct work
 			{
 				virtual ~work() = default;
@@ -59,18 +64,11 @@ namespace Doppelganger
 		public:
 			explicit queue(HTTPSession &self);
 
-			// Returns `true` if we have reached the queue limit
 			bool isFull() const;
-
-			// Called when a message finishes sending
-			// Returns `true` if the caller should initiate a read
 			bool onWrite();
-
-			// Called by the HTTP handler to send a response.
 			template <bool isRequest, class Body, class Fields>
 			void operator()(http::message<isRequest, Body, Fields> &&msg)
 			{
-				// This holds a work item
 				struct workImpl : work
 				{
 					HTTPSession &self_;
@@ -95,11 +93,9 @@ namespace Doppelganger
 					}
 				};
 
-				// Allocate and store the work
 				items_.push_back(
 					boost::make_unique<workImpl>(self_, std::move(msg)));
 
-				// If there was no previous work, start this one
 				if (items_.size() == 1)
 				{
 					(*items_.front())();
@@ -108,86 +104,51 @@ namespace Doppelganger
 		};
 
 		queue queue_;
-
-		// The parser is stored in an optional container so we can
-		// construct it from scratch it at the beginning of each new message.
 		boost::optional<http::request_parser<http::string_body>> parser_;
-
-		const std::shared_ptr<Core> core_;
-
-	protected:
-		beast::flat_buffer buffer_;
-
-		void fail(boost::system::error_code ec, char const *what);
-
-	public:
-		// Construct the session
-		HTTPSession(
-			const std::shared_ptr<Core> &core,
-			beast::flat_buffer buffer);
-
-		void doRead();
-		void onRead(beast::error_code ec, std::size_t bytes_transferred);
-		void onWrite(bool close, beast::error_code ec, std::size_t bytes_transferred);
+		const std::weak_ptr<Core> core_;
 	};
 
 	//------------------------------------------------------------------------------
 
-	// Handles a plain HTTP connection
 	class PlainHTTPSession
 		: public HTTPSession<PlainHTTPSession>,
 		  public std::enable_shared_from_this<PlainHTTPSession>
 	{
-		beast::tcp_stream stream_;
-
 	public:
-		// Create the session
 		PlainHTTPSession(
-			const std::shared_ptr<Core> &core,
+			const std::weak_ptr<Core> &core,
 			beast::tcp_stream &&stream,
 			beast::flat_buffer &&buffer);
 
-		// Start the session
 		void run();
-
-		// Called by the base class
 		beast::tcp_stream &stream();
-
-		// Called by the base class
 		beast::tcp_stream release_stream();
-
-		// Called by the base class
 		void doEof();
+
+	private:
+		beast::tcp_stream stream_;
 	};
 
 	//------------------------------------------------------------------------------
 
-	// Handles an SSL HTTP connection
 	class SSLHTTPSession
 		: public HTTPSession<SSLHTTPSession>,
 		  public std::enable_shared_from_this<SSLHTTPSession>
 	{
-		beast::ssl_stream<beast::tcp_stream> stream_;
-
 	public:
-		// Create the http_session
 		SSLHTTPSession(
-			const std::shared_ptr<Core> &core,
+			const std::weak_ptr<Core> &core,
 			beast::tcp_stream &&stream,
 			ssl::context &ctx,
 			beast::flat_buffer &&buffer);
 
-		// Start the session
 		void run();
-
-		// Called by the base class
 		beast::ssl_stream<beast::tcp_stream> &stream();
-
-		// Called by the base class
 		beast::ssl_stream<beast::tcp_stream> release_stream();
-
-		// Called by the base class
 		void doEof();
+
+	private:
+		beast::ssl_stream<beast::tcp_stream> stream_;
 
 	private:
 		void onHandshake(
