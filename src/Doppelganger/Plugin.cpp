@@ -108,7 +108,8 @@ namespace Doppelganger
 	{
 		const std::string actualVersion((version == "latest") ? parameters_.at("versions").at(0).at("version").get<std::string>() : version);
 
-		pluginDir_ = fs::path(config.at("plugin").at("dir").get<std::string>());
+		pluginDir_ = fs::path(config.at("DoppelgangerRootDir").get<std::string>());
+		pluginDir_.append("plugin");
 		std::string dirName("");
 		dirName += name_;
 		dirName += "_";
@@ -203,10 +204,8 @@ namespace Doppelganger
 
 		// update installed plugin list "installed.json"
 		{
-			const int priority = config.at("plugin").at("installed").size();
 			config.at("plugin").at("installed")[name_] = nlohmann::json::object();
 			config.at("plugin").at("installed")[name_]["version"] = installedVersion_;
-			config.at("plugin").at("installed")[name_]["priority"] = priority;
 		}
 	}
 
