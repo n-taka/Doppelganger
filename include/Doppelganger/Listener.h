@@ -33,7 +33,7 @@ namespace Doppelganger
 	namespace ssl = boost::asio::ssl;		// from <boost/asio/ssl.hpp>
 	using tcp = boost::asio::ip::tcp;		// from <boost/asio/ip/tcp.hpp>
 
-	class DECLSPEC Listener : public std::enable_shared_from_this<Listener>
+	class Listener : public std::enable_shared_from_this<Listener>
 	{
 	private:
 		const std::weak_ptr<Core> core_;
