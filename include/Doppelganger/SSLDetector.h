@@ -1,18 +1,6 @@
 #ifndef SSLDETECTOR_H
 #define SSLDETECTOR_H
 
-#if defined(_WIN64)
-#ifdef DLL_EXPORT
-#define DECLSPEC __declspec(dllexport)
-#else
-#define DECLSPEC __declspec(dllimport)
-#endif
-#elif defined(__APPLE__)
-#define DECLSPEC
-#elif defined(__linux__)
-#define DECLSPEC
-#endif
-
 #include <algorithm>
 #include <cstdlib>
 #include <functional>
@@ -36,6 +24,7 @@
 
 #include "Doppelganger/Core.h"
 #include "Doppelganger/HTTPSession.h"
+#include "Doppelganger/Util/log.h"
 
 namespace Doppelganger
 {
@@ -46,10 +35,10 @@ namespace Doppelganger
 	namespace ssl = boost::asio::ssl;		// from <boost/asio/ssl.hpp>
 	using tcp = boost::asio::ip::tcp;		// from <boost/asio/ip/tcp.hpp>
 
-	class DECLSPEC SSLDetector : public std::enable_shared_from_this<SSLDetector>
+	class SSLDetector : public std::enable_shared_from_this<SSLDetector>
 	{
 	private:
-		const std::shared_ptr<Core> core_;
+		const std::weak_ptr<Core> core_;
 		beast::tcp_stream stream_;
 		ssl::context &ctx_;
 		beast::flat_buffer buffer_;
@@ -61,14 +50,16 @@ namespace Doppelganger
 				return;
 			}
 
-			std::stringstream s;
-			s << what << ": " << ec.message();
-			core_->logger.log(s.str(), "ERROR");
+			{
+				std::stringstream ss;
+				ss << what << ": " << ec.message();
+				Util::log(ss.str(), "ERROR", core_.lock()->config_);
+			}
 		}
 
 	public:
 		explicit SSLDetector(
-			const std::shared_ptr<Core> &core,
+			const std::weak_ptr<Core> &core,
 			tcp::socket &&socket,
 			ssl::context &ctx)
 			: core_(core), stream_(std::move(socket)), ctx_(ctx)
