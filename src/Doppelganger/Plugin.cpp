@@ -171,6 +171,7 @@ namespace Doppelganger
 			core.lock()->to_json(configCore);
 			room.lock()->to_json(configRoom);
 			functionCall(dllPath, "pluginProcess", configCore, configRoom, parameters, response, broadcast);
+			// we need to optimize here...
 			room.lock()->from_json(configRoom);
 			room.lock()->applyCurrentConfig();
 			core.lock()->from_json(configCore);
@@ -332,12 +333,16 @@ namespace
 					modifiedConfigRoomChar,
 					responseChar,
 					broadcastChar);
-				// read results (todo: check, does parse() performs deep copy?)
-				// todo: do we use .update() for config?
-				configCore = nlohmann::json::parse(modifiedConfigCoreChar);
-				configRoom = nlohmann::json::parse(modifiedConfigRoomChar);
-				response.update(nlohmann::json::parse(responseChar));
-				broadcast.update(nlohmann::json::parse(broadcastChar));
+				if (modifiedConfigCoreChar != nullptr)
+				{
+					configCore.update(nlohmann::json::parse(modifiedConfigCoreChar));
+				}
+				if (modifiedConfigRoomChar != nullptr)
+				{
+					configRoom.update(nlohmann::json::parse(modifiedConfigRoomChar));
+				}
+				response = nlohmann::json::parse(responseChar);
+				broadcast = nlohmann::json::parse(broadcastChar);
 				// deallocation
 				reinterpret_cast<DeallocatePtr_t>(deallocateFunc)();
 			}

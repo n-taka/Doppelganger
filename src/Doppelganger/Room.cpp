@@ -170,9 +170,12 @@ namespace Doppelganger
 			meshes_.clear();
 			for (const auto &uuid_mesh : json.at("meshes").items())
 			{
-				const std::string &uuid = uuid_mesh.key();
-				const TriangleMesh mesh = uuid_mesh.value().get<TriangleMesh>();
-				meshes_[uuid] = mesh;
+				if (!uuid_mesh.value().is_null())
+				{
+					const std::string &uuid = uuid_mesh.key();
+					const TriangleMesh mesh = uuid_mesh.value().get<TriangleMesh>();
+					meshes_[uuid] = mesh;
+				}
 			}
 		}
 
@@ -362,32 +365,31 @@ namespace Doppelganger
 	// 	editHistory.index = editHistory.diffFromNext.size();
 	// }
 
-	
-		// add Room specific parameters
-		// to plugin...?
-		// interface
-		// camera
-		// {
-		// 	config_["camera"] = nlohmann::json::object();
-		// 	config_["camera"]["target"] = nlohmann::json::object();
-		// 	config_["camera"]["target"]["x"] = 0.0;
-		// 	config_["camera"]["target"]["y"] = 0.0;
-		// 	config_["camera"]["target"]["z"] = 0.0;
-		// 	config_["camera"]["target"]["timestamp"] = 0;
-		// 	config_["camera"]["position"] = nlohmann::json::object();
-		// 	config_["camera"]["position"]["x"] = -30.0;
-		// 	config_["camera"]["position"]["y"] = 40.0;
-		// 	config_["camera"]["position"]["z"] = 30.0;
-		// 	config_["camera"]["position"]["timestamp"] = 0;
-		// 	config_["camera"]["up"] = nlohmann::json::object();
-		// 	config_["camera"]["up"]["x"] = 0.0;
-		// 	config_["camera"]["up"]["y"] = 1.0;
-		// 	config_["camera"]["up"]["z"] = 0.0;
-		// 	config_["camera"]["up"]["timestamp"] = 0;
-		// 	config_["camera"]["zoom"] = nlohmann::json::object();
-		// 	config_["camera"]["zoom"]["value"] = 1.0;
-		// 	config_["camera"]["zoom"]["timestamp"] = 0;
-		// }
+	// add Room specific parameters
+	// to plugin...?
+	// interface
+	// camera
+	// {
+	// 	config_["camera"] = nlohmann::json::object();
+	// 	config_["camera"]["target"] = nlohmann::json::object();
+	// 	config_["camera"]["target"]["x"] = 0.0;
+	// 	config_["camera"]["target"]["y"] = 0.0;
+	// 	config_["camera"]["target"]["z"] = 0.0;
+	// 	config_["camera"]["target"]["timestamp"] = 0;
+	// 	config_["camera"]["position"] = nlohmann::json::object();
+	// 	config_["camera"]["position"]["x"] = -30.0;
+	// 	config_["camera"]["position"]["y"] = 40.0;
+	// 	config_["camera"]["position"]["z"] = 30.0;
+	// 	config_["camera"]["position"]["timestamp"] = 0;
+	// 	config_["camera"]["up"] = nlohmann::json::object();
+	// 	config_["camera"]["up"]["x"] = 0.0;
+	// 	config_["camera"]["up"]["y"] = 1.0;
+	// 	config_["camera"]["up"]["z"] = 0.0;
+	// 	config_["camera"]["up"]["timestamp"] = 0;
+	// 	config_["camera"]["zoom"] = nlohmann::json::object();
+	// 	config_["camera"]["zoom"]["value"] = 1.0;
+	// 	config_["camera"]["zoom"]["timestamp"] = 0;
+	// }
 }
 
 #endif
