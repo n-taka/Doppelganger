@@ -341,8 +341,14 @@ namespace
 				{
 					configRoom.update(nlohmann::json::parse(modifiedConfigRoomChar));
 				}
-				response = nlohmann::json::parse(responseChar);
-				broadcast = nlohmann::json::parse(broadcastChar);
+				if (responseChar != nullptr)
+				{
+					response = nlohmann::json::parse(responseChar);
+				}
+				if (broadcastChar != nullptr)
+				{
+					broadcast = nlohmann::json::parse(broadcastChar);
+				}
 				// deallocation
 				reinterpret_cast<DeallocatePtr_t>(deallocateFunc)();
 			}
