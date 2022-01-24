@@ -5,9 +5,7 @@
 #include "Doppelganger/Core.h"
 #include "Doppelganger/Room.h"
 
-#include <string>
 #include <sstream>
-#include <fstream>
 #if defined(_WIN64)
 #include "windows.h"
 #include "libloaderapi.h"
@@ -17,7 +15,6 @@
 #include <dlfcn.h>
 #endif
 
-#include "Doppelganger/Util/download.h"
 #include "Doppelganger/Util/unzip.h"
 #include "Doppelganger/Util/log.h"
 
@@ -176,29 +173,6 @@ namespace Doppelganger
 			room.lock()->applyCurrentConfig();
 			core.lock()->from_json(configCore);
 			core.lock()->applyCurrentConfig();
-		}
-	}
-
-	void Plugin::getCatalogue(
-		const fs::path &pluginDir,
-		const std::vector<std::string> &listURLList,
-		nlohmann::json &catalogue)
-	{
-		catalogue = nlohmann::json::array();
-
-		for (const auto &listURL : listURLList)
-		{
-			fs::path listJsonPath(pluginDir);
-			listJsonPath.append("tmp.json");
-			Util::download(listURL, listJsonPath);
-			std::ifstream ifs(listJsonPath.string());
-			if (ifs)
-			{
-				nlohmann::json list = nlohmann::json::parse(ifs);
-				ifs.close();
-				fs::remove_all(listJsonPath);
-				catalogue.insert(catalogue.end(), list.begin(), list.end());
-			}
 		}
 	}
 
