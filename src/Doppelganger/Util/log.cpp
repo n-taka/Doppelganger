@@ -15,13 +15,15 @@ namespace Doppelganger
 		void log(
 			const std::string &content,
 			const std::string &level,
-			const nlohmann::json &config)
+			const fs::path &dataDir,
+			const std::unordered_map<std::string, bool> &logLevels,
+			const std::unordered_map<std::string, bool> &logTypes)
 		{
-			fs::path logTextFile(config.at("data").at("dir").get<std::string>());
+			fs::path logTextFile(dataDir);
 			logTextFile.append("log");
 			logTextFile.append("log.txt");
 
-			if (config.at("log").at("level").contains(level) && config.at("log").at("level").at(level).get<bool>())
+			if ((logLevels.find(level) != logLevels.end()) && logLevels.at(level))
 			{
 				std::stringstream logText;
 				// time
@@ -41,11 +43,11 @@ namespace Doppelganger
 				logText << " ";
 				// new line
 				logText << std::endl;
-				if (config.at("log").at("type").at("STDOUT").get<bool>())
+				if ((logTypes.find("STDOUT") != logTypes.end()) && logTypes.at("STDOUT"))
 				{
 					std::cout << logText.str();
 				}
-				if (config.at("log").at("type").at("FILE").get<bool>())
+				if ((logTypes.find("FILE") != logTypes.end()) && logTypes.at("FILE"))
 				{
 					std::ofstream ofs(logTextFile.string(), std::ios_base::out | std::ios_base::app);
 					ofs << logText.str();
@@ -57,27 +59,29 @@ namespace Doppelganger
 		void log(
 			const fs::path &path,
 			const std::string &level,
-			const nlohmann::json &config)
+			const fs::path &dataDir,
+			const std::unordered_map<std::string, bool> &logLevels,
+			const std::unordered_map<std::string, bool> &logTypes)
 		{
-			fs::path logDir(config.at("data").at("dir").get<std::string>());
+			fs::path logDir(dataDir);
 			logDir.append("log");
 
-			if (config.at("log").at("level").contains(level) && config.at("log").at("level").at(level).get<bool>())
+			if ((logLevels.find(level) != logLevels.end()) && logLevels.at(level))
 			{
 				try
 				{
 					fs::path logFile(logDir);
 					logFile /= path.filename();
 					fs::rename(path, logFile);
-					std::stringstream s;
-					s << "temporary file " << path.filename().string() << " is stored in " << logDir.string();
-					log(s.str(), level, config);
+					std::stringstream ss;
+					ss << "temporary file " << path.filename().string() << " is stored in " << logDir.string();
+					log(ss.str(), level, dataDir, logLevels, logTypes);
 				}
 				catch (const fs::filesystem_error &e)
 				{
-					std::stringstream s;
-					s << e.what();
-					log(s.str(), "ERROR", config);
+					std::stringstream ss;
+					ss << e.what();
+					log(ss.str(), "ERROR", dataDir, logLevels, logTypes);
 				}
 			}
 		}

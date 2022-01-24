@@ -18,7 +18,7 @@ namespace Doppelganger
 	// SSLHTTPSession
 	////
 	SSLHTTPSession::SSLHTTPSession(
-		const std::shared_ptr<Core> &core,
+		const std::weak_ptr<Core> &core,
 		beast::tcp_stream &&stream,
 		ssl::context &ctx,
 		beast::flat_buffer &&buffer)

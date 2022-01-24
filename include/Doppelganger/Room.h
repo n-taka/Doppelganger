@@ -1,8 +1,20 @@
 #ifndef ROOM_H
 #define ROOM_H
 
+#if defined(_WIN64)
+#include <filesystem>
+namespace fs = std::filesystem;
+#elif defined(__APPLE__)
+#include "boost/filesystem.hpp"
+namespace fs = boost::filesystem;
+#elif defined(__linux__)
+#include <filesystem>
+namespace fs = std::filesystem;
+#endif
+
 #include <string>
 #include <memory>
+#include <mutex>
 #include <unordered_map>
 #include <unordered_set>
 // todo variant requires C++17
@@ -10,16 +22,15 @@
 #include <variant>
 
 #include <nlohmann/json.hpp>
-
 #include "Doppelganger/TriangleMesh.h"
+#include "Doppelganger/Plugin.h"
 
 namespace Doppelganger
 {
-	class Plugin;
 	class PlainWebsocketSession;
 	class SSLWebsocketSession;
 
-	class Room
+	class Room : public std::enable_shared_from_this<Room>
 	{
 		using WSSession = std::variant<std::shared_ptr<PlainWebsocketSession>, std::shared_ptr<SSLWebsocketSession>>;
 
@@ -30,44 +41,67 @@ namespace Doppelganger
 			const std::string &UUID,
 			nlohmann::json &configCore);
 
+		////
+		// nlohmann::json conversion (we do NOT use implicit conversions)
+		////
+		void to_json(nlohmann::json &json) const;
+		void from_json(const nlohmann::json &json);
 		void applyCurrentConfig();
+		// void storeHistory(const nlohmann::json &diff, const nlohmann::json &diffInv);
 
 		void joinWS(const WSSession &session);
 		void leaveWS(const std::string &sessionUUID);
 		void broadcastWS(const std::string &APIName, const std::string &sourceUUID, const nlohmann::json &broadcast, const nlohmann::json &response);
 
 	public:
-		nlohmann::json config_;
+		////
+		// parameters stored in nlohmann::json
+		struct LogConfig
+		{
+			std::unordered_map<std::string, bool> level;
+			std::unordered_map<std::string, bool> type;
+		};
+		struct PluginInfo
+		{
+			std::string name;
+			std::string version;
+		};
+		struct History
+		{
+			int index;
+			// for changing i => i+1 (redo),
+			//   we simply apply diffFromPrev.at(i+1)
+			std::vector<nlohmann::json> diffFromPrev;
+			// for changing i+1 => i (undo),
+			//   we simply apply diffFromNext.at(i)
+			//   diffFromNext is automatically calculated within storeCurrent(...)
+			std::vector<nlohmann::json> diffFromNext;
+		};
+		bool active_;
+		// room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+		std::string UUID_;
+		// Doppelganger
+		fs::path DoppelgangerRootDir_;
+		LogConfig logConfig_;
+		std::string outputType_;
+		std::vector<PluginInfo> installedPlugin_;
+		std::vector<std::string> pluginListURL_;
+		std::unordered_map<std::string, Doppelganger::TriangleMesh> meshes_;
+		History history_;
+		nlohmann::json extension_;
 
-		// mesh data
-		std::unordered_map<std::string, std::shared_ptr<Doppelganger::TriangleMesh>> meshes_;
+		////
+		// parameters **NOT** stored in nlohmann::json
+		// Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/
+		fs::path dataDir_;
+		std::unordered_map<std::string, Doppelganger::Plugin> plugin_;
 
-		// plugins
-		std::unordered_map<std::string, std::unique_ptr<Doppelganger::Plugin>> plugin_;
+		std::mutex mutexRoom_;
 
-		// websockets
 		std::unordered_map<std::string, WSSession> websocketSessions_;
 		std::mutex mutexWS_;
-
-		nlohmann::json extension_;
 	};
-
-	////
-	// nlohmann::json conversion (but, we do NOT use implicit conversions, hehe)
-	////
-	void to_json(nlohmann::json &json, const Room &room);
-	void from_json(const nlohmann::json &json, Room &room);
 }
-
-////
-// json format for Doppelganger::Room
-////
-// {
-//   "extension": json for extension (used by plugins)
-// }
-
-// // Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/
-// fs::path dataDir;
 
 // ////
 // // parameter for user interface
@@ -95,27 +129,13 @@ namespace Doppelganger
 ////
 // edit history is defined as a json object
 // {
-//  "meshes"
-//  "meshUUID-A": json object represents mesh with meshUUID-A,
-//  "meshUUID-B": json object represents mesh with meshUUID-B,
-//  "meshUUID-C": {
-//	 remove: true
-//  },
-//  ...
+//     "meshUUID-A": json object represents mesh with meshUUID-A,
+//     "meshUUID-B": json object represents mesh with meshUUID-B,
+//     "meshUUID-C": {
+//         remove: true
+//     },
+//     ...
 // }
 // * each json object ALWAYS contains entry with a key "remove"
-// struct EditHistory
-// {
-// 	int index;
-// 	// for changing i => i+1 (redo),
-// 	//   we simply apply diffFromPrev.at(i+1)
-// 	std::vector<nlohmann::json> diffFromPrev;
-// 	// for changing i+1 => i (undo),
-// 	//   we simply apply diffFromNext.at(i)
-// 	//   diffFromNext is automatically calculated within storeCurrent(...)
-// 	std::vector<nlohmann::json> diffFromNext;
-// };
-// EditHistory editHistory;
-// void storeHistory(const nlohmann::json &diff, const nlohmann::json &diffInv);
 
 #endif

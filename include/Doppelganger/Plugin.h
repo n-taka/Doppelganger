@@ -14,41 +14,83 @@ namespace fs = std::filesystem;
 
 #include <memory>
 #include <string>
+#include <variant>
 #include <nlohmann/json.hpp>
 
 namespace Doppelganger
 {
+	class Core;
+	class Room;
+
 	class Plugin
 	{
+		using CoreRoom = std::variant<std::weak_ptr<Core>, std::weak_ptr<Room>>;
+
 	public:
-		Plugin(
-			const std::string &name,
-			const nlohmann::json &parameters);
+		Plugin();
 
 		void install(
-			nlohmann::json &config,
+			const CoreRoom &coreRoom,
 			const std::string &version);
 		void pluginProcess(
-			nlohmann::json &configCore,
-			nlohmann::json &configRoom,
-			nlohmann::json &configMesh,
+			const std::weak_ptr<Core> &core,
+			const std::weak_ptr<Room> &room,
 			const nlohmann::json &parameters,
 			nlohmann::json &response,
 			nlohmann::json &broadcast);
 
 		static void getCatalogue(
-			const nlohmann::json &config,
+			const fs::path &pluginDir,
+			const std::vector<std::string> &listURLList,
 			nlohmann::json &catalogue);
 
 	public:
 		////
-		// parameter for this plugin
-		const std::string name_;
-		const nlohmann::json parameters_;
-		fs::path pluginDir_;
+		// parameters stored in nlohmann::json
+		struct VersionInfo
+		{
+			std::string version;
+			std::string URL;
+		};
+		std::string name_;
+		std::unordered_map<std::string, std::string> description_;
+		bool optional_;
+		std::string UIPosition_;
+		std::vector<VersionInfo> versions_;
 		std::string installedVersion_;
-		bool hasModuleJS_;
+		fs::path dir_;
+
+		////
+		// parameters **NOT** stored in nlohmann::json
+		// note: all parameters are stored in nlohmann::json
 	};
+
+	////
+	// nlohmann::json conversion
+	////
+	void to_json(nlohmann::json &json, const Plugin &plugin);
+	void from_json(const nlohmann::json &json, Plugin &plugin);
 }
+
+////
+// json format for Doppelganger::Plugin
+////
+// {
+//     "name": "sortMeshes",
+//     "description": {
+//         "en": "description in English",
+//         "ja": "description in Japanese"
+//     },
+//     "optional": false,
+//     "UIPosition": "topRight",
+//     "versions": [
+//         {
+//             "version": "2.0.0",
+//             "URL": "https://n-taka.info/nextcloud/s/jZzAeW7eMsmD3Yr/download/sortMeshes.zip"
+//         }
+//     ],
+//     "installedVersion": "latest",
+//     "dir": "path/to/plugin_itself"
+// }
 
 #endif

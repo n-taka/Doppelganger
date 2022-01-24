@@ -57,12 +57,15 @@ find_package(Eigen3 CONFIG REQUIRED)
 find_package(minizip CONFIG REQUIRED)
 # openSSL
 find_package(OpenSSL REQUIRED)
+# thread
+find_package(Threads REQUIRED)
 
 
 ##############################################
 ### target
 ##############################################
-add_library(${PROJECT_NAME} SHARED)
+# add_library(${PROJECT_NAME} SHARED)
+add_executable(${PROJECT_NAME})
 
 
 ##############################################
@@ -73,10 +76,9 @@ target_sources(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/HTTPSession.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/PlainHTTPSession.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/SSLHTTPSession.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Logger.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Plugin.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Room.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/triangleMesh.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/TriangleMesh.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/WebsocketSession.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/PlainWebsocketSession.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/SSLWebsocketSession.cpp
@@ -86,6 +88,8 @@ target_sources(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Util/unzip.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Util/uuid.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Util/writeBase64ToFile.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Util/log.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
 )
 
 
@@ -117,6 +121,7 @@ if(WIN32)
         minizip::minizip
         OpenSSL::SSL
         OpenSSL::Crypto
+        Threads::Threads
         Crypt32.lib
         bcrypt.lib
     )
@@ -133,6 +138,7 @@ elseif (APPLE)
         minizip::minizip
         OpenSSL::SSL
         OpenSSL::Crypto
+        Threads::Threads
         ${CORE_FOUNDATION_LIBRARY}
         ${SECURITY_LIBRARY}
     )
@@ -146,6 +152,7 @@ elseif (UNIX)
         minizip::minizip
         OpenSSL::SSL
         OpenSSL::Crypto
+        Threads::Threads
     )
 endif ()
 
@@ -169,30 +176,3 @@ elseif (UNIX)
     target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 endif ()
 target_compile_definitions(${PROJECT_NAME} PUBLIC _USE_MATH_DEFINES)
-
-
-##############################################
-### example
-##############################################
-if (DOPPELGANGER_BUILD_EXAMPLE)
-    add_subdirectory(example)
-endif ()
-
-
-##############################################
-### install
-##############################################
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include DESTINATION .)
-if (WIN32)
-    # *.dll file for actual execution
-    install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION lib)
-    # accompanying *.lib file for link
-    install(TARGETS ${PROJECT_NAME} ARCHIVE DESTINATION lib)
-elseif (APPLE)
-    # shared library (todo: test on macOS)
-    install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib)
-elseif (UNIX)
-    # shared library (todo: test on Linux)
-    install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION lib)
-endif ()
-

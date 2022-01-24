@@ -56,7 +56,7 @@ namespace Doppelganger
 		{
 			std::stringstream ss;
 			ss << what << ": " << ec.message();
-			Util::log(ss.str(), "ERROR", core_.lock()->config_);
+			Util::log(ss.str(), "ERROR", core_.lock()->dataDir_, core_.lock()->logConfig_.level, core_.lock()->logConfig_.type);
 		}
 	}
 
@@ -109,7 +109,7 @@ namespace Doppelganger
 		{
 			std::stringstream ss;
 			ss << "Request received: \"" << parser_->get().target().to_string() << "\"";
-			Util::log(ss.str(), "SYSTEM", core_.lock()->config_);
+			Util::log(ss.str(), "SYSTEM", core_.lock()->dataDir_, core_.lock()->logConfig_.level, core_.lock()->logConfig_.type);
 		}
 
 		std::string roomUUID = parseRoomUUID(parser_->get());
@@ -134,7 +134,9 @@ namespace Doppelganger
 				}
 			}
 			const std::shared_ptr<Room> room = std::make_shared<Room>();
-			room->setup(roomUUID, core_.lock()->config_);
+			nlohmann::json configCore;
+			core_.lock()->to_json(configCore);
+			room->setup(roomUUID, configCore);
 			core_.lock()->rooms_[roomUUID] = room;
 			handleRequest(core_, room, parser_->release(), queue_);
 		}
@@ -378,8 +380,9 @@ namespace
 		return res;
 	}
 
-	template <class Send>
+	template <class Body, class Allocator, class Send>
 	void openAndSendResource(const fs::path &completePath,
+							 http::request<Body, http::basic_fields<Allocator>> &&req,
 							 Send &&send)
 	{
 		// Attempt to open the file
@@ -477,28 +480,29 @@ namespace
 					if (reqPathVec.at(2) == "css" || reqPathVec.at(2) == "html" || reqPathVec.at(2) == "icon" || reqPathVec.at(2) == "js")
 					{
 						// resource
-						fs::path completePath(room.lock()->plugin_.at("assets")->pluginDir_);
+						fs::path completePath(room.lock()->plugin_.at("assets").dir_);
 						for (int pIdx = 2; pIdx < reqPathVec.size(); ++pIdx)
 						{
 							completePath.append(reqPathVec.at(pIdx));
 						}
 
-						openAndSendResource(completePath, send);
+						openAndSendResource(completePath, std::move(req), send);
 					}
 					else if (reqPathVec.at(2) == "plugin")
 					{
 						// resource
-						fs::path completePath(core_.lock()->config_.at("DoppelgangerRootDir").get<std::string>());
+						fs::path completePath(core.lock()->DoppelgangerRootDir_);
 						for (int pIdx = 2; pIdx < reqPathVec.size(); ++pIdx)
 						{
 							completePath.append(reqPathVec.at(pIdx));
 						}
 
-						openAndSendResource(completePath, send);
+						openAndSendResource(completePath, std::move(req), send);
 					}
 					else
 					{
 						// API
+						std::lock_guard<std::mutex> lock(room.lock()->mutexRoom_);
 						try
 						{
 							{
@@ -506,7 +510,7 @@ namespace
 								nlohmann::json broadcast = nlohmann::json::object();
 								nlohmann::json response = nlohmann::json::object();
 								broadcast["isBusy"] = true;
-								room->broadcastWS("isServerBusy", std::string(""), broadcast, response);
+								room.lock()->broadcastWS("isServerBusy", std::string(""), broadcast, response);
 							}
 
 							const std::string &APIName = reqPathVec.at(2);
@@ -528,16 +532,14 @@ namespace
 								// logContent << parameters.at("sessionUUID").get<std::string>();
 								logContent << parameters.at("sessionUUID");
 								logContent << ")";
-								Util::log(logContent.str(), "APICALL", room.lock()->config_);
+								Doppelganger::Util::log(logContent.str(), "APICALL", room.lock()->dataDir_, room.lock()->logConfig_.level, room.lock()->logConfig_.type);
 							}
 
-							nlohmann::json configMesh, response, broadcast;
-							// todo configMesh
+							nlohmann::json response, broadcast;
 
-							room->plugin.at(APIName)->pluginProcess(
-								core.lock()->config_,
-								room.lock()->config_,
-								configMesh,
+							room.lock()->plugin_.at(APIName).pluginProcess(
+								core,
+								room,
 								parameters.at("parameters"),
 								response,
 								broadcast);
@@ -551,13 +553,13 @@ namespace
 								nlohmann::json broadcast = nlohmann::json::object();
 								nlohmann::json response = nlohmann::json::object();
 								broadcast["isBusy"] = false;
-								room->broadcastWS("isServerBusy", std::string(""), broadcast, response);
+								room.lock()->broadcastWS("isServerBusy", std::string(""), broadcast, response);
 							}
 
 							// broadcast
 							if (!broadcast.empty())
 							{
-								room->broadcastWS(APIName, std::string(""), broadcast, response);
+								room.lock()->broadcastWS(APIName, std::string(""), broadcast, response);
 							}
 
 							// response
@@ -583,9 +585,18 @@ namespace
 				else
 				{
 					// return 301 (moved permanently)
-					std::string location = core.lock()->config_.at("server").at("completeURL").get<std::string>();
+					std::string completeURL("");
+					{
+						completeURL += core.lock()->serverConfig_.protocol;
+						completeURL += "://";
+						completeURL += core.lock()->serverConfig_.host;
+						completeURL += ":";
+						completeURL += std::to_string(core.lock()->serverConfig_.portUsed);
+					}
+
+					std::string location = completeURL;
 					location += "/";
-					location += room.lock()->config_.at("UUID").get<std::string>();
+					location += room.lock()->UUID_;
 					location += "/html/index.html";
 					return send(movedPermanently(std::move(req), location));
 				}
@@ -593,9 +604,18 @@ namespace
 			else
 			{
 				// return 301 (moved permanently)
-				std::string location = core.lock()->config_.at("server").at("completeURL").get<std::string>();
+				std::string completeURL("");
+				{
+					completeURL += core.lock()->serverConfig_.protocol;
+					completeURL += "://";
+					completeURL += core.lock()->serverConfig_.host;
+					completeURL += ":";
+					completeURL += std::to_string(core.lock()->serverConfig_.portUsed);
+				}
+
+				std::string location = completeURL;
 				location += "/";
-				location += room.lock()->config_.at("UUID").get<std::string>();
+				location += room.lock()->UUID_;
 				location += "/html/index.html";
 				return send(movedPermanently(std::move(req), location));
 			}
@@ -603,9 +623,18 @@ namespace
 		else
 		{
 			// return 301 (moved permanently)
-			std::string location = core.lock()->config_.at("server").at("completeURL").get<std::string>();
+			std::string completeURL("");
+			{
+				completeURL += core.lock()->serverConfig_.protocol;
+				completeURL += "://";
+				completeURL += core.lock()->serverConfig_.host;
+				completeURL += ":";
+				completeURL += std::to_string(core.lock()->serverConfig_.portUsed);
+			}
+
+			std::string location = completeURL;
 			location += "/";
-			location += room.lock()->config_.at("UUID").get<std::string>();
+			location += room.lock()->UUID_;
 			location += "/html/index.html";
 			return send(movedPermanently(std::move(req), location));
 		}

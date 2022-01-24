@@ -15,6 +15,20 @@
 #include "Doppelganger/Util/encodeEigenMatrixToBase64.h"
 #include "Doppelganger/Util/decodeBase64ToEigenMatrix.h"
 
+namespace
+{
+	template <typename DerivedV, typename DerivedF, typename DerivedVC, typename DerivedFC, typename DerivedTC, typename DerivedFTC>
+	void writeToJson(
+		const Eigen::MatrixBase<DerivedV> &Vertices,
+		const Eigen::MatrixBase<DerivedF> &Facets,
+		const Eigen::MatrixBase<DerivedVC> &VertexColors,
+		const Eigen::MatrixBase<DerivedFC> &FacetColors,
+		const Eigen::MatrixBase<DerivedTC> &TexCoords,
+		const Eigen::MatrixBase<DerivedFTC> &FacetTexCoords,
+		const bool &toClient,
+		nlohmann::json &json);
+}
+
 namespace Doppelganger
 {
 	// constructor
@@ -24,6 +38,123 @@ namespace Doppelganger
 		extension_ = nlohmann::json::object();
 	}
 
+	void TriangleMesh::projectMeshAttributes(const std::shared_ptr<TriangleMesh> &source)
+	{
+		// we assume that two meshes have (almost) identical shape
+		// [vertex attributes]
+		// - vertex color
+		// - vertex normal (re-calculate)
+		// - texture coordinates
+		// [face attributes]
+		// - face color
+		// - face normal (re-calculate)
+		// - face texture coordinates
+		// - face group
+		// [misc]
+		// - halfedge data structure
+
+		{
+			// face/vertex correspondence
+			Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> q;
+			{
+				q.resize(V_.rows() + F_.rows(), V_.cols());
+				q.block(0, 0, V_.rows(), V_.cols()) = V_;
+				Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> BC;
+				igl::barycenter(V_, F_, BC);
+				q.block(V_.rows(), 0, F_.rows(), V_.cols()) = BC;
+			}
+
+			Eigen::Matrix<int, Eigen::Dynamic, 1> vertCorrespondingFace;
+			Eigen::Matrix<int, Eigen::Dynamic, 1> faceCorrespondingFace;
+			Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> vertPointsOnMesh;
+			Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> facePointsOnMesh;
+			{
+				Eigen::Matrix<int, Eigen::Dynamic, 1> correspondingFace;
+				Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> pointsOnMesh;
+				Eigen::Matrix<double, Eigen::Dynamic, 1> S;
+				Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> N;
+				igl::signed_distance(q, source->V_, source->F_, igl::SIGNED_DISTANCE_TYPE_FAST_WINDING_NUMBER, S, correspondingFace, pointsOnMesh, N);
+				vertCorrespondingFace = correspondingFace.block(0, 0, V_.rows(), 1);
+				faceCorrespondingFace = correspondingFace.block(V_.rows(), 0, F_.rows(), 1);
+				vertPointsOnMesh = pointsOnMesh.block(0, 0, V_.rows(), V_.cols());
+				facePointsOnMesh = pointsOnMesh.block(V_.rows(), 0, F_.rows(), V_.cols());
+			}
+
+			// barycentric coordinate (only for vertices)
+			Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> L;
+			{
+				Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> A, B, C;
+				A.resize(vertPointsOnMesh.rows(), 3);
+				B.resize(vertPointsOnMesh.rows(), 3);
+				C.resize(vertPointsOnMesh.rows(), 3);
+				for (int vIdx = 0; vIdx < vertPointsOnMesh.rows(); ++vIdx)
+				{
+					const int &vertCorrespondingFaceIdx = vertCorrespondingFace(vIdx, 0);
+					A.row(vIdx) = source->V_.row(source->F_(vertCorrespondingFaceIdx, 0));
+					B.row(vIdx) = source->V_.row(source->F_(vertCorrespondingFaceIdx, 1));
+					C.row(vIdx) = source->V_.row(source->F_(vertCorrespondingFaceIdx, 2));
+				}
+				igl::barycentric_coordinates(vertPointsOnMesh, A, B, C, L);
+			}
+
+			// face attributes
+			{
+				// face color (FC)
+				if (source->FC_.rows() == source->F_.rows())
+				{
+					FC_.resize(F_.rows(), source->FC_.cols());
+					for (int f = 0; f < F_.rows(); ++f)
+					{
+						FC_.row(f) = source->FC_.row(faceCorrespondingFace(f, 0));
+					}
+				}
+
+				// face normal (FN, re-calculate)
+				igl::per_face_normals(V_, F_, FN_);
+
+				// face group (FG)
+				if (source->FG_.rows() == source->F_.rows())
+				{
+					FG_.resize(F_.rows(), 1);
+					for (int f = 0; f < F_.rows(); ++f)
+					{
+						FG_(f, 0) = source->FG_(faceCorrespondingFace(f, 0), 0);
+					}
+				}
+			}
+
+			// vertex attributes
+			{
+				// vertex color (VC)
+				if (source->VC_.rows() == source->V_.rows())
+				{
+					igl::barycentric_interpolation(source->VC_, source->F_, L, vertCorrespondingFace, VC_);
+				}
+
+				// vertex normal (VN, re-calculate)
+				igl::per_vertex_normals(V_, F_, FN_, VN_);
+			}
+
+			// texture
+			{
+				if (source->TC_.rows() == source->V_.rows())
+				{
+					igl::barycentric_interpolation(source->TC_, source->F_, L, vertCorrespondingFace, TC_);
+				}
+				// currently, we don't support FTC...
+			}
+
+			// misc
+			{
+				igl::triangle_triangle_adjacency(F_, TT_, TTi_);
+				igl::vertex_triangle_adjacency(V_, F_, VF_, VFi_);
+			}
+		}
+	}
+
+	////
+	// nlohmann::json conversion
+	////
 	void to_json(nlohmann::json &json, const TriangleMesh &mesh)
 	{
 		to_json(json, mesh, false);
@@ -168,126 +299,11 @@ namespace Doppelganger
 		}
 
 		// extension
-		if(json.contains("extension"))
+		if (json.contains("extension"))
 		{
 			mesh.extension_ = json.at("extension");
 		}
 	}
-
-	void TriangleMesh::projectMeshAttributes(const std::shared_ptr<TriangleMesh> &source)
-	{
-		// we assume that two meshes have (almost) identical shape
-		// [vertex attributes]
-		// - vertex color
-		// - vertex normal (re-calculate)
-		// - texture coordinates
-		// [face attributes]
-		// - face color
-		// - face normal (re-calculate)
-		// - face texture coordinates
-		// - face group
-		// [misc]
-		// - halfedge data structure
-
-		{
-			// face/vertex correspondence
-			Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> q;
-			{
-				q.resize(V_.rows() + F_.rows(), V_.cols());
-				q.block(0, 0, V_.rows(), V_.cols()) = V_;
-				Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> BC;
-				igl::barycenter(V_, F_, BC);
-				q.block(V_.rows(), 0, F_.rows(), V_.cols()) = BC;
-			}
-
-			Eigen::Matrix<int, Eigen::Dynamic, 1> vertCorrespondingFace;
-			Eigen::Matrix<int, Eigen::Dynamic, 1> faceCorrespondingFace;
-			Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> vertPointsOnMesh;
-			Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> facePointsOnMesh;
-			{
-				Eigen::Matrix<int, Eigen::Dynamic, 1> correspondingFace;
-				Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> pointsOnMesh;
-				Eigen::Matrix<double, Eigen::Dynamic, 1> S;
-				Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> N;
-				igl::signed_distance(q, source->V_, source->F_, igl::SIGNED_DISTANCE_TYPE_FAST_WINDING_NUMBER, S, correspondingFace, pointsOnMesh, N);
-				vertCorrespondingFace = correspondingFace.block(0, 0, V_.rows(), 1);
-				faceCorrespondingFace = correspondingFace.block(V_.rows(), 0, F_.rows(), 1);
-				vertPointsOnMesh = pointsOnMesh.block(0, 0, V_.rows(), V_.cols());
-				facePointsOnMesh = pointsOnMesh.block(V_.rows(), 0, F_.rows(), V_.cols());
-			}
-
-			// barycentric coordinate (only for vertices)
-			Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> L;
-			{
-				Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> A, B, C;
-				A.resize(vertPointsOnMesh.rows(), 3);
-				B.resize(vertPointsOnMesh.rows(), 3);
-				C.resize(vertPointsOnMesh.rows(), 3);
-				for (int vIdx = 0; vIdx < vertPointsOnMesh.rows(); ++vIdx)
-				{
-					const int &vertCorrespondingFaceIdx = vertCorrespondingFace(vIdx, 0);
-					A.row(vIdx) = source->V_.row(source->F_(vertCorrespondingFaceIdx, 0));
-					B.row(vIdx) = source->V_.row(source->F_(vertCorrespondingFaceIdx, 1));
-					C.row(vIdx) = source->V_.row(source->F_(vertCorrespondingFaceIdx, 2));
-				}
-				igl::barycentric_coordinates(vertPointsOnMesh, A, B, C, L);
-			}
-
-			// face attributes
-			{
-				// face color (FC)
-				if (source->FC_.rows() == source->F_.rows())
-				{
-					FC_.resize(F_.rows(), source->FC_.cols());
-					for (int f = 0; f < F_.rows(); ++f)
-					{
-						FC_.row(f) = source->FC_.row(faceCorrespondingFace(f, 0));
-					}
-				}
-
-				// face normal (FN, re-calculate)
-				igl::per_face_normals(V_, F_, FN_);
-
-				// face group (FG)
-				if (source->FG_.rows() == source->F_.rows())
-				{
-					FG_.resize(F_.rows(), 1);
-					for (int f = 0; f < F_.rows(); ++f)
-					{
-						FG_(f, 0) = source->FG_(faceCorrespondingFace(f, 0), 0);
-					}
-				}
-			}
-
-			// vertex attributes
-			{
-				// vertex color (VC)
-				if (source->VC_.rows() == source->V_.rows())
-				{
-					igl::barycentric_interpolation(source->VC_, source->F_, L, vertCorrespondingFace, VC_);
-				}
-
-				// vertex normal (VN, re-calculate)
-				igl::per_vertex_normals(V_, F_, FN_, VN_);
-			}
-
-			// texture
-			{
-				if (source->TC_.rows() == source->V_.rows())
-				{
-					igl::barycentric_interpolation(source->TC_, source->F_, L, vertCorrespondingFace, TC_);
-				}
-				// currently, we don't support FTC...
-			}
-
-			// misc
-			{
-				igl::triangle_triangle_adjacency(F_, TT_, TTi_);
-				igl::vertex_triangle_adjacency(V_, F_, VF_, VFi_);
-			}
-		}
-	}
-
 }
 
 namespace

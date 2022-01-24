@@ -89,7 +89,7 @@ namespace Doppelganger
 		{
 			std::stringstream logContent;
 			logContent << "Invalid WS API Call...";
-			Util::log(logContent.str(), "ERROR", room_.lock()->config_);
+			Util::log(logContent.str(), "ERROR", room_.lock()->dataDir_, room_.lock()->logConfig_.level, room_.lock()->logConfig_.type);
 		}
 
 		buffer_.consume(buffer_.size());
@@ -133,7 +133,7 @@ namespace Doppelganger
 		{
 			std::stringstream ss;
 			ss << "WS session \"" << UUID_ << "\" is closed.";
-			Util::Logger::log(ss.str(), "SYSTEM", room_.lock()->config_);
+			Util::log(ss.str(), "SYSTEM", room_.lock()->dataDir_, room_.lock()->logConfig_.level, room_.lock()->logConfig_.type);
 		}
 		// remove mouse cursor
 		//   - update parameter on this server
@@ -166,7 +166,7 @@ namespace Doppelganger
 
 		std::stringstream ss;
 		ss << what << ": " << ec.message();
-		Util::log(ss.str(), "ERROR", room_.lock()->config_);
+		Util::log(ss.str(), "ERROR", room_.lock()->dataDir_, room_.lock()->logConfig_.level, room_.lock()->logConfig_.type);
 	}
 
 	template <class Derived>
@@ -177,7 +177,7 @@ namespace Doppelganger
 	{
 		std::stringstream ss;
 		ss << "New WS session \"" << UUID_ << "\" is created.";
-		Util::log(ss.str(), "SYSTEM", room_.lock()->config_);
+		Util::log(ss.str(), "SYSTEM", room_.lock()->dataDir_, room_.lock()->logConfig_.level, room_.lock()->logConfig_.type);
 	}
 
 	template <class Derived>
