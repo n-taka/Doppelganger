@@ -32,12 +32,6 @@ namespace
 
 namespace Doppelganger
 {
-	Plugin::Plugin()
-	{
-		// for nlohmann::json conversion, Plugin is default constructable.
-		// for actual use, we ALWAYS use nlohmann::json conversion for initialize.
-	}
-
 	void Plugin::install(
 		const CoreRoom &coreRoom,
 		const std::string &version)

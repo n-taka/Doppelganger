@@ -10,6 +10,7 @@
 #include "Doppelganger/Plugin.h"
 #include "Doppelganger/WebsocketSession.h"
 #include "Doppelganger/Util/getCurrentTimestampAsString.h"
+#include "Doppelganger/Util/getPluginCatalogue.h"
 #include "Doppelganger/Util/log.h"
 
 namespace Doppelganger
@@ -247,7 +248,7 @@ namespace Doppelganger
 			fs::path pluginDir(DoppelgangerRootDir_);
 			pluginDir.append("plugin");
 			nlohmann::json catalogue;
-			Plugin::getCatalogue(pluginDir, pluginListURL_, catalogue);
+			Util::getPluginCatalogue(pluginDir, pluginListURL_, catalogue);
 
 			// initialize Doppelganger::Plugin instances
 			for (const auto &pluginEntry : catalogue)

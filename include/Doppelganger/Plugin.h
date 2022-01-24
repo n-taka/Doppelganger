@@ -32,7 +32,7 @@ namespace Doppelganger
 		using CoreRoom = std::variant<std::weak_ptr<Core>, std::weak_ptr<Room>>;
 
 	public:
-		Plugin();
+		Plugin(){};
 
 		void install(
 			const CoreRoom &coreRoom,
@@ -43,29 +43,6 @@ namespace Doppelganger
 			const nlohmann::json &parameters,
 			nlohmann::json &response,
 			nlohmann::json &broadcast);
-
-		static void getCatalogue(
-			const fs::path &pluginDir,
-			const std::vector<std::string> &listURLList,
-			nlohmann::json &catalogue)
-		{
-			catalogue = nlohmann::json::array();
-
-			for (const auto &listURL : listURLList)
-			{
-				fs::path listJsonPath(pluginDir);
-				listJsonPath.append("tmp.json");
-				Util::download(listURL, listJsonPath);
-				std::ifstream ifs(listJsonPath.string());
-				if (ifs)
-				{
-					nlohmann::json list = nlohmann::json::parse(ifs);
-					ifs.close();
-					fs::remove_all(listJsonPath);
-					catalogue.insert(catalogue.end(), list.begin(), list.end());
-				}
-			}
-		}
 
 	public:
 		////
