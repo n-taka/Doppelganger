@@ -63,43 +63,6 @@ namespace Doppelganger
 			   boost::asio::ssl::context &ctx)
 		: ioc_(ioc), ctx_(ctx)
 	{
-		// set default parameters
-
-		// active
-		active_ = true;
-		// broser setting
-		browserConfig_ = BrowserConfig({true,
-										std::string("default"),
-										std::string("default"),
-										fs::path()});
-		// root
-		DoppelgangerRootDir_ = fs::path();
-		// data
-		dataDir_ = fs::path();
-		// log
-		logConfig_.level["SYSTEM"] = true;
-		logConfig_.level["APICALL"] = true;
-		logConfig_.level["WSCALL"] = true;
-		logConfig_.level["ERROR"] = true;
-		logConfig_.level["MISC"] = true;
-		logConfig_.level["DEBUG"] = true;
-		logConfig_.type["STDOUT"] = true;
-		logConfig_.type["FILE"] = true;
-		// output
-		outputType_ = std::string("storage");
-		// installed plugin
-		installedPlugin_ = std::vector<Plugin::InstalledVersionInfo>();
-		// pluginList
-		pluginListURL_.push_back(std::string("https://n-taka.info/nextcloud/s/XqGGYPo8J2rwc9S/download/pluginList_Essential.json"));
-		pluginListURL_.push_back(std::string("https://n-taka.info/nextcloud/s/PgccNTmPECPXSgQ/download/pluginList_Basic.json"));
-		pluginListURL_.push_back(std::string("https://n-taka.info/nextcloud/s/PWPR7YDXKoMeP66/download/pluginList_TORIDE.json"));
-		// server
-		serverConfig_ = ServerConfig({std::string("127.0.0.1"),
-									  0,
-									  -1,
-									  std::string("http"),
-									  fs::path(),
-									  fs::path()});
 	}
 
 	void Core::setup()
@@ -148,21 +111,76 @@ namespace Doppelganger
 #endif
 		}
 
+		fs::path configPath(DoppelgangerRootDir_);
+		configPath.append("config.json");
+		if (fs::exists(configPath))
 		{
-			fs::path configPath(DoppelgangerRootDir_);
-			configPath.append("config.json");
-			if (fs::exists(configPath))
-			{
-				// we could directly use std::filesystem::path, but we could not directly boost::filesystem::path
-				std::ifstream ifs(configPath.string());
-				from_json(nlohmann::json::parse(ifs));
-				ifs.close();
-			}
-			// default config is already stored in the constructor
+			// we could directly use std::filesystem::path, but we could not directly boost::filesystem::path
+			std::ifstream ifs(configPath.string());
+			from_json(nlohmann::json::parse(ifs));
+			ifs.close();
 		}
-
-		// apply current config
-		applyCurrentConfig();
+		else
+		{
+			// default config
+			nlohmann::json defaultConfig;
+			{
+				// active
+				{
+					defaultConfig["active"] = true;
+				}
+				// browser
+				{
+					defaultConfig["browser"] = nlohmann::json::object();
+					defaultConfig.at("browser")["type"] = "default";
+					defaultConfig.at("browser")["openMode"] = "default";
+					defaultConfig.at("browser")["openOnStartup"] = true;
+				}
+				// log
+				{
+					defaultConfig["log"] = nlohmann::json::object();
+					defaultConfig.at("log")["level"] = nlohmann::json::object();
+					defaultConfig.at("log").at("level")["SYSTEM"] = true;
+					defaultConfig.at("log").at("level")["APICALL"] = true;
+					defaultConfig.at("log").at("level")["WSCALL"] = true;
+					defaultConfig.at("log").at("level")["ERROR"] = true;
+					defaultConfig.at("log").at("level")["MISC"] = true;
+					defaultConfig.at("log").at("level")["DEBUG"] = true;
+					defaultConfig.at("log")["type"] = nlohmann::json::object();
+					defaultConfig.at("log").at("type")["STDOUT"] = true;
+					defaultConfig.at("log").at("type")["FILE"] = true;
+				}
+				// output
+				{
+					defaultConfig["output"] = nlohmann::json::object();
+					defaultConfig.at("output")["type"] = "storage";
+				}
+				// plugin
+				{
+					defaultConfig["plugin"] = nlohmann::json::object();
+					defaultConfig.at("plugin")["installed"] = nlohmann::json::array();
+					defaultConfig.at("plugin")["listURL"] = nlohmann::json::array();
+					defaultConfig.at("plugin").at("listURL").push_back(std::string("https://n-taka.info/nextcloud/s/XqGGYPo8J2rwc9S/download/pluginList_Essential.json"));
+					defaultConfig.at("plugin").at("listURL").push_back(std::string("https://n-taka.info/nextcloud/s/PgccNTmPECPXSgQ/download/pluginList_Basic.json"));
+					defaultConfig.at("plugin").at("listURL").push_back(std::string("https://n-taka.info/nextcloud/s/PWPR7YDXKoMeP66/download/pluginList_TORIDE.json"));
+				}
+				// server
+				{
+					defaultConfig["server"] = nlohmann::json::object();
+					defaultConfig.at("server")["certificate"] = nlohmann::json::object();
+					defaultConfig.at("server").at("certificate")["certificateFilePath"] = "";
+					defaultConfig.at("server").at("certificate")["privateKeyFilePath"] = "";
+					defaultConfig.at("server")["protocol"] = "http";
+					defaultConfig.at("server")["host"] = "127.0.0.1";
+					defaultConfig.at("server")["port"] = 0;
+				}
+				// extension
+				{
+					defaultConfig["extension"] = nlohmann::json::object();
+				}
+			}
+			from_json(defaultConfig);
+		}
 	}
 
 	void Core::run()
@@ -376,7 +394,13 @@ namespace Doppelganger
 				}
 #endif
 				Util::log(cmd.str(), "SYSTEM", dataDir_, logConfig_);
-				system(cmd.str().c_str());
+				// system(cmd.str().c_str());
+				{
+					nlohmann::json config;
+					to_json(config);
+					std::cout << config.dump(4) << std::endl;
+					exit(0);
+				}
 			}
 		}
 	}
@@ -445,214 +469,283 @@ namespace Doppelganger
 
 	void Core::from_json(const nlohmann::json &json)
 	{
-		active_ = json.at("active").get<bool>();
+		// todo: use .contains and minimize the update operation...
 
-		browserConfig_.openOnStartup = json.at("browser").at("openOnStartup").get<bool>();
-		browserConfig_.openMode = json.at("browser").at("openMode").get<std::string>();
-		browserConfig_.type = json.at("browser").at("type").get<std::string>();
-		// DoppelgangerRootDir is ignored
-		logConfig_.level.clear();
-		for (const auto &level_value : json.at("log").at("level").items())
+		if (json.contains("active"))
 		{
-			const std::string &level = level_value.key();
-			const bool &value = level_value.value().get<bool>();
-			logConfig_.level[level] = value;
-		}
-		logConfig_.type.clear();
-		for (const auto &type_value : json.at("log").at("type").items())
-		{
-			const std::string &type = type_value.key();
-			const bool &value = type_value.value().get<bool>();
-			logConfig_.type[type] = value;
-		}
-
-		outputType_ = json.at("output").at("type").get<std::string>();
-
-		installedPlugin_.clear();
-		for (const auto &plugin : json.at("plugin").at("installed"))
-		{
-			Plugin::InstalledVersionInfo versionInfo;
-			versionInfo.name = plugin.at("name").get<std::string>();
-			versionInfo.version = plugin.at("version").get<std::string>();
-			installedPlugin_.push_back(versionInfo);
-		}
-
-		pluginListURL_.clear();
-		for (const auto &listURL : json.at("plugin").at("listURL"))
-		{
-			pluginListURL_.push_back(listURL.get<std::string>());
-		}
-
-		serverConfig_.host = json.at("server").at("host").get<std::string>();
-		serverConfig_.portRequested = json.at("server").at("port").get<int>();
-		serverConfig_.protocol = json.at("server").at("protocol").get<std::string>();
-		if (json.at("server").contains("certificate"))
-		{
-			serverConfig_.certificateFilePath = fs::path(json.at("server").at("certificate").at("certificateFilePath").get<std::string>());
-			serverConfig_.privateKeyFilePath = fs::path(json.at("server").at("certificate").at("privateKeyFilePath").get<std::string>());
-		}
-
-		extension_ = json.at("extension");
-	}
-
-	void Core::applyCurrentConfig()
-	{
-		if (!active_)
-		{
-			// shutdown...
-			storeCurrentConfig();
-			ioc_.stop();
-			// todo: close rooms, etc.
-			return;
-		}
-
-		// dataDir: Doppelganger/data/YYYYMMDDTHHMMSS-Core/
-		//   note: dataDir is NOT changed.
-		if (!fs::exists(dataDir_))
-		{
-			dataDir_ = DoppelgangerRootDir_;
-			dataDir_.append("data");
-			std::string dirName("");
-			dirName += Util::getCurrentTimestampAsString(false);
-			dirName += "-Core";
-			dataDir_.append(dirName);
-			fs::create_directories(dataDir_);
-		}
-
-		// log: Doppelganger/data/YYYYMMDDTHHMMSS-Core/log
-		{
-			fs::path logDir(dataDir_);
-			logDir.append("log");
-			fs::create_directories(logDir);
-		}
-
-		// output: Doppelganger/data/YYYYMMDDTHHMMSS-Core/output
-		{
-			fs::path outputDir(dataDir_);
-			outputDir.append("output");
-			fs::create_directories(outputDir);
-		}
-
-		// plugin: Doppelganger/plugin
-		//     note: actual installation is called in rooms
-		{
-			fs::path pluginDir(DoppelgangerRootDir_);
-			pluginDir.append("plugin");
-			fs::create_directories(pluginDir);
-		}
-
-		// plugin
-		{
-			// get plugin catalogue
-			fs::path pluginDir(DoppelgangerRootDir_);
-			pluginDir.append("plugin");
-			nlohmann::json catalogue;
-			Util::getPluginCatalogue(pluginDir, pluginListURL_, catalogue);
-
-			// For Core, we only maintain installedPlugin_
-			// i.e. we *don't* perform install in Core
-			std::unordered_map<std::string, Plugin> plugins;
-
-			// initialize Doppelganger::Plugin instances
-			for (const auto &pluginEntry : catalogue)
+			active_ = json.at("active").get<bool>();
+			if (!active_)
 			{
-				const Doppelganger::Plugin plugin = pluginEntry.get<Doppelganger::Plugin>();
-				plugins[plugin.name_] = plugin;
+				// shutdown
+				storeCurrentConfig();
+				ioc_.stop();
+				// todo: close rooms, etc.
+				return;
+			}
+		}
+
+		if (json.contains("browser"))
+		{
+			if (json.at("browser").contains("openOnStartup"))
+			{
+				browserConfig_.openOnStartup = json.at("browser").at("openOnStartup").get<bool>();
+			}
+			if (json.at("browser").contains("openMode"))
+			{
+				browserConfig_.openMode = json.at("browser").at("openMode").get<std::string>();
+			}
+			if (json.at("browser").contains("type"))
+			{
+				browserConfig_.type = json.at("browser").at("type").get<std::string>();
+			}
+		}
+
+		// DoppelgangerRootDir is ignored
+		//   note: DoppelgangerRootDir is automatically specified depending on the type of OS
+
+		{
+			// dataDir: Doppelganger/data/YYYYMMDDTHHMMSS-Core/
+			//   note: dataDir is NOT changed.
+			if (!fs::exists(dataDir_))
+			{
+				dataDir_ = DoppelgangerRootDir_;
+				dataDir_.append("data");
+				std::string dirName("");
+				dirName += Util::getCurrentTimestampAsString(false);
+				dirName += "-Core";
+				dataDir_.append(dirName);
+				fs::create_directories(dataDir_);
+			}
+		}
+
+		{
+			// log: Doppelganger/data/YYYYMMDDTHHMMSS-Core/log
+			{
+				fs::path logDir(dataDir_);
+				logDir.append("log");
+				fs::create_directories(logDir);
+			}
+			if (json.contains("log"))
+			{
+				if (json.at("log").contains("level"))
+				{
+					logConfig_.level.clear();
+					for (const auto &level_value : json.at("log").at("level").items())
+					{
+						const std::string &level = level_value.key();
+						const bool &value = level_value.value().get<bool>();
+						logConfig_.level[level] = value;
+					}
+				}
+				if (json.at("log").contains("type"))
+				{
+					logConfig_.type.clear();
+					for (const auto &type_value : json.at("log").at("type").items())
+					{
+						const std::string &type = type_value.key();
+						const bool &value = type_value.value().get<bool>();
+						logConfig_.type[type] = value;
+					}
+				}
+			}
+		}
+
+		{
+			// output: Doppelganger/data/YYYYMMDDTHHMMSS-Core/output
+			{
+				fs::path outputDir(dataDir_);
+				outputDir.append("output");
+				fs::create_directories(outputDir);
+			}
+			if (json.contains("output"))
+			{
+				if (json.at("output").contains("type"))
+				{
+					outputType_ = json.at("output").at("type").get<std::string>();
+				}
+			}
+		}
+
+		{
+			// plugin: Doppelganger/plugin
+			//     note: actual installation is called in rooms
+			{
+				fs::path pluginDir(DoppelgangerRootDir_);
+				pluginDir.append("plugin");
+				fs::create_directories(pluginDir);
+			}
+			if (json.contains("plugin"))
+			{
+				if (json.at("plugin").contains("installed"))
+				{
+					installedPlugin_.clear();
+					for (const auto &plugin : json.at("plugin").at("installed"))
+					{
+						Plugin::InstalledVersionInfo versionInfo;
+						versionInfo.name = plugin.at("name").get<std::string>();
+						versionInfo.version = plugin.at("version").get<std::string>();
+						installedPlugin_.push_back(versionInfo);
+					}
+				}
+				if (json.at("plugin").contains("listURL"))
+				{
+					pluginListURL_.clear();
+					for (const auto &listURL : json.at("plugin").at("listURL"))
+					{
+						pluginListURL_.push_back(listURL.get<std::string>());
+					}
+
+					// get plugin catalogue
+					fs::path pluginDir(DoppelgangerRootDir_);
+					pluginDir.append("plugin");
+					nlohmann::json catalogue;
+					Util::getPluginCatalogue(pluginDir, pluginListURL_, catalogue);
+
+					// For Core, we only maintain installedPlugin_
+					// i.e. we *don't* perform install in Core
+					std::unordered_map<std::string, Plugin> plugins;
+
+					// initialize Doppelganger::Plugin instances
+					for (const auto &pluginEntry : catalogue)
+					{
+						const Doppelganger::Plugin plugin = pluginEntry.get<Doppelganger::Plugin>();
+						plugins[plugin.name_] = plugin;
+					}
+
+					// mark installed plugins as "installed"
+					{
+						for (const auto &plugin : installedPlugin_)
+						{
+							const std::string &name = plugin.name;
+							const std::string &version = plugin.version;
+
+							if (plugins.find(name) != plugins.end() && version.size() > 0)
+							{
+								// here we don't check validity/availability of the specified version...
+								plugins.at(name).installedVersion_ = version;
+							}
+							else
+							{
+								std::stringstream ss;
+								ss << "Plugin \"" << name << "\" (" << version << ")"
+								   << " is NOT found in the catalogue.";
+								Util::log(ss.str(), "ERROR", dataDir_, logConfig_);
+							}
+						}
+					}
+
+					// add non-optional plugins to installedPlugin
+					for (auto &name_plugin : plugins)
+					{
+						const Plugin &plugin = name_plugin.second;
+						if (!plugin.optional_ && (plugin.installedVersion_.size() == 0))
+						{
+							installedPlugin_.push_back({plugin.name_, std::string("latest")});
+						}
+					}
+				}
+			}
+		}
+
+		if (json.contains("server"))
+		{
+			bool serverConfigChanged = false;
+			if (json.at("server").contains("host"))
+			{
+				serverConfig_.host = json.at("server").at("host").get<std::string>();
+				serverConfigChanged = true;
+			}
+			if (json.at("server").contains("port"))
+			{
+				serverConfig_.portRequested = json.at("server").at("port").get<int>();
+				serverConfigChanged = true;
+			}
+			if (json.at("server").contains("protocol"))
+			{
+				serverConfig_.protocol = json.at("server").at("protocol").get<std::string>();
+				serverConfigChanged = true;
+			}
+			if (json.at("server").contains("certificate"))
+			{
+				if (json.at("server").at("certificate").contains("certificateFilePath"))
+				{
+					serverConfig_.certificateFilePath = fs::path(json.at("server").at("certificate").at("certificateFilePath").get<std::string>());
+					serverConfigChanged = true;
+				}
+				if (json.at("server").at("certificate").contains("privateKeyFilePath"))
+				{
+					serverConfig_.privateKeyFilePath = fs::path(json.at("server").at("certificate").at("privateKeyFilePath").get<std::string>());
+					serverConfigChanged = true;
+				}
 			}
 
-			// mark installed plugins as "installed"
+			if (serverConfigChanged)
 			{
-				for (const auto &plugin : installedPlugin_)
-				{
-					const std::string &name = plugin.name;
-					const std::string &version = plugin.version;
+				boost::system::error_code ec;
 
-					if (plugins.find(name) != plugins.end() && version.size() > 0)
+				boost::asio::ip::tcp::resolver resolver(ioc_);
+				boost::asio::ip::tcp::resolver::results_type endpointIterator = resolver.resolve(
+					serverConfig_.host,
+					std::to_string(serverConfig_.portRequested),
+					ec);
+				if (ec)
+				{
 					{
-						// here we don't check validity/availability of the specified version...
-						plugins.at(name).installedVersion_ = version;
+						std::stringstream ss;
+						ss << "Fail to resolve hostname \"" << serverConfig_.host << "\"";
+						Util::log(ss.str(), "ERROR", dataDir_, logConfig_);
+					}
+					{
+						std::stringstream ss;
+						ss << ec.message();
+						Util::log(ss.str(), "ERROR", dataDir_, logConfig_);
+					}
+					return;
+				}
+
+				boost::asio::ip::tcp::endpoint endpoint = endpointIterator->endpoint();
+
+				if (serverConfig_.protocol == "https")
+				{
+					if (fs::exists(serverConfig_.certificateFilePath) && fs::exists(serverConfig_.privateKeyFilePath))
+					{
+						loadServerCertificate(
+							serverConfig_.certificateFilePath,
+							serverConfig_.privateKeyFilePath);
 					}
 					else
 					{
-						std::stringstream ss;
-						ss << "Plugin \"" << name << "\" (" << version << ")"
-						   << " is NOT found in the catalogue.";
-						Util::log(ss.str(), "ERROR", dataDir_, logConfig_);
+						{
+							std::stringstream ss;
+							ss << "Protocol \"https\" is specified, but no valid certificate is found. We switch to \"http\".";
+							Util::log(ss.str(), "ERROR", dataDir_, logConfig_);
+						}
+						{
+							std::stringstream ss;
+							ss << "    certificate: ";
+							ss << serverConfig_.certificateFilePath.string();
+							Util::log(ss.str(), "ERROR", dataDir_, logConfig_);
+						}
+						{
+							std::stringstream ss;
+							ss << "    privateKey: ";
+							ss << serverConfig_.privateKeyFilePath.string();
+							Util::log(ss.str(), "ERROR", dataDir_, logConfig_);
+						}
+						serverConfig_.protocol = std::string("http");
 					}
 				}
-			}
 
-			// add non-optional plugins to installedPlugin
-			for (auto &name_plugin : plugins)
-			{
-				const Plugin &plugin = name_plugin.second;
-				if (!plugin.optional_ && (plugin.installedVersion_.size() == 0))
-				{
-					installedPlugin_.push_back({plugin.name_, std::string("latest")});
-				}
+				// listener
+				listener_ = std::make_shared<Listener>(weak_from_this(), ioc_, ctx_, endpoint);
+				serverConfig_.portUsed = listener_->acceptor_.local_endpoint().port();
 			}
 		}
 
-		// server
+		if (json.contains("extension"))
 		{
-			boost::system::error_code ec;
-
-			boost::asio::ip::tcp::resolver resolver(ioc_);
-			boost::asio::ip::tcp::resolver::results_type endpointIterator = resolver.resolve(
-				serverConfig_.host,
-				std::to_string(serverConfig_.portRequested),
-				ec);
-			if (ec)
-			{
-				{
-					std::stringstream ss;
-					ss << "Fail to resolve hostname \"" << serverConfig_.host << "\"";
-					Util::log(ss.str(), "ERROR", dataDir_, logConfig_);
-				}
-				{
-					std::stringstream ss;
-					ss << ec.message();
-					Util::log(ss.str(), "ERROR", dataDir_, logConfig_);
-				}
-				return;
-			}
-
-			boost::asio::ip::tcp::endpoint endpoint = endpointIterator->endpoint();
-
-			if (serverConfig_.protocol == "https")
-			{
-				if (fs::exists(serverConfig_.certificateFilePath) && fs::exists(serverConfig_.privateKeyFilePath))
-				{
-					loadServerCertificate(
-						serverConfig_.certificateFilePath,
-						serverConfig_.privateKeyFilePath);
-				}
-				else
-				{
-					{
-						std::stringstream ss;
-						ss << "Protocol \"https\" is specified, but no valid certificate is found. We switch to \"http\".";
-						Util::log(ss.str(), "ERROR", dataDir_, logConfig_);
-					}
-					{
-						std::stringstream ss;
-						ss << "    certificate: ";
-						ss << serverConfig_.certificateFilePath.string();
-						Util::log(ss.str(), "ERROR", dataDir_, logConfig_);
-					}
-					{
-						std::stringstream ss;
-						ss << "    privateKey: ";
-						ss << serverConfig_.privateKeyFilePath.string();
-						Util::log(ss.str(), "ERROR", dataDir_, logConfig_);
-					}
-					serverConfig_.protocol = std::string("http");
-				}
-			}
-
-			// listener
-			listener_ = std::make_shared<Listener>(weak_from_this(), ioc_, ctx_, endpoint);
-			serverConfig_.portUsed = listener_->acceptor_.local_endpoint().port();
+			// extension (used by plugins)
+			extension_ = json.at("extension");
 		}
 	}
 

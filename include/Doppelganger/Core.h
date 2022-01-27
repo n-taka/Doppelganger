@@ -54,7 +54,6 @@ namespace Doppelganger
 		////
 		void to_json(nlohmann::json &json) const;
 		void from_json(const nlohmann::json &json);
-		void applyCurrentConfig();
 		void storeCurrentConfig() const;
 
 	public:

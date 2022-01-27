@@ -23,9 +23,11 @@ namespace
 	void functionCall(
 		const fs::path &dllPath,
 		const std::string &functionName,
-		nlohmann::json &configCore,
-		nlohmann::json &configRoom,
+		const nlohmann::json &configCore,
+		const nlohmann::json &configRoom,
 		const nlohmann::json &parameter,
+		nlohmann::json &configCoreUpdate,
+		nlohmann::json &configRoomUpdate,
 		nlohmann::json &response,
 		nlohmann::json &broadcast);
 }
@@ -150,15 +152,12 @@ namespace Doppelganger
 		// c++ functions (.dll/.so) (if exists)
 		if (fs::exists(dllPath))
 		{
-			nlohmann::json configCore, configRoom;
+			nlohmann::json configCore, configRoom, configCoreUpdate, configRoomUpdate;
 			core.lock()->to_json(configCore);
 			room.lock()->to_json(configRoom);
-			functionCall(dllPath, "pluginProcess", configCore, configRoom, parameters, response, broadcast);
-			// we need to optimize here...
+			functionCall(dllPath, "pluginProcess", configCore, configRoom, parameters, configCoreUpdate, configRoomUpdate, response, broadcast);
 			room.lock()->from_json(configRoom);
-			room.lock()->applyCurrentConfig();
 			core.lock()->from_json(configCore);
-			core.lock()->applyCurrentConfig();
 		}
 	}
 
@@ -246,9 +245,11 @@ namespace
 	void functionCall(
 		const fs::path &dllPath,
 		const std::string &functionName,
-		nlohmann::json &configCore,
-		nlohmann::json &configRoom,
+		const nlohmann::json &configCore,
+		const nlohmann::json &configRoom,
 		const nlohmann::json &parameter,
+		nlohmann::json &configCoreUpdate,
+		nlohmann::json &configRoomUpdate,
 		nlohmann::json &response,
 		nlohmann::json &broadcast)
 	{
@@ -280,8 +281,8 @@ namespace
 				const char *configCoreChar = configCore.dump().c_str();
 				const char *configRoomChar = configRoom.dump().c_str();
 				const char *parameterChar = parameter.dump().c_str();
-				char *modifiedConfigCoreChar = nullptr;
-				char *modifiedConfigRoomChar = nullptr;
+				char *configCoreUpdateChar = nullptr;
+				char *configRoomUpdateChar = nullptr;
 				char *responseChar = nullptr;
 				char *broadcastChar = nullptr;
 				// pluginFunc
@@ -289,17 +290,17 @@ namespace
 					configCoreChar,
 					configRoomChar,
 					parameterChar,
-					modifiedConfigCoreChar,
-					modifiedConfigRoomChar,
+					configCoreUpdateChar,
+					configRoomUpdateChar,
 					responseChar,
 					broadcastChar);
-				if (modifiedConfigCoreChar != nullptr)
+				if (configCoreUpdateChar != nullptr)
 				{
-					configCore.update(nlohmann::json::parse(modifiedConfigCoreChar));
+					configCoreUpdate = nlohmann::json::parse(configCoreUpdateChar);
 				}
-				if (modifiedConfigRoomChar != nullptr)
+				if (configRoomUpdateChar != nullptr)
 				{
-					configRoom.update(nlohmann::json::parse(modifiedConfigRoomChar));
+					configRoomUpdate = nlohmann::json::parse(configRoomUpdateChar);
 				}
 				if (responseChar != nullptr)
 				{
