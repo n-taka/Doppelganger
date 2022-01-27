@@ -32,6 +32,7 @@ namespace fs = std::filesystem;
 
 #include <nlohmann/json.hpp>
 #include "Doppelganger/Plugin.h"
+#include "Doppelganger/Util/log.h"
 
 namespace Doppelganger
 {
@@ -66,16 +67,6 @@ namespace Doppelganger
 			std::string type;
 			fs::path path;
 		};
-		struct LogConfig
-		{
-			std::unordered_map<std::string, bool> level;
-			std::unordered_map<std::string, bool> type;
-		};
-		struct PluginInfo
-		{
-			std::string name;
-			std::string version;
-		};
 		struct ServerConfig
 		{
 			std::string host;
@@ -88,9 +79,9 @@ namespace Doppelganger
 		bool active_;
 		BrowserConfig browserConfig_;
 		fs::path DoppelgangerRootDir_;
-		LogConfig logConfig_;
+		Util::LogConfig logConfig_;
 		std::string outputType_;
-		std::vector<PluginInfo> installedPlugin_;
+		std::vector<Plugin::InstalledVersionInfo> installedPlugin_;
 		std::vector<std::string> pluginListURL_;
 		ServerConfig serverConfig_;
 		nlohmann::json extension_;
@@ -98,7 +89,6 @@ namespace Doppelganger
 		////
 		// parameters **NOT** stored in nlohmann::json
 		fs::path dataDir_;
-		std::unordered_map<std::string, Doppelganger::Plugin> plugin_;
 		std::unordered_map<std::string, std::shared_ptr<Doppelganger::Room>> rooms_;
 
 	private:

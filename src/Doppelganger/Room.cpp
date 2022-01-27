@@ -38,7 +38,7 @@ namespace Doppelganger
 		{
 			std::stringstream ss;
 			ss << "New room \"" << UUID_ << "\" is created.";
-			Util::log(ss.str(), "SYSTEM", dataDir_, logConfig_.level, logConfig_.type);
+			Util::log(ss.str(), "SYSTEM", dataDir_, logConfig_);
 		}
 	}
 
@@ -153,10 +153,10 @@ namespace Doppelganger
 			installedPlugin_.clear();
 			for (const auto &plugin : json.at("plugin").at("installed"))
 			{
-				PluginInfo pluginInfo;
-				pluginInfo.name = plugin.at("name").get<std::string>();
-				pluginInfo.version = plugin.at("version").get<std::string>();
-				installedPlugin_.push_back(pluginInfo);
+				Plugin::InstalledVersionInfo versionInfo;
+				versionInfo.name = plugin.at("name").get<std::string>();
+				versionInfo.version = plugin.at("version").get<std::string>();
+				installedPlugin_.push_back(versionInfo);
 			}
 
 			pluginListURL_.clear();
@@ -239,6 +239,13 @@ namespace Doppelganger
 			fs::create_directories(outputDir);
 		}
 
+		// plugin: Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/plugin
+		{
+			fs::path pluginDir(dataDir_);
+			pluginDir.append("plugin");
+			fs::create_directories(pluginDir);
+		}
+
 		// plugin
 		{
 			// remove outdated ones
@@ -272,8 +279,8 @@ namespace Doppelganger
 					{
 						std::stringstream ss;
 						ss << "Plugin \"" << name << "\" (" << version << ")"
-						   << " is NOT found.";
-						Util::log(ss.str(), "ERROR", dataDir_, logConfig_.level, logConfig_.type);
+						   << " is NOT found in the catalogue.";
+						Util::log(ss.str(), "ERROR", dataDir_, logConfig_);
 					}
 				}
 			}

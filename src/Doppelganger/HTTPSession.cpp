@@ -56,7 +56,7 @@ namespace Doppelganger
 		{
 			std::stringstream ss;
 			ss << what << ": " << ec.message();
-			Util::log(ss.str(), "ERROR", core_.lock()->dataDir_, core_.lock()->logConfig_.level, core_.lock()->logConfig_.type);
+			Util::log(ss.str(), "ERROR", core_.lock()->dataDir_, core_.lock()->logConfig_);
 		}
 	}
 
@@ -109,7 +109,7 @@ namespace Doppelganger
 		{
 			std::stringstream ss;
 			ss << "Request received: \"" << parser_->get().target().to_string() << "\"";
-			Util::log(ss.str(), "SYSTEM", core_.lock()->dataDir_, core_.lock()->logConfig_.level, core_.lock()->logConfig_.type);
+			Util::log(ss.str(), "SYSTEM", core_.lock()->dataDir_, core_.lock()->logConfig_);
 		}
 
 		std::string roomUUID = parseRoomUUID(parser_->get());
@@ -532,7 +532,7 @@ namespace
 								// logContent << parameters.at("sessionUUID").get<std::string>();
 								logContent << parameters.at("sessionUUID");
 								logContent << ")";
-								Doppelganger::Util::log(logContent.str(), "APICALL", room.lock()->dataDir_, room.lock()->logConfig_.level, room.lock()->logConfig_.type);
+								Doppelganger::Util::log(logContent.str(), "APICALL", room.lock()->dataDir_, room.lock()->logConfig_);
 							}
 
 							nlohmann::json response, broadcast;

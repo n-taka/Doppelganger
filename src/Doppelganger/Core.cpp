@@ -87,10 +87,8 @@ namespace Doppelganger
 		logConfig_.type["FILE"] = true;
 		// output
 		outputType_ = std::string("storage");
-		// plugin
-		plugin_ = std::unordered_map<std::string, Doppelganger::Plugin>();
 		// installed plugin
-		installedPlugin_ = std::vector<PluginInfo>();
+		installedPlugin_ = std::vector<Plugin::InstalledVersionInfo>();
 		// pluginList
 		pluginListURL_.push_back(std::string("https://n-taka.info/nextcloud/s/XqGGYPo8J2rwc9S/download/pluginList_Essential.json"));
 		pluginListURL_.push_back(std::string("https://n-taka.info/nextcloud/s/PgccNTmPECPXSgQ/download/pluginList_Basic.json"));
@@ -184,7 +182,7 @@ namespace Doppelganger
 			{
 				std::stringstream ss;
 				ss << "Listening for requests at : " << completeURL;
-				Util::log(ss.str(), "SYSTEM", dataDir_, logConfig_.level, logConfig_.type);
+				Util::log(ss.str(), "SYSTEM", dataDir_, logConfig_);
 			}
 		}
 		////
@@ -377,7 +375,7 @@ namespace Doppelganger
 					cmd << " &";
 				}
 #endif
-				Util::log(cmd.str(), "SYSTEM", dataDir_, logConfig_.level, logConfig_.type);
+				Util::log(cmd.str(), "SYSTEM", dataDir_, logConfig_);
 				system(cmd.str().c_str());
 			}
 		}
@@ -473,10 +471,10 @@ namespace Doppelganger
 		installedPlugin_.clear();
 		for (const auto &plugin : json.at("plugin").at("installed"))
 		{
-			PluginInfo pluginInfo;
-			pluginInfo.name = plugin.at("name").get<std::string>();
-			pluginInfo.version = plugin.at("version").get<std::string>();
-			installedPlugin_.push_back(pluginInfo);
+			Plugin::InstalledVersionInfo versionInfo;
+			versionInfo.name = plugin.at("name").get<std::string>();
+			versionInfo.version = plugin.at("version").get<std::string>();
+			installedPlugin_.push_back(versionInfo);
 		}
 
 		pluginListURL_.clear();
@@ -545,50 +543,52 @@ namespace Doppelganger
 
 		// plugin
 		{
-			// remove outdated ones
-			plugin_.clear();
-
 			// get plugin catalogue
 			fs::path pluginDir(DoppelgangerRootDir_);
 			pluginDir.append("plugin");
 			nlohmann::json catalogue;
 			Util::getPluginCatalogue(pluginDir, pluginListURL_, catalogue);
 
+			// For Core, we only maintain installedPlugin_
+			// i.e. we *don't* perform install in Core
+			std::unordered_map<std::string, Plugin> plugins;
+
 			// initialize Doppelganger::Plugin instances
 			for (const auto &pluginEntry : catalogue)
 			{
-				Doppelganger::Plugin plugin = pluginEntry.get<Doppelganger::Plugin>();
-				plugin_[plugin.name_] = plugin;
+				const Doppelganger::Plugin plugin = pluginEntry.get<Doppelganger::Plugin>();
+				plugins[plugin.name_] = plugin;
 			}
 
-			// install plugins
+			// mark installed plugins as "installed"
 			{
 				for (const auto &plugin : installedPlugin_)
 				{
 					const std::string &name = plugin.name;
 					const std::string &version = plugin.version;
 
-					if (plugin_.find(name) != plugin_.end() && version.size() > 0)
+					if (plugins.find(name) != plugins.end() && version.size() > 0)
 					{
-						plugin_.at(name).install(weak_from_this(), version);
+						// here we don't check validity/availability of the specified version...
+						plugins.at(name).installedVersion_ = version;
 					}
 					else
 					{
 						std::stringstream ss;
 						ss << "Plugin \"" << name << "\" (" << version << ")"
-						   << " is NOT found.";
-						Util::log(ss.str(), "ERROR", dataDir_, logConfig_.level, logConfig_.type);
+						   << " is NOT found in the catalogue.";
+						Util::log(ss.str(), "ERROR", dataDir_, logConfig_);
 					}
 				}
 			}
 
-			// install non-optional plugins
-			for (auto &name_plugin : plugin_)
+			// add non-optional plugins to installedPlugin
+			for (auto &name_plugin : plugins)
 			{
-				Plugin &plugin = name_plugin.second;
+				const Plugin &plugin = name_plugin.second;
 				if (!plugin.optional_ && (plugin.installedVersion_.size() == 0))
 				{
-					plugin.install(weak_from_this(), std::string("latest"));
+					installedPlugin_.push_back({plugin.name_, std::string("latest")});
 				}
 			}
 		}
@@ -607,12 +607,12 @@ namespace Doppelganger
 				{
 					std::stringstream ss;
 					ss << "Fail to resolve hostname \"" << serverConfig_.host << "\"";
-					Util::log(ss.str(), "ERROR", dataDir_, logConfig_.level, logConfig_.type);
+					Util::log(ss.str(), "ERROR", dataDir_, logConfig_);
 				}
 				{
 					std::stringstream ss;
 					ss << ec.message();
-					Util::log(ss.str(), "ERROR", dataDir_, logConfig_.level, logConfig_.type);
+					Util::log(ss.str(), "ERROR", dataDir_, logConfig_);
 				}
 				return;
 			}
@@ -632,19 +632,19 @@ namespace Doppelganger
 					{
 						std::stringstream ss;
 						ss << "Protocol \"https\" is specified, but no valid certificate is found. We switch to \"http\".";
-						Util::log(ss.str(), "ERROR", dataDir_, logConfig_.level, logConfig_.type);
+						Util::log(ss.str(), "ERROR", dataDir_, logConfig_);
 					}
 					{
 						std::stringstream ss;
 						ss << "    certificate: ";
 						ss << serverConfig_.certificateFilePath.string();
-						Util::log(ss.str(), "ERROR", dataDir_, logConfig_.level, logConfig_.type);
+						Util::log(ss.str(), "ERROR", dataDir_, logConfig_);
 					}
 					{
 						std::stringstream ss;
 						ss << "    privateKey: ";
 						ss << serverConfig_.privateKeyFilePath.string();
-						Util::log(ss.str(), "ERROR", dataDir_, logConfig_.level, logConfig_.type);
+						Util::log(ss.str(), "ERROR", dataDir_, logConfig_);
 					}
 					serverConfig_.protocol = std::string("http");
 				}

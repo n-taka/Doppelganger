@@ -24,6 +24,7 @@ namespace fs = std::filesystem;
 #include <nlohmann/json.hpp>
 #include "Doppelganger/TriangleMesh.h"
 #include "Doppelganger/Plugin.h"
+#include "Doppelganger/Util/log.h"
 
 namespace Doppelganger
 {
@@ -56,11 +57,6 @@ namespace Doppelganger
 	public:
 		////
 		// parameters stored in nlohmann::json
-		struct LogConfig
-		{
-			std::unordered_map<std::string, bool> level;
-			std::unordered_map<std::string, bool> type;
-		};
 		struct PluginInfo
 		{
 			std::string name;
@@ -82,9 +78,9 @@ namespace Doppelganger
 		std::string UUID_;
 		// Doppelganger
 		fs::path DoppelgangerRootDir_;
-		LogConfig logConfig_;
+		Util::LogConfig logConfig_;
 		std::string outputType_;
-		std::vector<PluginInfo> installedPlugin_;
+		std::vector<Plugin::InstalledVersionInfo> installedPlugin_;
 		std::vector<std::string> pluginListURL_;
 		std::unordered_map<std::string, Doppelganger::TriangleMesh> meshes_;
 		History history_;

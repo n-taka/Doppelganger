@@ -29,13 +29,11 @@ namespace Doppelganger
 
 	class Plugin
 	{
-		using CoreRoom = std::variant<std::weak_ptr<Core>, std::weak_ptr<Room>>;
-
 	public:
 		Plugin(){};
 
 		void install(
-			const CoreRoom &coreRoom,
+			const std::weak_ptr<Room> &room,
 			const std::string &version);
 		void pluginProcess(
 			const std::weak_ptr<Core> &core,
@@ -44,19 +42,26 @@ namespace Doppelganger
 			nlohmann::json &response,
 			nlohmann::json &broadcast);
 
-	public:
-		////
-		// parameters stored in nlohmann::json
-		struct VersionInfo
+		struct InstalledVersionInfo
+		{
+			std::string name;
+			std::string version;
+		};
+
+		struct VersionResourceInfo
 		{
 			std::string version;
 			std::string URL;
 		};
+
+	public:
+		////
+		// parameters stored in nlohmann::json
 		std::string name_;
 		std::unordered_map<std::string, std::string> description_;
 		bool optional_;
 		std::string UIPosition_;
-		std::vector<VersionInfo> versions_;
+		std::vector<VersionResourceInfo> versions_;
 		std::string installedVersion_;
 		fs::path dir_;
 

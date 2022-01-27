@@ -16,14 +16,13 @@ namespace Doppelganger
 			const std::string &content,
 			const std::string &level,
 			const fs::path &dataDir,
-			const std::unordered_map<std::string, bool> &logLevels,
-			const std::unordered_map<std::string, bool> &logTypes)
+			const LogConfig& logConfig)
 		{
 			fs::path logTextFile(dataDir);
 			logTextFile.append("log");
 			logTextFile.append("log.txt");
 
-			if ((logLevels.find(level) != logLevels.end()) && logLevels.at(level))
+			if ((logConfig.level.find(level) != logConfig.level.end()) && logConfig.level.at(level))
 			{
 				std::stringstream logText;
 				// time
@@ -43,11 +42,11 @@ namespace Doppelganger
 				logText << " ";
 				// new line
 				logText << std::endl;
-				if ((logTypes.find("STDOUT") != logTypes.end()) && logTypes.at("STDOUT"))
+				if ((logConfig.type.find("STDOUT") != logConfig.type.end()) && logConfig.type.at("STDOUT"))
 				{
 					std::cout << logText.str();
 				}
-				if ((logTypes.find("FILE") != logTypes.end()) && logTypes.at("FILE"))
+				if ((logConfig.type.find("FILE") != logConfig.type.end()) && logConfig.type.at("FILE"))
 				{
 					std::ofstream ofs(logTextFile.string(), std::ios_base::out | std::ios_base::app);
 					ofs << logText.str();
@@ -60,13 +59,12 @@ namespace Doppelganger
 			const fs::path &path,
 			const std::string &level,
 			const fs::path &dataDir,
-			const std::unordered_map<std::string, bool> &logLevels,
-			const std::unordered_map<std::string, bool> &logTypes)
+			const LogConfig& logConfig)
 		{
 			fs::path logDir(dataDir);
 			logDir.append("log");
 
-			if ((logLevels.find(level) != logLevels.end()) && logLevels.at(level))
+			if ((logConfig.level.find(level) != logConfig.level.end()) && logConfig.level.at(level))
 			{
 				try
 				{
@@ -75,13 +73,13 @@ namespace Doppelganger
 					fs::rename(path, logFile);
 					std::stringstream ss;
 					ss << "temporary file " << path.filename().string() << " is stored in " << logDir.string();
-					log(ss.str(), level, dataDir, logLevels, logTypes);
+					log(ss.str(), level, dataDir, logConfig);
 				}
 				catch (const fs::filesystem_error &e)
 				{
 					std::stringstream ss;
 					ss << e.what();
-					log(ss.str(), "ERROR", dataDir, logLevels, logTypes);
+					log(ss.str(), "ERROR", dataDir, logConfig);
 				}
 			}
 		}

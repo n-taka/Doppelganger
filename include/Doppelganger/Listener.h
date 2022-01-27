@@ -50,7 +50,7 @@ namespace Doppelganger
 			{
 				std::stringstream ss;
 				ss << what << ": " << ec.message();
-				Util::log(ss.str(), "ERROR", core_.lock()->dataDir_, core_.lock()->logConfig_.level, core_.lock()->logConfig_.type);
+				Util::log(ss.str(), "ERROR", core_.lock()->dataDir_, core_.lock()->logConfig_);
 			}
 		}
 
