@@ -125,8 +125,6 @@ namespace Doppelganger
 			   << " is loaded.";
 			Util::log(ss.str(), "SYSTEM", room.lock()->dataDir_, room.lock()->logConfig_);
 		}
-
-		room.lock()->installedPlugin_.push_back({name_, installedVersion_});
 	}
 
 	void Plugin::pluginProcess(

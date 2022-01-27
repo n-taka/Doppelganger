@@ -38,16 +38,16 @@ namespace Doppelganger
 	public:
 		Room();
 
+		// we explicitly copy configCore
 		void setup(
 			const std::string &UUID,
-			nlohmann::json &configCore);
+			nlohmann::json configCore);
 
 		////
 		// nlohmann::json conversion (we do NOT use implicit conversions)
 		////
 		void to_json(nlohmann::json &json) const;
 		void from_json(const nlohmann::json &json);
-		void applyCurrentConfig();
 		// void storeHistory(const nlohmann::json &diff, const nlohmann::json &diffInv);
 
 		void joinWS(const WSSession &session);

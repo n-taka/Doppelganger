@@ -394,13 +394,7 @@ namespace Doppelganger
 				}
 #endif
 				Util::log(cmd.str(), "SYSTEM", dataDir_, logConfig_);
-				// system(cmd.str().c_str());
-				{
-					nlohmann::json config;
-					to_json(config);
-					std::cout << config.dump(4) << std::endl;
-					exit(0);
-				}
+				system(cmd.str().c_str());
 			}
 		}
 	}
@@ -469,8 +463,6 @@ namespace Doppelganger
 
 	void Core::from_json(const nlohmann::json &json)
 	{
-		// todo: use .contains and minimize the update operation...
-
 		if (json.contains("active"))
 		{
 			active_ = json.at("active").get<bool>();
@@ -603,13 +595,13 @@ namespace Doppelganger
 
 					// For Core, we only maintain installedPlugin_
 					// i.e. we *don't* perform install in Core
-					std::unordered_map<std::string, Plugin> plugins;
+					std::unordered_map<std::string, nlohmann::json> plugins;
 
 					// initialize Doppelganger::Plugin instances
 					for (const auto &pluginEntry : catalogue)
 					{
-						const Doppelganger::Plugin plugin = pluginEntry.get<Doppelganger::Plugin>();
-						plugins[plugin.name_] = plugin;
+						const std::string name = pluginEntry.at("name").get<std::string>();
+						plugins[name] = pluginEntry;
 					}
 
 					// mark installed plugins as "installed"
@@ -622,7 +614,7 @@ namespace Doppelganger
 							if (plugins.find(name) != plugins.end() && version.size() > 0)
 							{
 								// here we don't check validity/availability of the specified version...
-								plugins.at(name).installedVersion_ = version;
+								plugins.at(name)["installedVersion"] = version;
 							}
 							else
 							{
@@ -637,10 +629,12 @@ namespace Doppelganger
 					// add non-optional plugins to installedPlugin
 					for (auto &name_plugin : plugins)
 					{
-						const Plugin &plugin = name_plugin.second;
-						if (!plugin.optional_ && (plugin.installedVersion_.size() == 0))
+						const std::string &name = name_plugin.first;
+						const nlohmann::json &plugin = name_plugin.second;
+						if (!plugin.at("optional").get<bool>() &&
+							(!plugin.contains("installedVersion")))
 						{
-							installedPlugin_.push_back({plugin.name_, std::string("latest")});
+							installedPlugin_.push_back({name, std::string("latest")});
 						}
 					}
 				}
