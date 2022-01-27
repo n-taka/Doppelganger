@@ -33,92 +33,67 @@ namespace
 namespace Doppelganger
 {
 	void Plugin::install(
-		const CoreRoom &coreRoom,
+		const std::weak_ptr<Room> &room,
 		const std::string &version)
 	{
-		const auto installFunc = [this, &version](const auto &cr)
+
+		const std::string actualVersion((version == "latest") ? versions_.at(0).version : version);
+
+		std::string dirName("");
+		dirName += name_;
+		dirName += "_";
+		dirName += actualVersion;
+
+		fs::path cachedDir(room.lock()->DoppelgangerRootDir_);
+		cachedDir.append("plugin");
+		cachedDir.append(dirName);
+
+		dir_ = fs::path(room.lock()->dataDir_);
+		dir_.append("plugin");
+		dir_.append(dirName);
+
+		if (!fs::exists(cachedDir))
 		{
-			const std::string actualVersion((version == "latest") ? versions_.at(0).version : version);
-
-			dir_ = fs::path(cr.lock()->DoppelgangerRootDir_);
-			dir_.append("plugin");
-			std::string dirName("");
-			dirName += name_;
-			dirName += "_";
-			dirName += actualVersion;
-			dir_.append(dirName);
-
-			if (!fs::exists(dir_))
+			bool versionFound = false;
+			for (const auto &versionEntry : versions_)
 			{
-				bool versionFound = false;
-				for (const auto &versionEntry : versions_)
+				const std::string &pluginVersion = versionEntry.version;
+				if (pluginVersion == actualVersion)
 				{
-					const std::string &pluginVersion = versionEntry.version;
-					if (pluginVersion == actualVersion)
+					const std::string &pluginURL = versionEntry.URL;
+					fs::path zipPath(room.lock()->DoppelgangerRootDir_);
+					zipPath.append("plugin");
+					zipPath.append("tmp.zip");
+					if (Util::download(pluginURL, zipPath))
 					{
-						const std::string &pluginURL = versionEntry.URL;
-						fs::path zipPath(cr.lock()->DoppelgangerRootDir_);
-						zipPath.append("plugin");
-						zipPath.append("tmp.zip");
-						if (Util::download(pluginURL, zipPath))
+						Util::unzip(zipPath, cachedDir);
+						// erase temporary file
+						fs::remove_all(zipPath);
+						versionFound = true;
+						break;
+					}
+					else
+					{
+						// failure
+						std::stringstream ss;
+						ss << "Plugin \"" << name_ << "\" (";
+						if (version == "latest")
 						{
-							Util::unzip(zipPath, dir_);
-							// erase temporary file
-							fs::remove_all(zipPath);
-							versionFound = true;
-							break;
+							ss << "latest, ";
 						}
-						else
-						{
-							// failure
-							std::stringstream ss;
-							ss << "Plugin \"" << name_ << "\" (";
-							if (version == "latest")
-							{
-								ss << "latest, ";
-							}
-							ss << actualVersion << ")"
-							   << " is NOT loaded correctly. (Download)";
-							Util::log(ss.str(), "ERROR", cr.lock()->dataDir_, cr.lock()->logConfig_.level, cr.lock()->logConfig_.type);
-							// remove invalid dir_
-							dir_ = fs::path();
-							return;
-						}
+						ss << actualVersion << ")"
+						   << " is NOT downloaded correctly. (Download)";
+						Util::log(ss.str(), "ERROR", room.lock()->dataDir_, room.lock()->logConfig_);
+						// remove invalid dir_
+						dir_ = fs::path();
+						return;
 					}
-				}
-
-				if (!versionFound)
-				{
-					// failure
-					std::stringstream ss;
-					ss << "Plugin \"" << name_ << "\" (";
-					if (version == "latest")
-					{
-						ss << "latest, ";
-					}
-					ss << actualVersion << ")"
-					   << " is NOT loaded correctly. (No such version)";
-					Util::log(ss.str(), "ERROR", cr.lock()->dataDir_, cr.lock()->logConfig_.level, cr.lock()->logConfig_.type);
-					// remove invalid dir_
-					dir_ = fs::path();
-					return;
-				}
-				else
-				{
-					std::stringstream ss;
-					ss << "Plugin \"" << name_ << "\" (";
-					if (version == "latest")
-					{
-						ss << "latest, ";
-					}
-					ss << actualVersion << ")"
-					   << " is loaded.";
-					Util::log(ss.str(), "SYSTEM", cr.lock()->dataDir_, cr.lock()->logConfig_.level, cr.lock()->logConfig_.type);
 				}
 			}
-			else
+
+			if (!versionFound)
 			{
-				// already downloaded
+				// failure
 				std::stringstream ss;
 				ss << "Plugin \"" << name_ << "\" (";
 				if (version == "latest")
@@ -126,13 +101,30 @@ namespace Doppelganger
 					ss << "latest, ";
 				}
 				ss << actualVersion << ")"
-				   << " is already downloaded. We reuse it.";
-				Util::log(ss.str(), "SYSTEM", cr.lock()->dataDir_, cr.lock()->logConfig_.level, cr.lock()->logConfig_.type);
+				   << " is NOT loaded correctly. (No such version)";
+				Util::log(ss.str(), "ERROR", room.lock()->dataDir_, room.lock()->logConfig_);
+				// remove invalid dir_
+				dir_ = fs::path();
+				return;
 			}
-			installedVersion_ = version;
-		};
+		}
+		installedVersion_ = version;
 
-		std::visit(installFunc, coreRoom);
+		// copy cached plugin into room
+		fs::copy(cachedDir, dir_, fs::copy_options::recursive);
+		{
+			std::stringstream ss;
+			ss << "Plugin \"" << name_ << "\" (";
+			if (version == "latest")
+			{
+				ss << "latest, ";
+			}
+			ss << actualVersion << ")"
+			   << " is loaded.";
+			Util::log(ss.str(), "SYSTEM", room.lock()->dataDir_, room.lock()->logConfig_);
+		}
+
+		room.lock()->installedPlugin_.push_back({name_, installedVersion_});
 	}
 
 	void Plugin::pluginProcess(
@@ -215,7 +207,7 @@ namespace Doppelganger
 		{
 			const std::string version = versionInfo.at("version").get<std::string>();
 			const std::string URL = versionInfo.at("URL").get<std::string>();
-			plugin.versions_.push_back(Plugin::VersionInfo({version, URL}));
+			plugin.versions_.push_back(Plugin::VersionResourceInfo({version, URL}));
 		}
 		if (json.contains("installedVersion"))
 		{
