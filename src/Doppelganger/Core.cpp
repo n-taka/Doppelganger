@@ -576,7 +576,10 @@ namespace Doppelganger
 						Plugin::InstalledVersionInfo versionInfo;
 						versionInfo.name = plugin.at("name").get<std::string>();
 						versionInfo.version = plugin.at("version").get<std::string>();
-						installedPlugin_.push_back(versionInfo);
+						if (versionInfo.version.length() > 0)
+						{
+							installedPlugin_.push_back(versionInfo);
+						}
 					}
 				}
 				if (json.at("plugin").contains("listURL"))
@@ -611,7 +614,7 @@ namespace Doppelganger
 							const std::string &name = plugin.name;
 							const std::string &version = plugin.version;
 
-							if (plugins.find(name) != plugins.end() && version.size() > 0)
+							if (plugins.find(name) != plugins.end() && version.length() > 0)
 							{
 								// here we don't check validity/availability of the specified version...
 								plugins.at(name)["installedVersion"] = version;
@@ -747,6 +750,9 @@ namespace Doppelganger
 	{
 		nlohmann::json config;
 		to_json(config);
+
+		// for next time, we update "active"
+		config.at("active") = true;
 
 		fs::path configPath(DoppelgangerRootDir_);
 		configPath.append("config.json");

@@ -61,6 +61,7 @@ namespace Doppelganger
 		std::unordered_map<std::string, std::string> description_;
 		bool optional_;
 		std::string UIPosition_;
+		bool hasModuleJS_;
 		std::vector<VersionResourceInfo> versions_;
 		std::string installedVersion_;
 		fs::path dir_;

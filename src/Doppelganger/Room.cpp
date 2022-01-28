@@ -3,7 +3,6 @@
 
 #include "Doppelganger/Room.h"
 
-#include <iostream>
 #include <fstream>
 #include <sstream>
 
@@ -208,7 +207,10 @@ namespace Doppelganger
 						Plugin::InstalledVersionInfo versionInfo;
 						versionInfo.name = plugin.at("name").get<std::string>();
 						versionInfo.version = plugin.at("version").get<std::string>();
-						installedPlugin_.push_back(versionInfo);
+						if (versionInfo.version.length() > 0)
+						{
+							installedPlugin_.push_back(versionInfo);
+						}
 					}
 					pluginConfigChanged = true;
 				}
@@ -246,7 +248,7 @@ namespace Doppelganger
 							const std::string &name = plugin.name;
 							const std::string &version = plugin.version;
 
-							if (plugin_.find(name) != plugin_.end() && version.size() > 0)
+							if (plugin_.find(name) != plugin_.end() && version.length() > 0)
 							{
 								plugin_.at(name).install(weak_from_this(), version);
 							}

@@ -110,21 +110,25 @@ namespace Doppelganger
 				return;
 			}
 		}
-		installedVersion_ = version;
 
-		// copy cached plugin into room
-		fs::copy(cachedDir, dir_, fs::copy_options::recursive);
+		if (!fs::exists(dir_))
 		{
-			std::stringstream ss;
-			ss << "Plugin \"" << name_ << "\" (";
-			if (version == "latest")
+			// copy cached plugin into room
+			fs::copy(cachedDir, dir_, fs::copy_options::recursive);
 			{
-				ss << "latest, ";
+				std::stringstream ss;
+				ss << "Plugin \"" << name_ << "\" (";
+				if (version == "latest")
+				{
+					ss << "latest, ";
+				}
+				ss << actualVersion << ")"
+				   << " is loaded.";
+				Util::log(ss.str(), "SYSTEM", room.lock()->dataDir_, room.lock()->logConfig_);
 			}
-			ss << actualVersion << ")"
-			   << " is loaded.";
-			Util::log(ss.str(), "SYSTEM", room.lock()->dataDir_, room.lock()->logConfig_);
 		}
+
+		installedVersion_ = version;
 	}
 
 	void Plugin::pluginProcess(
@@ -175,6 +179,7 @@ namespace Doppelganger
 		}
 		json["optional"] = plugin.optional_;
 		json["UIPosition"] = plugin.UIPosition_;
+		json["hasModuleJS"] = plugin.hasModuleJS_;
 		json["versions"] = nlohmann::json::array();
 		for (const auto &versionInfo : plugin.versions_)
 		{
@@ -199,6 +204,7 @@ namespace Doppelganger
 		}
 		plugin.optional_ = json.at("optional").get<bool>();
 		plugin.UIPosition_ = json.at("UIPosition").get<std::string>();
+		plugin.hasModuleJS_ = json.at("hasModuleJS").get<bool>();
 		plugin.versions_.clear();
 		for (const auto &versionInfo : json.at("versions"))
 		{
