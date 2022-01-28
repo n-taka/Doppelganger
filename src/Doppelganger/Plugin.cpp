@@ -154,8 +154,8 @@ namespace Doppelganger
 			core.lock()->to_json(configCore);
 			room.lock()->to_json(configRoom);
 			functionCall(dllPath, "pluginProcess", configCore, configRoom, parameters, configCoreUpdate, configRoomUpdate, response, broadcast);
-			room.lock()->from_json(configRoom);
-			core.lock()->from_json(configCore);
+			room.lock()->from_json(configRoomUpdate);
+			core.lock()->from_json(configCoreUpdate);
 		}
 	}
 
@@ -230,14 +230,11 @@ namespace
 	////
 	// typedef for loading API from dll/lib
 #if defined(_WIN64)
-	using APIPtr_t = void(__stdcall *)(const char *, const char *, const char *, char *, char *, char *, char *);
-	using DeallocatePtr_t = void(__stdcall *)();
+	using APIPtr_t = void(__stdcall *)(const char *&, const char *&, const char *&, char *&, char *&, char *&, char *&);
 #elif defined(__APPLE__)
-	using APIPtr_t = void (*)(const char *, const char *, const char *, char *, char *, char *, char *);
-	using DeallocatePtr_t = void (*)();
+	using APIPtr_t = void (*)(const char *&, const char *&, const char *&, char *&, char *&, char *&, char *&);
 #elif defined(__linux__)
-	using APIPtr_t = void (*)(const char *, const char *, const char *, char *, char *, char *, char *);
-	using DeallocatePtr_t = void (*)();
+	using APIPtr_t = void (*)(const char *&, const char *&, const char *&, char *&, char *&, char *&, char *&);
 #endif
 
 	void functionCall(
@@ -265,20 +262,20 @@ namespace
 		{
 #if defined(_WIN64)
 			FARPROC pluginFunc = GetProcAddress(handle, functionName.c_str());
-			FARPROC deallocateFunc = GetProcAddress(handle, "deallocate");
 #elif defined(__APPLE__)
 			void *pluginFunc = dlsym(handle, functionName.c_str());
-			void *deallocateFunc = dlsym(handle, "deallocate");
 #elif defined(__linux__)
 			void *pluginFunc = dlsym(handle, functionName.c_str());
-			void *deallocateFunc = dlsym(handle, "deallocate");
 #endif
-			if (pluginFunc && deallocateFunc)
+			if (pluginFunc)
 			{
 				// setup buffers
-				const char *configCoreChar = configCore.dump().c_str();
-				const char *configRoomChar = configRoom.dump().c_str();
-				const char *parameterChar = parameter.dump().c_str();
+				const std::string configCoreStr = configCore.dump(-1, ' ', true);
+				const char *configCoreChar = configCoreStr.c_str();
+				const std::string configRoomStr = configRoom.dump(-1, ' ', true);
+				const char *configRoomChar = configRoomStr.c_str();
+				const std::string parameterStr = parameter.dump(-1, ' ', true);
+				const char *parameterChar = parameterStr.c_str();
 				char *configCoreUpdateChar = nullptr;
 				char *configRoomUpdateChar = nullptr;
 				char *responseChar = nullptr;
@@ -308,8 +305,6 @@ namespace
 				{
 					broadcast = nlohmann::json::parse(broadcastChar);
 				}
-				// deallocation
-				reinterpret_cast<DeallocatePtr_t>(deallocateFunc)();
 			}
 #if defined(_WIN64)
 			FreeLibrary(handle);
