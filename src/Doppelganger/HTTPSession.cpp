@@ -506,11 +506,9 @@ namespace
 						try
 						{
 							{
-								// todo update...
-								nlohmann::json broadcast = nlohmann::json::object();
-								nlohmann::json response = nlohmann::json::object();
-								broadcast["isBusy"] = true;
-								room.lock()->broadcastWS("isServerBusy", std::string(""), broadcast, response);
+								nlohmann::json serverBusyBroadcast = nlohmann::json::object();
+								serverBusyBroadcast["isBusy"] = true;
+								room.lock()->broadcastWS("isServerBusy", std::string(""), serverBusyBroadcast, nlohmann::json::basic_json());
 							}
 
 							const std::string &APIName = reqPathVec.at(2);
@@ -545,19 +543,13 @@ namespace
 								broadcast);
 
 							{
-								// todo update according to update of the configs
-							}
-
-							{
-								// todo update...
-								nlohmann::json broadcast = nlohmann::json::object();
-								nlohmann::json response = nlohmann::json::object();
-								broadcast["isBusy"] = false;
-								room.lock()->broadcastWS("isServerBusy", std::string(""), broadcast, response);
+								nlohmann::json serverBusyBroadcast = nlohmann::json::object();
+								serverBusyBroadcast["isBusy"] = false;
+								room.lock()->broadcastWS("isServerBusy", std::string(""), serverBusyBroadcast, nlohmann::json::basic_json());
 							}
 
 							// broadcast
-							if (!broadcast.empty())
+							if (!broadcast.is_null())
 							{
 								room.lock()->broadcastWS(APIName, std::string(""), broadcast, response);
 							}

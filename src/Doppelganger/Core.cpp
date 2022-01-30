@@ -2,6 +2,7 @@
 #define CORE_CPP
 
 #include "Doppelganger/Core.h"
+#include "Doppelganger/Room.h"
 #include "Doppelganger/HTTPSession.h"
 #include "Doppelganger/Plugin.h"
 #include "Doppelganger/Listener.h"
@@ -463,19 +464,6 @@ namespace Doppelganger
 
 	void Core::from_json(const nlohmann::json &json)
 	{
-		if (json.contains("active"))
-		{
-			active_ = json.at("active").get<bool>();
-			if (!active_)
-			{
-				// shutdown
-				storeCurrentConfig();
-				ioc_.stop();
-				// todo: close rooms, etc.
-				return;
-			}
-		}
-
 		if (json.contains("browser"))
 		{
 			if (json.at("browser").contains("openOnStartup"))
@@ -743,6 +731,33 @@ namespace Doppelganger
 		{
 			// extension (used by plugins)
 			extension_ = json.at("extension");
+		}
+
+		// "active" and "forceReload" are very critical and we take care of them in the last
+		if (json.contains("active"))
+		{
+			active_ = json.at("active").get<bool>();
+			if (!active_)
+			{
+				// shutdown
+				storeCurrentConfig();
+				ioc_.stop();
+				// todo: close rooms, etc.
+				return;
+			}
+		}
+
+		if (json.contains("forceReload"))
+		{
+			if (json.at("forceReload").get<bool>())
+			{
+				for (const auto &uuid_room : rooms_)
+				{
+					const std::shared_ptr<Room> room = uuid_room.second;
+					// reload
+					room->broadcastWS(std::string("forceReload"), std::string(""), nlohmann::json::object(), nlohmann::json::basic_json());
+				}
+			}
 		}
 	}
 

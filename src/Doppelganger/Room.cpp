@@ -109,17 +109,6 @@ namespace Doppelganger
 
 	void Room::from_json(const nlohmann::json &json)
 	{
-		if (json.contains("active"))
-		{
-			active_ = json.at("active").get<bool>();
-			if (!active_)
-			{
-				// shutdown...
-				// TODO: close websocket sessions, etc...
-				return;
-			}
-		}
-
 		if (json.contains("DoppelgangerRootDir"))
 		{
 			DoppelgangerRootDir_ = fs::path(json.at("DoppelgangerRootDir").get<std::string>());
@@ -326,6 +315,27 @@ namespace Doppelganger
 		{
 			extension_ = json.at("extension");
 		}
+
+		// "active" and "forceReload" are very critical and we take care of them in the last
+		if (json.contains("active"))
+		{
+			active_ = json.at("active").get<bool>();
+			if (!active_)
+			{
+				// shutdown...
+				// TODO: close websocket sessions, etc...
+				return;
+			}
+		}
+
+		if (json.contains("forceReload"))
+		{
+			if (json.at("forceReload").get<bool>())
+			{
+				// reload
+				broadcastWS(std::string("forceReload"), std::string(""), nlohmann::json::object(), nlohmann::json::basic_json());
+			}
+		}
 	}
 
 	void Room::joinWS(const WSSession &session)
@@ -349,18 +359,18 @@ namespace Doppelganger
 		std::lock_guard<std::mutex> lock(mutexWS_);
 		nlohmann::json broadcastJson = nlohmann::json::object();
 		nlohmann::json responseJson = nlohmann::json::object();
-		if (!broadcast.empty())
+		if (!broadcast.is_null())
 		{
 			broadcastJson["API"] = APIName;
 			broadcastJson["parameters"] = broadcast;
 		}
-		if (!response.empty())
+		if (!response.is_null())
 		{
 			responseJson["API"] = APIName;
 			responseJson["parameters"] = response;
 		}
-		const std::shared_ptr<const std::string> broadcastMessage = std::make_shared<const std::string>(broadcastJson.dump());
-		const std::shared_ptr<const std::string> responseMessage = std::make_shared<const std::string>(responseJson.dump());
+		const std::shared_ptr<const std::string> broadcastMessage = std::make_shared<const std::string>(broadcastJson.dump(-1, ' ', true));
+		const std::shared_ptr<const std::string> responseMessage = std::make_shared<const std::string>(responseJson.dump(-1, ' ', true));
 
 		for (const auto &uuid_session : websocketSessions_)
 		{
@@ -368,7 +378,7 @@ namespace Doppelganger
 			const WSSession &session = uuid_session.second;
 			if (sessionUUID != sourceUUID)
 			{
-				if (!broadcast.empty())
+				if (!broadcast.is_null())
 				{
 					std::visit([&broadcastMessage](const auto &session_)
 							   { session_->send(broadcastMessage); },
@@ -377,7 +387,7 @@ namespace Doppelganger
 			}
 			else
 			{
-				if (!response.empty())
+				if (!response.is_null())
 				{
 					std::visit([&responseMessage](const auto &session_)
 							   { session_->send(responseMessage); },
