@@ -313,7 +313,9 @@ namespace Doppelganger
 
 		if (json.contains("extension"))
 		{
-			extension_ = json.at("extension");
+			// we use .update() for extension
+			//     so that each plugin can update parameters independently
+			extension_.update(json.at("extension"));
 		}
 
 		// "active" and "forceReload" are very critical and we take care of them in the last
