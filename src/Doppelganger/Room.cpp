@@ -46,6 +46,7 @@ namespace Doppelganger
 		json["active"] = active_;
 		json["UUID"] = UUID_;
 		json["DoppelgangerRootDir"] = DoppelgangerRootDir_.string();
+		json["dataDir"] = dataDir_.string();
 		json["log"] = nlohmann::json::object();
 		{
 			json.at("log")["level"] = nlohmann::json::object();

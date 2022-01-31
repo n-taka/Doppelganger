@@ -412,6 +412,7 @@ namespace Doppelganger
 			// path is not stored in json
 		}
 		json["DoppelgangerRootDir"] = DoppelgangerRootDir_.string();
+		json["dataDir"] = dataDir_.string();
 		json["log"] = nlohmann::json::object();
 		{
 			json.at("log")["level"] = nlohmann::json::object();
@@ -769,6 +770,9 @@ namespace Doppelganger
 
 		// for next time, we update "active"
 		config.at("active") = true;
+
+		// remove unused
+		config.erase("dataDir");
 
 		fs::path configPath(DoppelgangerRootDir_);
 		configPath.append("config.json");
