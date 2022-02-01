@@ -307,9 +307,17 @@ namespace
 				{
 					response = nlohmann::json::parse(responseChar);
 				}
+				else
+				{
+					response = nlohmann::json::object();
+				}
 				if (broadcastChar != nullptr)
 				{
 					broadcast = nlohmann::json::parse(broadcastChar);
+				}
+				else
+				{
+					broadcast = nlohmann::json::object();
 				}
 			}
 #if defined(_WIN64)
