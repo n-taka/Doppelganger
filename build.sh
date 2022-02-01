@@ -21,7 +21,7 @@ fi
 ############
 # build project
 ############
-CONFIG="Debug"
+CONFIG="Release"
 if [ "$(uname)" == "Darwin" ]; then
     cmake -B build -S . -DVCPKG_TARGET_TRIPLET="${TRIPLET}" -DCMAKE_BUILD_TYPE="${CONFIG}"
     cmake --build build --config "${CONFIG}"
