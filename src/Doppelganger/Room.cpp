@@ -20,324 +20,149 @@ namespace Doppelganger
 
 	void Room::setup(
 		const std::string &UUID,
-		nlohmann::json configCore)
+		const nlohmann::json &configCore)
 	{
 		// inherit from Core
+		config = configCore;
+		// remove config for core
+		config.erase("dataDir");
 		// add room-specific contents
-		configCore["UUID"] = UUID;
-		configCore["history"] = nlohmann::json::object();
-		configCore.at("history")["index"] = 0;
-		configCore.at("history")["diffFromPrev"] = nlohmann::json::array();
-		configCore.at("history").at("diffFromPrev").push_back(nlohmann::json::object());
-		configCore.at("history")["diffFromNext"] = nlohmann::json::array();
-		from_json(configCore);
+		config["UUID"] = UUID;
+		config["meshes"] = nlohmann::json::object();
+		config["history"] = nlohmann::json::object();
+		config.at("history")["index"] = 0;
+		config.at("history")["diffFromPrev"] = nlohmann::json::array();
+		config.at("history").at("diffFromPrev").push_back(nlohmann::json::object());
+		config.at("history")["diffFromNext"] = nlohmann::json::array();
+		config.at("history")["extension"] = nlohmann::json::object();
+		applyCurrentConfig();
 
 		// log
 		{
 			std::stringstream ss;
-			ss << "New room \"" << UUID_ << "\" is created.";
-			Util::log(ss.str(), "SYSTEM", dataDir_, logConfig_);
+			ss << "New room \"" << config.at("UUID").get<std::string>() << "\" is created.";
+			// we log this message to Core
+			Util::log(ss.str(), "SYSTEM", configCore);
 		}
 	}
 
-	void Room::to_json(nlohmann::json &json) const
+	void Room::applyCurrentConfig()
 	{
-		json = nlohmann::json::object();
-		json["active"] = active_;
-		json["UUID"] = UUID_;
-		json["DoppelgangerRootDir"] = DoppelgangerRootDir_.string();
-		json["dataDir"] = dataDir_.string();
-		json["log"] = nlohmann::json::object();
+		// dataDir: Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/
+		fs::path dataDir_(config.at("DoppelgangerRootDir").get<std::string>());
+		if (!config.contains("dataDir"))
 		{
-			json.at("log")["level"] = nlohmann::json::object();
-			for (const auto &level_value : logConfig_.level)
-			{
-				const std::string &level = level_value.first;
-				const bool &value = level_value.second;
-				json.at("log").at("level")[level] = value;
-			}
-			json.at("log")["type"] = nlohmann::json::object();
-			for (const auto &type_value : logConfig_.type)
-			{
-				const std::string &type = type_value.first;
-				const bool &value = type_value.second;
-				json.at("log").at("type")[type] = value;
-			}
-		}
-		json["output"] = nlohmann::json::object();
-		{
-			json.at("output")["type"] = outputType_;
-		}
-		json["plugin"] = nlohmann::json::object();
-		{
-			json.at("plugin")["installed"] = nlohmann::json::array();
-			for (const auto &plugin : installedPlugin_)
-			{
-				nlohmann::json pluginJson = nlohmann::json::object();
-				pluginJson["name"] = plugin.name;
-				pluginJson["version"] = plugin.version;
-				json.at("plugin").at("installed").push_back(pluginJson);
-			}
-			json.at("plugin")["listURL"] = nlohmann::json::array();
-			for (const auto &listURL : pluginListURL_)
-			{
-				json.at("plugin").at("listURL").push_back(listURL);
-			}
-		}
-		json["meshes"] = nlohmann::json::object();
-		for (const auto &uuid_mesh : meshes_)
-		{
-			const std::string &uuid = uuid_mesh.first;
-			const TriangleMesh &mesh = uuid_mesh.second;
-			json.at("meshes")[uuid] = mesh;
-		}
-		json["history"] = nlohmann::json::object();
-		{
-			json.at("history")["index"] = history_.index;
-			json.at("history")["diffFromPrev"] = nlohmann::json::array();
-			for (const auto &diff : history_.diffFromPrev)
-			{
-				json.at("history").at("diffFromPrev").push_back(diff);
-			}
-			json.at("history")["diffFromNext"] = nlohmann::json::array();
-			for (const auto &diff : history_.diffFromNext)
-			{
-				json.at("history").at("diffFromNext").push_back(diff);
-			}
-		}
-		json["extension"] = extension_;
-	}
-
-	void Room::from_json(const nlohmann::json &json)
-	{
-		if (json.contains("DoppelgangerRootDir"))
-		{
-			DoppelgangerRootDir_ = fs::path(json.at("DoppelgangerRootDir").get<std::string>());
-		}
-
-		if (json.contains("UUID"))
-		{
-			UUID_ = json.at("UUID").get<std::string>();
-		}
-
-		{
-			// dataDir: Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/
-			if (!fs::exists(dataDir_))
-			{
-				dataDir_ = DoppelgangerRootDir_;
-				dataDir_.append("data");
-				std::string dirName("");
-				dirName += Util::getCurrentTimestampAsString(false);
-				dirName += "-";
-				dirName += UUID_;
-				dataDir_.append(dirName);
-				fs::create_directories(dataDir_);
-			}
+			dataDir_.append("data");
+			std::string dirName("");
+			dirName += Util::getCurrentTimestampAsString(false);
+			dirName += "-";
+			dirName += config.at("UUID").get<std::string>();
+			dataDir_.append(dirName);
+			config["dataDir"] = dataDir_.string();
+			fs::create_directories(dataDir_);
 		}
 
 		// log: Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/log
 		{
-			fs::path logDir(dataDir_);
+			fs::path logDir(config.at("dataDir").get<std::string>());
 			logDir.append("log");
 			fs::create_directories(logDir);
-		}
-		if (json.contains("log"))
-		{
-			if (json.at("log").contains("level"))
-			{
-				logConfig_.level.clear();
-				for (const auto &level_value : json.at("log").at("level").items())
-				{
-					const std::string &level = level_value.key();
-					const bool &value = level_value.value().get<bool>();
-					logConfig_.level[level] = value;
-				}
-			}
-			if (json.at("log").contains("type"))
-			{
-				logConfig_.type.clear();
-				for (const auto &type_value : json.at("log").at("type").items())
-				{
-					const std::string &type = type_value.key();
-					const bool &value = type_value.value().get<bool>();
-					logConfig_.type[type] = value;
-				}
-			}
 		}
 
 		// output: Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/output
 		{
-			fs::path outputDir(dataDir_);
+			fs::path outputDir(config.at("dataDir").get<std::string>());
 			outputDir.append("output");
 			fs::create_directories(outputDir);
 		}
-		if (json.contains("output"))
+
+		// plugin: Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/plugin
 		{
-			if (json.at("output").contains("type"))
-			{
-				outputType_ = json.at("output").at("type").get<std::string>();
-			}
+			fs::path pluginDir(config.at("dataDir").get<std::string>());
+			pluginDir.append("plugin");
+			fs::create_directories(pluginDir);
 		}
-
+		if (config.contains("plugin"))
 		{
-			// plugin: Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/plugin
+			if (config.at("plugin").contains("reInstall") && config.at("plugin").at("reInstall").get<bool>())
 			{
-				fs::path pluginDir(dataDir_);
-				pluginDir.append("plugin");
-				fs::create_directories(pluginDir);
-			}
-			if (json.contains("plugin"))
-			{
-				bool pluginConfigChanged = false;
-				if (json.at("plugin").contains("installed"))
+				config.at("plugin").at("reInstall") = false;
+				if (config.at("plugin").contains("listURL"))
 				{
-					installedPlugin_.clear();
-					for (const auto &plugin : json.at("plugin").at("installed"))
-					{
-						Plugin::InstalledVersionInfo versionInfo;
-						versionInfo.name = plugin.at("name").get<std::string>();
-						versionInfo.version = plugin.at("version").get<std::string>();
-						if (versionInfo.version.length() > 0)
-						{
-							installedPlugin_.push_back(versionInfo);
-						}
-					}
-					pluginConfigChanged = true;
-				}
-				if (json.at("plugin").contains("listURL"))
-				{
-					pluginListURL_.clear();
-					for (const auto &listURL : json.at("plugin").at("listURL"))
-					{
-						pluginListURL_.push_back(listURL.get<std::string>());
-					}
-					pluginConfigChanged = true;
-				}
-				if (pluginConfigChanged)
-				{
-					// remove old plugins
-					plugin_.clear();
-
 					// get plugin catalogue
-					fs::path pluginDir(DoppelgangerRootDir_);
+					fs::path pluginDir(config.at("DoppelgangerRootDir").get<std::string>());
 					pluginDir.append("plugin");
 					nlohmann::json catalogue;
-					Util::getPluginCatalogue(pluginDir, pluginListURL_, catalogue);
+					Util::getPluginCatalogue(pluginDir, config.at("plugin").at("listURL"), catalogue);
 
-					// initialize Doppelganger::Plugin instances
-					for (const auto &pluginEntry : catalogue)
+					// update plugins
 					{
-						const Doppelganger::Plugin plugin = pluginEntry.get<Doppelganger::Plugin>();
-						plugin_[plugin.name_] = plugin;
-					}
+						// remove old plugins
+						plugin_.clear();
 
-					// install plugins
-					{
-						for (const auto &plugin : installedPlugin_)
+						// initialize Doppelganger::Plugin instances
+						for (const auto &pluginEntry : catalogue)
 						{
-							const std::string &name = plugin.name;
-							const std::string &version = plugin.version;
+							const Doppelganger::Plugin plugin = pluginEntry.get<Doppelganger::Plugin>();
+							plugin_[plugin.name_] = plugin;
+						}
 
-							if (plugin_.find(name) != plugin_.end() && version.length() > 0)
+						// install plugins
+						{
+							for (const auto &installedPluginJson : config.at("plugin").at("installed"))
 							{
-								plugin_.at(name).install(weak_from_this(), version);
+								const std::string name = installedPluginJson.at("name").get<std::string>();
+								const std::string version = installedPluginJson.at("version").get<std::string>();
+
+								if (plugin_.find(name) != plugin_.end() && version.length() > 0)
+								{
+									plugin_.at(name).install(weak_from_this(), version);
+								}
+								else
+								{
+									std::stringstream ss;
+									ss << "Plugin \"" << name << "\" (" << version << ")"
+									   << " is NOT found in the catalogue.";
+									Util::log(ss.str(), "ERROR", config);
+								}
 							}
-							else
+						}
+
+						// install non-optional plugins
+						for (auto &name_plugin : plugin_)
+						{
+							const std::string &name = name_plugin.first;
+							Plugin &plugin = name_plugin.second;
+							if (!plugin.optional_ && (plugin.installedVersion_.size() == 0))
 							{
-								std::stringstream ss;
-								ss << "Plugin \"" << name << "\" (" << version << ")"
-								   << " is NOT found in the catalogue.";
-								Util::log(ss.str(), "ERROR", dataDir_, logConfig_);
+								plugin.install(weak_from_this(), std::string("latest"));
+								nlohmann::json installedPluginJson = nlohmann::json::object();
+								installedPluginJson["name"] = name;
+								installedPluginJson["version"] = std::string("latest");
+								config.at("plugin").at("installed").push_back(installedPluginJson);
 							}
 						}
 					}
-
-					// install non-optional plugins
-					for (auto &name_plugin : plugin_)
-					{
-						const std::string &name = name_plugin.first;
-						Plugin &plugin = name_plugin.second;
-						if (!plugin.optional_ && (plugin.installedVersion_.size() == 0))
-						{
-							plugin.install(weak_from_this(), std::string("latest"));
-							installedPlugin_.push_back({name, std::string("latest")});
-						}
-					}
 				}
 			}
 		}
 
-		if (json.contains("meshes"))
-		{
-			// by setting the value to null, we remove the entry.
-			for (const auto &uuid_mesh : json.at("meshes").items())
-			{
-				const std::string &uuid = uuid_mesh.key();
-				if (!uuid_mesh.value().is_null())
-				{
-					const TriangleMesh mesh = uuid_mesh.value().get<TriangleMesh>();
-					meshes_[uuid] = mesh;
-				}
-				else
-				{
-					meshes_.erase(uuid);
-				}
-			}
-		}
-
-		if (json.contains("history"))
-		{
-			if (json.at("history").contains("index"))
-			{
-				history_.index = json.at("history").at("index").get<int>();
-			}
-
-			// I guess we could do something clever with diffFrom(Prev|Next)
-			if (json.at("history").contains("diffFromPrev"))
-			{
-				history_.diffFromPrev.clear();
-				for (const auto &diff : json.at("history").at("diffFromPrev"))
-				{
-					history_.diffFromPrev.push_back(diff);
-				}
-			}
-
-			if (json.at("history").contains("diffFromNext"))
-			{
-				history_.diffFromNext.clear();
-				for (const auto &diff : json.at("history").at("diffFromNext"))
-				{
-					history_.diffFromNext.push_back(diff);
-				}
-			}
-		}
-
-		if (json.contains("extension"))
-		{
-			// we use .update() for extension
-			//     so that each plugin can update parameters independently
-			extension_.update(json.at("extension"));
-		}
+		// config.at("mesh") is maintained by using nlohmann::json::merge_patch
+		// config.at("history") is maintained by using nlohmann::json::merge_patch
+		// config.at("extension") is maintained by using nlohmann::json::merge_patch
 
 		// "active" and "forceReload" are very critical and we take care of them in the last
-		if (json.contains("active"))
+		if (config.contains("active") && !config.at("active").get<bool>())
 		{
-			active_ = json.at("active").get<bool>();
-			if (!active_)
-			{
-				// shutdown...
-				// TODO: close websocket sessions, etc...
-				return;
-			}
+			// shutdown...
+			// TODO: close websocket sessions, etc...
+			return;
 		}
 
-		if (json.contains("forceReload"))
+		if (config.contains("forceReload") && config.at("forceReload").get<bool>())
 		{
-			if (json.at("forceReload").get<bool>())
-			{
-				// reload
-				broadcastWS(std::string("forceReload"), std::string(""), nlohmann::json::object(), nlohmann::json::basic_json());
-			}
+			config.at("forceReload") = false;
+			broadcastWS(std::string("forceReload"), std::string(""), nlohmann::json::object(), nlohmann::json::basic_json());
 		}
 	}
 

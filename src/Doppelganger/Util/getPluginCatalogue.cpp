@@ -12,16 +12,16 @@ namespace Doppelganger
 	{
 		void getPluginCatalogue(
 			const fs::path &pluginDir,
-			const std::vector<std::string> &listURLList,
+			const nlohmann::json &listURLJsonArray,
 			nlohmann::json &catalogue)
 		{
 			catalogue = nlohmann::json::array();
 
-			for (const auto &listURL : listURLList)
+			for (const auto &listURL : listURLJsonArray)
 			{
 				fs::path listJsonPath(pluginDir);
 				listJsonPath.append("tmp.json");
-				Util::download(listURL, listJsonPath);
+				Util::download(listURL.get<std::string>(), listJsonPath);
 				std::ifstream ifs(listJsonPath.string());
 				if (ifs)
 				{

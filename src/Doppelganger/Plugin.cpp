@@ -20,14 +20,19 @@
 
 namespace
 {
+	void getPtrStrArrayForPartialConfig(
+		const fs::path &dllPath,
+		const char *parameterChar,
+		nlohmann::json &ptrStrArrayCore,
+		nlohmann::json &ptrStrArrayRoom);
 	void functionCall(
 		const fs::path &dllPath,
 		const std::string &functionName,
 		const nlohmann::json &configCore,
 		const nlohmann::json &configRoom,
 		const nlohmann::json &parameter,
-		nlohmann::json &configCoreUpdate,
-		nlohmann::json &configRoomUpdate,
+		nlohmann::json &configCorePatch,
+		nlohmann::json &configRoomPatch,
 		nlohmann::json &response,
 		nlohmann::json &broadcast);
 }
@@ -46,11 +51,11 @@ namespace Doppelganger
 		dirName += "_";
 		dirName += actualVersion;
 
-		fs::path cachedDir(room.lock()->DoppelgangerRootDir_);
+		fs::path cachedDir(room.lock()->config.at("DoppelgangerRootDir").get<std::string>());
 		cachedDir.append("plugin");
 		cachedDir.append(dirName);
 
-		dir_ = fs::path(room.lock()->dataDir_);
+		dir_ = fs::path(room.lock()->config.at("dataDir").get<std::string>());
 		dir_.append("plugin");
 		dir_.append(dirName);
 
@@ -63,7 +68,7 @@ namespace Doppelganger
 				if (pluginVersion == actualVersion)
 				{
 					const std::string &pluginURL = versionEntry.URL;
-					fs::path zipPath(room.lock()->DoppelgangerRootDir_);
+					fs::path zipPath(room.lock()->config.at("DoppelgangerRootDir").get<std::string>());
 					zipPath.append("plugin");
 					zipPath.append("tmp.zip");
 					if (Util::download(pluginURL, zipPath))
@@ -85,7 +90,7 @@ namespace Doppelganger
 						}
 						ss << actualVersion << ")"
 						   << " is NOT downloaded correctly. (Download)";
-						Util::log(ss.str(), "ERROR", room.lock()->dataDir_, room.lock()->logConfig_);
+						Util::log(ss.str(), "ERROR", room.lock()->config);
 						// remove invalid dir_
 						dir_ = fs::path();
 						return;
@@ -104,7 +109,7 @@ namespace Doppelganger
 				}
 				ss << actualVersion << ")"
 				   << " is NOT loaded correctly. (No such version)";
-				Util::log(ss.str(), "ERROR", room.lock()->dataDir_, room.lock()->logConfig_);
+				Util::log(ss.str(), "ERROR", room.lock()->config);
 				// remove invalid dir_
 				dir_ = fs::path();
 				return;
@@ -124,7 +129,7 @@ namespace Doppelganger
 				}
 				ss << actualVersion << ")"
 				   << " is loaded.";
-				Util::log(ss.str(), "SYSTEM", room.lock()->dataDir_, room.lock()->logConfig_);
+				Util::log(ss.str(), "SYSTEM", room.lock()->config);
 			}
 		}
 
@@ -154,12 +159,12 @@ namespace Doppelganger
 		// c++ functions (.dll/.so) (if exists)
 		if (fs::exists(dllPath))
 		{
-			nlohmann::json configCore, configRoom, configCoreUpdate, configRoomUpdate;
-			core.lock()->to_json(configCore);
-			room.lock()->to_json(configRoom);
-			functionCall(dllPath, "pluginProcess", configCore, configRoom, parameters, configCoreUpdate, configRoomUpdate, response, broadcast);
-			room.lock()->from_json(configRoomUpdate);
-			core.lock()->from_json(configCoreUpdate);
+			nlohmann::json configCorePatch, configRoomPatch;
+			functionCall(dllPath, "pluginProcess", core.lock()->config, room.lock()->config, parameters, configCorePatch, configRoomPatch, response, broadcast);
+			room.lock()->config.merge_patch(configRoomPatch);
+			room.lock()->applyCurrentConfig();
+			core.lock()->config.merge_patch(configCorePatch);
+			core.lock()->applyCurrentConfig();
 		}
 	}
 
@@ -233,15 +238,66 @@ namespace Doppelganger
 
 namespace
 {
-	////
-	// typedef for loading API from dll/lib
+	void getPtrStrArrayForPartialConfig(
+		const fs::path &dllPath,
+		const char *parameterChar,
+		nlohmann::json &ptrStrArrayCore,
+		nlohmann::json &ptrStrArrayRoom)
+	{
+		// by default, we request all config (this setting would be overwritten below)
+		ptrStrArrayCore = nlohmann::json::array({"/"});
+		ptrStrArrayRoom = nlohmann::json::array({"/"});
+
 #if defined(_WIN64)
-	using APIPtr_t = void(__stdcall *)(const char *&, const char *&, const char *&, char *&, char *&, char *&, char *&);
+		using APIPtr_t = void(__stdcall *)(const char *&, char *&, char *&);
+		HINSTANCE handle = LoadLibrary(dllPath.string().c_str());
 #elif defined(__APPLE__)
-	using APIPtr_t = void (*)(const char *&, const char *&, const char *&, char *&, char *&, char *&, char *&);
+		using APIPtr_t = void (*)(const char *&, char *&, char *&);
+		void *handle;
+		handle = dlopen(dllPath.string().c_str(), RTLD_LAZY);
 #elif defined(__linux__)
-	using APIPtr_t = void (*)(const char *&, const char *&, const char *&, char *&, char *&, char *&, char *&);
+		using APIPtr_t = void (*)(const char *&, char *&, char *&);
+		void *handle;
+		handle = dlopen(dllPath.string().c_str(), RTLD_LAZY);
 #endif
+
+		if (handle != NULL)
+		{
+#if defined(_WIN64)
+			FARPROC pluginFunc = GetProcAddress(handle, "getPtrStrArrayForPartialConfig");
+#elif defined(__APPLE__)
+			void *pluginFunc = dlsym(handle, "getPtrStrArrayForPartialConfig");
+#elif defined(__linux__)
+			void *pluginFunc = dlsym(handle, "getPtrStrArrayForPartialConfig");
+#endif
+			if (pluginFunc)
+			{
+				// setup buffers
+				char *ptrStrArrayCoreChar = nullptr;
+				char *ptrStrArrayRoomChar = nullptr;
+				// pluginFunc
+				reinterpret_cast<APIPtr_t>(pluginFunc)(
+					parameterChar,
+					ptrStrArrayCoreChar,
+					ptrStrArrayRoomChar);
+				if (ptrStrArrayCoreChar != nullptr)
+				{
+					ptrStrArrayCore = nlohmann::json::parse(ptrStrArrayCoreChar);
+				}
+				if (ptrStrArrayRoomChar != nullptr)
+				{
+					ptrStrArrayRoom = nlohmann::json::parse(ptrStrArrayRoomChar);
+				}
+			}
+#if defined(_WIN64)
+			FreeLibrary(handle);
+#elif defined(__APPLE__)
+			dlclose(handle);
+#elif defined(__linux__)
+			dlclose(handle);
+#endif
+		}
+	}
 
 	void functionCall(
 		const fs::path &dllPath,
@@ -249,17 +305,20 @@ namespace
 		const nlohmann::json &configCore,
 		const nlohmann::json &configRoom,
 		const nlohmann::json &parameter,
-		nlohmann::json &configCoreUpdate,
-		nlohmann::json &configRoomUpdate,
+		nlohmann::json &configCorePatch,
+		nlohmann::json &configRoomPatch,
 		nlohmann::json &response,
 		nlohmann::json &broadcast)
 	{
 #if defined(_WIN64)
+		using APIPtr_t = void(__stdcall *)(const char *&, const char *&, const char *&, char *&, char *&, char *&, char *&);
 		HINSTANCE handle = LoadLibrary(dllPath.string().c_str());
 #elif defined(__APPLE__)
+		using APIPtr_t = void (*)(const char *&, const char *&, const char *&, char *&, char *&, char *&, char *&);
 		void *handle;
 		handle = dlopen(dllPath.string().c_str(), RTLD_LAZY);
 #elif defined(__linux__)
+		using APIPtr_t = void (*)(const char *&, const char *&, const char *&, char *&, char *&, char *&, char *&);
 		void *handle;
 		handle = dlopen(dllPath.string().c_str(), RTLD_LAZY);
 #endif
@@ -276,14 +335,44 @@ namespace
 			if (pluginFunc)
 			{
 				// setup buffers
-				const std::string configCoreStr = configCore.dump(-1, ' ', true);
-				const char *configCoreChar = configCoreStr.c_str();
-				const std::string configRoomStr = configRoom.dump(-1, ' ', true);
-				const char *configRoomChar = configRoomStr.c_str();
 				const std::string parameterStr = parameter.dump(-1, ' ', true);
 				const char *parameterChar = parameterStr.c_str();
-				char *configCoreUpdateChar = nullptr;
-				char *configRoomUpdateChar = nullptr;
+
+				nlohmann::json ptrStrArrayCore, ptrStrArrayRoom;
+				getPtrStrArrayForPartialConfig(
+					dllPath,
+					parameterChar,
+					ptrStrArrayCore,
+					ptrStrArrayRoom);
+
+				nlohmann::json partialConfigCore, partialConfigRoom;
+				partialConfigCore = nlohmann::json::object();
+				for (const auto &ptrStrJson : ptrStrArrayCore)
+				{
+					const nlohmann::json::json_pointer ptr(ptrStrJson.get<std::string>());
+					// we explicitly check by using .contains()
+					//     e.g. ptr == "/extension/plugin_A/...", but config.at("extension")("plugin_A") == null
+					if (configCore.contains(ptr))
+					{
+						partialConfigCore[ptr] = configCore.at(ptr);
+					}
+				}
+				partialConfigRoom = nlohmann::json::object();
+				for (const auto &ptrStrJson : ptrStrArrayRoom)
+				{
+					const nlohmann::json::json_pointer ptr(ptrStrJson.get<std::string>());
+					if (configRoom.contains(ptr))
+					{
+						partialConfigRoom[ptr] = configRoom.at(ptr);
+					}
+				}
+
+				const std::string configCoreStr = partialConfigCore.dump(-1, ' ', true);
+				const char *configCoreChar = configCoreStr.c_str();
+				const std::string configRoomStr = partialConfigRoom.dump(-1, ' ', true);
+				const char *configRoomChar = configRoomStr.c_str();
+				char *configCorePatchChar = nullptr;
+				char *configRoomPatchChar = nullptr;
 				char *responseChar = nullptr;
 				char *broadcastChar = nullptr;
 				// pluginFunc
@@ -291,18 +380,19 @@ namespace
 					configCoreChar,
 					configRoomChar,
 					parameterChar,
-					configCoreUpdateChar,
-					configRoomUpdateChar,
+					configCorePatchChar,
+					configRoomPatchChar,
 					responseChar,
 					broadcastChar);
-				if (configCoreUpdateChar != nullptr)
+				if (configCorePatchChar != nullptr)
 				{
-					configCoreUpdate = nlohmann::json::parse(configCoreUpdateChar);
+					configCorePatch = nlohmann::json::parse(configCorePatchChar);
 				}
-				if (configRoomUpdateChar != nullptr)
+				if (configRoomPatchChar != nullptr)
 				{
-					configRoomUpdate = nlohmann::json::parse(configRoomUpdateChar);
+					configRoomPatch = nlohmann::json::parse(configRoomPatchChar);
 				}
+				// we respond something (for example, empty json object)
 				if (responseChar != nullptr)
 				{
 					response = nlohmann::json::parse(responseChar);
@@ -311,13 +401,10 @@ namespace
 				{
 					response = nlohmann::json::object();
 				}
+				// broadcast could be null
 				if (broadcastChar != nullptr)
 				{
 					broadcast = nlohmann::json::parse(broadcastChar);
-				}
-				else
-				{
-					broadcast = nlohmann::json::object();
 				}
 			}
 #if defined(_WIN64)

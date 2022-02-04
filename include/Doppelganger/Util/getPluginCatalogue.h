@@ -13,7 +13,6 @@ namespace fs = std::filesystem;
 #endif
 
 #include <string>
-#include <vector>
 #include <nlohmann/json.hpp>
 
 namespace Doppelganger
@@ -22,7 +21,7 @@ namespace Doppelganger
 	{
 		void getPluginCatalogue(
 			const fs::path &pluginDir,
-			const std::vector<std::string> &listURLList,
+			const nlohmann::json &listURLJsonArray,
 			nlohmann::json &catalogue);
 	}
 }

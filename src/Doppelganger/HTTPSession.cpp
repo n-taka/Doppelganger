@@ -56,7 +56,7 @@ namespace Doppelganger
 		{
 			std::stringstream ss;
 			ss << what << ": " << ec.message();
-			Util::log(ss.str(), "ERROR", core_.lock()->dataDir_, core_.lock()->logConfig_);
+			Util::log(ss.str(), "ERROR", core_.lock()->config);
 		}
 	}
 
@@ -109,7 +109,7 @@ namespace Doppelganger
 		{
 			std::stringstream ss;
 			ss << "Request received: \"" << parser_->get().target().to_string() << "\"";
-			Util::log(ss.str(), "SYSTEM", core_.lock()->dataDir_, core_.lock()->logConfig_);
+			Util::log(ss.str(), "SYSTEM", core_.lock()->config);
 		}
 
 		std::string roomUUID = parseRoomUUID(parser_->get());
@@ -134,9 +134,7 @@ namespace Doppelganger
 				}
 			}
 			const std::shared_ptr<Room> room = std::make_shared<Room>();
-			nlohmann::json configCore;
-			core_.lock()->to_json(configCore);
-			room->setup(roomUUID, configCore);
+			room->setup(roomUUID, core_.lock()->config);
 			core_.lock()->rooms_[roomUUID] = room;
 			handleRequest(core_, room, parser_->release(), queue_);
 		}
@@ -491,7 +489,7 @@ namespace
 					else if (reqPathVec.at(2) == "plugin")
 					{
 						// resource
-						fs::path completePath(core.lock()->DoppelgangerRootDir_);
+						fs::path completePath(core.lock()->config.at("DoppelgangerRootDir").get<std::string>());
 						for (int pIdx = 2; pIdx < reqPathVec.size(); ++pIdx)
 						{
 							completePath.append(reqPathVec.at(pIdx));
@@ -530,7 +528,7 @@ namespace
 								// logContent << parameters.at("sessionUUID").get<std::string>();
 								logContent << parameters.at("sessionUUID");
 								logContent << ")";
-								Doppelganger::Util::log(logContent.str(), "APICALL", room.lock()->dataDir_, room.lock()->logConfig_);
+								Doppelganger::Util::log(logContent.str(), "APICALL", room.lock()->config);
 							}
 
 							nlohmann::json response, broadcast;
@@ -579,16 +577,16 @@ namespace
 					// return 301 (moved permanently)
 					std::string completeURL("");
 					{
-						completeURL += core.lock()->serverConfig_.protocol;
+						completeURL += core.lock()->config.at("server").at("protocol").get<std::string>();
 						completeURL += "://";
-						completeURL += core.lock()->serverConfig_.host;
+						completeURL += core.lock()->config.at("server").at("host").get<std::string>();
 						completeURL += ":";
-						completeURL += std::to_string(core.lock()->serverConfig_.portUsed);
+						completeURL += std::to_string(core.lock()->config.at("server").at("portUsed").get<int>());
 					}
 
 					std::string location = completeURL;
 					location += "/";
-					location += room.lock()->UUID_;
+					location += room.lock()->config.at("UUID").get<std::string>();
 					location += "/html/index.html";
 					return send(movedPermanently(std::move(req), location));
 				}
@@ -598,16 +596,16 @@ namespace
 				// return 301 (moved permanently)
 				std::string completeURL("");
 				{
-					completeURL += core.lock()->serverConfig_.protocol;
+					completeURL += core.lock()->config.at("server").at("protocol").get<std::string>();
 					completeURL += "://";
-					completeURL += core.lock()->serverConfig_.host;
+					completeURL += core.lock()->config.at("server").at("host").get<std::string>();
 					completeURL += ":";
-					completeURL += std::to_string(core.lock()->serverConfig_.portUsed);
+					completeURL += std::to_string(core.lock()->config.at("server").at("portUsed").get<int>());
 				}
 
 				std::string location = completeURL;
 				location += "/";
-				location += room.lock()->UUID_;
+				location += room.lock()->config.at("UUID").get<std::string>();
 				location += "/html/index.html";
 				return send(movedPermanently(std::move(req), location));
 			}
@@ -617,16 +615,16 @@ namespace
 			// return 301 (moved permanently)
 			std::string completeURL("");
 			{
-				completeURL += core.lock()->serverConfig_.protocol;
+				completeURL += core.lock()->config.at("server").at("protocol").get<std::string>();
 				completeURL += "://";
-				completeURL += core.lock()->serverConfig_.host;
+				completeURL += core.lock()->config.at("server").at("host").get<std::string>();
 				completeURL += ":";
-				completeURL += std::to_string(core.lock()->serverConfig_.portUsed);
+				completeURL += std::to_string(core.lock()->config.at("server").at("portUsed").get<int>());
 			}
 
 			std::string location = completeURL;
 			location += "/";
-			location += room.lock()->UUID_;
+			location += room.lock()->config.at("UUID").get<std::string>();
 			location += "/html/index.html";
 			return send(movedPermanently(std::move(req), location));
 		}

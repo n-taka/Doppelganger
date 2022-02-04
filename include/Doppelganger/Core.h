@@ -52,42 +52,18 @@ namespace Doppelganger
 		// nlohmann::json conversion
 		//     note: we don't allow implicit conversion for Core
 		////
-		void to_json(nlohmann::json &json) const;
-		void from_json(const nlohmann::json &json);
+		// void to_json(nlohmann::json &json) const;
+		// void to_json(nlohmann::json &json, const nlohmann::json &ptrStrArray) const;
+		// void to_json(nlohmann::json &json, const nlohmann::json_pointer &ptr) const;
+		// void from_json(const nlohmann::json &json);
+		void applyCurrentConfig();
 		void storeCurrentConfig() const;
 
 	public:
-		////
-		// parameters stored in nlohmann::json
-		struct BrowserConfig
-		{
-			bool openOnStartup;
-			std::string openMode;
-			std::string type;
-			fs::path path;
-		};
-		struct ServerConfig
-		{
-			std::string host;
-			int portRequested;
-			int portUsed;
-			std::string protocol;
-			fs::path certificateFilePath;
-			fs::path privateKeyFilePath;
-		};
-		bool active_;
-		BrowserConfig browserConfig_;
-		fs::path DoppelgangerRootDir_;
-		Util::LogConfig logConfig_;
-		std::string outputType_;
-		std::vector<Plugin::InstalledVersionInfo> installedPlugin_;
-		std::vector<std::string> pluginListURL_;
-		ServerConfig serverConfig_;
-		nlohmann::json extension_;
+		nlohmann::json config;
 
 		////
 		// parameters **NOT** stored in nlohmann::json
-		fs::path dataDir_;
 		std::unordered_map<std::string, std::shared_ptr<Doppelganger::Room>> rooms_;
 
 	private:

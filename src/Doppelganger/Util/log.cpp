@@ -15,14 +15,15 @@ namespace Doppelganger
 		void log(
 			const std::string &content,
 			const std::string &level,
-			const fs::path &dataDir,
-			const LogConfig& logConfig)
+			const nlohmann::json& config)
 		{
-			fs::path logTextFile(dataDir);
+			fs::path logTextFile(config.at("dataDir").get<std::string>());
 			logTextFile.append("log");
 			logTextFile.append("log.txt");
+			const nlohmann::json& logLevelJson = config.at("log").at("level");
+			const nlohmann::json& logTypeJson = config.at("log").at("level");
 
-			if ((logConfig.level.find(level) != logConfig.level.end()) && logConfig.level.at(level))
+			if (logLevelJson.contains(level) && logLevelJson.at(level).get<bool>())
 			{
 				std::stringstream logText;
 				// time
@@ -42,11 +43,11 @@ namespace Doppelganger
 				logText << " ";
 				// new line
 				logText << std::endl;
-				if ((logConfig.type.find("STDOUT") != logConfig.type.end()) && logConfig.type.at("STDOUT"))
+				if (logTypeJson.contains("STDOUT") && logTypeJson.at("STDOUT").get<bool>())
 				{
 					std::cout << logText.str();
 				}
-				if ((logConfig.type.find("FILE") != logConfig.type.end()) && logConfig.type.at("FILE"))
+				if (logTypeJson.contains("FILE") && logTypeJson.at("FILE").get<bool>())
 				{
 					std::ofstream ofs(logTextFile.string(), std::ios_base::out | std::ios_base::app);
 					ofs << logText.str();
@@ -58,13 +59,14 @@ namespace Doppelganger
 		void log(
 			const fs::path &path,
 			const std::string &level,
-			const fs::path &dataDir,
-			const LogConfig& logConfig)
+			const nlohmann::json& config)
 		{
-			fs::path logDir(dataDir);
+			fs::path logDir(config.at("dataDir").get<std::string>());
 			logDir.append("log");
+			const nlohmann::json& logLevelJson = config.at("log").at("level");
+			const nlohmann::json& logTypeJson = config.at("log").at("level");
 
-			if ((logConfig.level.find(level) != logConfig.level.end()) && logConfig.level.at(level))
+			if (logLevelJson.contains(level) && logLevelJson.at(level).get<bool>())
 			{
 				try
 				{
@@ -73,13 +75,13 @@ namespace Doppelganger
 					fs::rename(path, logFile);
 					std::stringstream ss;
 					ss << "temporary file " << path.filename().string() << " is stored in " << logDir.string();
-					log(ss.str(), level, dataDir, logConfig);
+					log(ss.str(), level, config);
 				}
 				catch (const fs::filesystem_error &e)
 				{
 					std::stringstream ss;
 					ss << e.what();
-					log(ss.str(), "ERROR", dataDir, logConfig);
+					log(ss.str(), "ERROR", config);
 				}
 			}
 		}

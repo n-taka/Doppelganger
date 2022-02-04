@@ -41,59 +41,28 @@ namespace Doppelganger
 		// we explicitly copy configCore
 		void setup(
 			const std::string &UUID,
-			nlohmann::json configCore);
+			const nlohmann::json &configCore);
 
 		////
 		// nlohmann::json conversion (we do NOT use implicit conversions)
 		////
-		void to_json(nlohmann::json &json) const;
-		void from_json(const nlohmann::json &json);
-		// void storeHistory(const nlohmann::json &diff, const nlohmann::json &diffInv);
+		// void to_json(nlohmann::json &json) const;
+		// void from_json(const nlohmann::json &json);
+		void applyCurrentConfig();
 
 		void joinWS(const WSSession &session);
 		void leaveWS(const std::string &sessionUUID);
 		void broadcastWS(const std::string &APIName, const std::string &sourceUUID, const nlohmann::json &broadcast, const nlohmann::json &response);
 
 	public:
-		////
-		// parameters stored in nlohmann::json
-		struct PluginInfo
-		{
-			std::string name;
-			std::string version;
-		};
-		struct History
-		{
-			int index;
-			// for changing i => i+1 (redo),
-			//   we simply apply diffFromPrev.at(i+1)
-			std::vector<nlohmann::json> diffFromPrev;
-			// for changing i+1 => i (undo),
-			//   we simply apply diffFromNext.at(i)
-			//   diffFromNext is automatically calculated within storeCurrent(...)
-			std::vector<nlohmann::json> diffFromNext;
-		};
-		bool active_;
-		// room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
-		std::string UUID_;
-		// Doppelganger
-		fs::path DoppelgangerRootDir_;
-		Util::LogConfig logConfig_;
-		std::string outputType_;
-		std::vector<Plugin::InstalledVersionInfo> installedPlugin_;
-		std::vector<std::string> pluginListURL_;
-		std::unordered_map<std::string, Doppelganger::TriangleMesh> meshes_;
-		History history_;
-		nlohmann::json extension_;
+		nlohmann::json config;
 
 		////
 		// parameters **NOT** stored in nlohmann::json
 		// Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/
-		fs::path dataDir_;
 		std::unordered_map<std::string, Doppelganger::Plugin> plugin_;
 
 		std::mutex mutexRoom_;
-
 		std::unordered_map<std::string, WSSession> websocketSessions_;
 		std::mutex mutexWS_;
 	};
@@ -119,19 +88,5 @@ namespace Doppelganger
 // 	std::mutex mutex;
 // };
 // interfaceParameters interfaceParams;
-
-////
-// edit history
-////
-// edit history is defined as a json object
-// {
-//     "meshUUID-A": json object represents mesh with meshUUID-A,
-//     "meshUUID-B": json object represents mesh with meshUUID-B,
-//     "meshUUID-C": {
-//         remove: true
-//     },
-//     ...
-// }
-// * each json object ALWAYS contains entry with a key "remove"
 
 #endif
