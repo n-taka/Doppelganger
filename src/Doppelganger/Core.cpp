@@ -204,7 +204,7 @@ namespace Doppelganger
 		{
 			// by default, we open browser
 			if (config.at("browser").at("openOnStartup").get<bool>() &&
-				config.at("browser").at("host").get<std::string>() == "127.0.0.1")
+				config.at("server").at("host").get<std::string>() == "127.0.0.1")
 			{
 				if (config.at("browser").at("type").get<std::string>() == "chrome")
 				{
@@ -556,7 +556,7 @@ namespace Doppelganger
 
 			// listener
 			listener_ = std::make_shared<Listener>(weak_from_this(), ioc_, ctx_, endpoint);
-			config.at("server").at("portUsed") = listener_->acceptor_.local_endpoint().port();
+			config.at("server")["portUsed"] = listener_->acceptor_.local_endpoint().port();
 		}
 
 		// "active" and "forceReload" are very critical and we take care of them in the last

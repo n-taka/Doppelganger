@@ -29,6 +29,7 @@ namespace Doppelganger
 		// add room-specific contents
 		config["UUID"] = UUID;
 		config["meshes"] = nlohmann::json::object();
+		config.at("plugin").at("reInstall") = true;
 		config["history"] = nlohmann::json::object();
 		config.at("history")["index"] = 0;
 		config.at("history")["diffFromPrev"] = nlohmann::json::array();

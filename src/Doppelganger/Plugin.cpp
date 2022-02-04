@@ -161,10 +161,16 @@ namespace Doppelganger
 		{
 			nlohmann::json configCorePatch, configRoomPatch;
 			functionCall(dllPath, "pluginProcess", core.lock()->config, room.lock()->config, parameters, configCorePatch, configRoomPatch, response, broadcast);
-			room.lock()->config.merge_patch(configRoomPatch);
-			room.lock()->applyCurrentConfig();
-			core.lock()->config.merge_patch(configCorePatch);
-			core.lock()->applyCurrentConfig();
+			if (!configRoomPatch.is_null())
+			{
+				room.lock()->config.merge_patch(configRoomPatch);
+				room.lock()->applyCurrentConfig();
+			}
+			if (!configCorePatch.is_null())
+			{
+				core.lock()->config.merge_patch(configCorePatch);
+				core.lock()->applyCurrentConfig();
+			}
 		}
 	}
 
@@ -239,7 +245,13 @@ namespace Doppelganger
 namespace
 {
 	void getPtrStrArrayForPartialConfig(
-		const fs::path &dllPath,
+#if defined(_WIN64)
+		HINSTANCE handle,
+#elif defined(__APPLE__)
+		void *handle,
+#elif defined(__linux__)
+		void *handle,
+#endif
 		const char *parameterChar,
 		nlohmann::json &ptrStrArrayCore,
 		nlohmann::json &ptrStrArrayRoom)
@@ -249,53 +261,37 @@ namespace
 		ptrStrArrayRoom = nlohmann::json::array({"/"});
 
 #if defined(_WIN64)
-		using APIPtr_t = void(__stdcall *)(const char *&, char *&, char *&);
-		HINSTANCE handle = LoadLibrary(dllPath.string().c_str());
+		FARPROC pluginFunc = GetProcAddress(handle, "getPtrStrArrayForPartialConfig");
 #elif defined(__APPLE__)
-		using APIPtr_t = void (*)(const char *&, char *&, char *&);
-		void *handle;
-		handle = dlopen(dllPath.string().c_str(), RTLD_LAZY);
+		void *pluginFunc = dlsym(handle, "getPtrStrArrayForPartialConfig");
 #elif defined(__linux__)
-		using APIPtr_t = void (*)(const char *&, char *&, char *&);
-		void *handle;
-		handle = dlopen(dllPath.string().c_str(), RTLD_LAZY);
+		void *pluginFunc = dlsym(handle, "getPtrStrArrayForPartialConfig");
 #endif
-
-		if (handle != NULL)
+		if (pluginFunc)
 		{
+			// setup buffers
+			char *ptrStrArrayCoreChar = nullptr;
+			char *ptrStrArrayRoomChar = nullptr;
+			// pluginFunc
 #if defined(_WIN64)
-			FARPROC pluginFunc = GetProcAddress(handle, "getPtrStrArrayForPartialConfig");
+			using APIPtr_t = void(__stdcall *)(const char *&, char *&, char *&);
 #elif defined(__APPLE__)
-			void *pluginFunc = dlsym(handle, "getPtrStrArrayForPartialConfig");
+			using APIPtr_t = void (*)(const char *&, char *&, char *&);
 #elif defined(__linux__)
-			void *pluginFunc = dlsym(handle, "getPtrStrArrayForPartialConfig");
+			using APIPtr_t = void (*)(const char *&, char *&, char *&);
 #endif
-			if (pluginFunc)
+			reinterpret_cast<APIPtr_t>(pluginFunc)(
+				parameterChar,
+				ptrStrArrayCoreChar,
+				ptrStrArrayRoomChar);
+			if (ptrStrArrayCoreChar != nullptr)
 			{
-				// setup buffers
-				char *ptrStrArrayCoreChar = nullptr;
-				char *ptrStrArrayRoomChar = nullptr;
-				// pluginFunc
-				reinterpret_cast<APIPtr_t>(pluginFunc)(
-					parameterChar,
-					ptrStrArrayCoreChar,
-					ptrStrArrayRoomChar);
-				if (ptrStrArrayCoreChar != nullptr)
-				{
-					ptrStrArrayCore = nlohmann::json::parse(ptrStrArrayCoreChar);
-				}
-				if (ptrStrArrayRoomChar != nullptr)
-				{
-					ptrStrArrayRoom = nlohmann::json::parse(ptrStrArrayRoomChar);
-				}
+				ptrStrArrayCore = nlohmann::json::parse(ptrStrArrayCoreChar);
 			}
-#if defined(_WIN64)
-			FreeLibrary(handle);
-#elif defined(__APPLE__)
-			dlclose(handle);
-#elif defined(__linux__)
-			dlclose(handle);
-#endif
+			if (ptrStrArrayRoomChar != nullptr)
+			{
+				ptrStrArrayRoom = nlohmann::json::parse(ptrStrArrayRoomChar);
+			}
 		}
 	}
 
@@ -312,13 +308,16 @@ namespace
 	{
 #if defined(_WIN64)
 		using APIPtr_t = void(__stdcall *)(const char *&, const char *&, const char *&, char *&, char *&, char *&, char *&);
+		using DeallocatePtr_t = void(__stdcall *)();
 		HINSTANCE handle = LoadLibrary(dllPath.string().c_str());
 #elif defined(__APPLE__)
 		using APIPtr_t = void (*)(const char *&, const char *&, const char *&, char *&, char *&, char *&, char *&);
+		using DeallocatePtr_t = void (*)();
 		void *handle;
 		handle = dlopen(dllPath.string().c_str(), RTLD_LAZY);
 #elif defined(__linux__)
 		using APIPtr_t = void (*)(const char *&, const char *&, const char *&, char *&, char *&, char *&, char *&);
+		using DeallocatePtr_t = void (*)();
 		void *handle;
 		handle = dlopen(dllPath.string().c_str(), RTLD_LAZY);
 #endif
@@ -327,12 +326,15 @@ namespace
 		{
 #if defined(_WIN64)
 			FARPROC pluginFunc = GetProcAddress(handle, functionName.c_str());
+			FARPROC deallocateFunc = GetProcAddress(handle, "deallocate");
 #elif defined(__APPLE__)
 			void *pluginFunc = dlsym(handle, functionName.c_str());
+			void *deallocateFunc = dlsym(handle, "deallocate");
 #elif defined(__linux__)
 			void *pluginFunc = dlsym(handle, functionName.c_str());
+			void *deallocateFunc = dlsym(handle, "deallocate");
 #endif
-			if (pluginFunc)
+			if (pluginFunc && deallocateFunc)
 			{
 				// setup buffers
 				const std::string parameterStr = parameter.dump(-1, ' ', true);
@@ -340,7 +342,7 @@ namespace
 
 				nlohmann::json ptrStrArrayCore, ptrStrArrayRoom;
 				getPtrStrArrayForPartialConfig(
-					dllPath,
+					handle,
 					parameterChar,
 					ptrStrArrayCore,
 					ptrStrArrayRoom);
@@ -406,6 +408,9 @@ namespace
 				{
 					broadcast = nlohmann::json::parse(broadcastChar);
 				}
+
+				// deallocate memory malloc-ed within dll
+				reinterpret_cast<DeallocatePtr_t>(deallocateFunc)();
 			}
 #if defined(_WIN64)
 			FreeLibrary(handle);

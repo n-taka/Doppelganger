@@ -21,7 +21,7 @@ namespace Doppelganger
 			logTextFile.append("log");
 			logTextFile.append("log.txt");
 			const nlohmann::json& logLevelJson = config.at("log").at("level");
-			const nlohmann::json& logTypeJson = config.at("log").at("level");
+			const nlohmann::json& logTypeJson = config.at("log").at("type");
 
 			if (logLevelJson.contains(level) && logLevelJson.at(level).get<bool>())
 			{
@@ -64,7 +64,7 @@ namespace Doppelganger
 			fs::path logDir(config.at("dataDir").get<std::string>());
 			logDir.append("log");
 			const nlohmann::json& logLevelJson = config.at("log").at("level");
-			const nlohmann::json& logTypeJson = config.at("log").at("level");
+			const nlohmann::json& logTypeJson = config.at("log").at("type");
 
 			if (logLevelJson.contains(level) && logLevelJson.at(level).get<bool>())
 			{
