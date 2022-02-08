@@ -257,8 +257,8 @@ namespace
 		nlohmann::json &ptrStrArrayRoom)
 	{
 		// by default, we request all config (this setting would be overwritten below)
-		ptrStrArrayCore = nlohmann::json::array({"/"});
-		ptrStrArrayRoom = nlohmann::json::array({"/"});
+		ptrStrArrayCore = nlohmann::json::array({""});
+		ptrStrArrayRoom = nlohmann::json::array({""});
 
 #if defined(_WIN64)
 		FARPROC pluginFunc = GetProcAddress(handle, "getPtrStrArrayForPartialConfig");
