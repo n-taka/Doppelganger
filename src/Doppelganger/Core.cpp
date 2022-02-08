@@ -576,7 +576,7 @@ namespace Doppelganger
 			{
 				const std::shared_ptr<Room> room = uuid_room.second;
 				// reload
-				room->broadcastWS(std::string("forceReload"), std::string(""), nlohmann::json::object(), nlohmann::json::basic_json());
+				room->broadcastWS(std::string("forceReload"), std::string(""), nlohmann::json::object(), nlohmann::basic_json(nullptr));
 			}
 		}
 	}

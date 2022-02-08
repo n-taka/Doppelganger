@@ -32,214 +32,6 @@ namespace fs = std::filesystem;
 #include "Doppelganger/Util/uuid.h"
 #include "Doppelganger/Util/log.h"
 
-namespace Doppelganger
-{
-	namespace beast = boost::beast;	  // from <boost/beast.hpp>
-	namespace http = beast::http;	  // from <boost/beast/http.hpp>
-	namespace net = boost::asio;	  // from <boost/asio.hpp>
-	using tcp = boost::asio::ip::tcp; // from <boost/asio/ip/tcp.hpp>
-
-	template <class Derived>
-	Derived &HTTPSession<Derived>::derived()
-	{
-		return static_cast<Derived &>(*this);
-	}
-
-	template <class Derived>
-	void HTTPSession<Derived>::fail(boost::system::error_code ec, char const *what)
-	{
-		if (ec == net::ssl::error::stream_truncated)
-		{
-			return;
-		}
-
-		{
-			std::stringstream ss;
-			ss << what << ": " << ec.message();
-			Util::log(ss.str(), "ERROR", core_.lock()->config);
-		}
-	}
-
-	template <class Derived>
-	HTTPSession<Derived>::HTTPSession(
-		const std::weak_ptr<Core> &core,
-		beast::flat_buffer buffer)
-		: buffer_(std::move(buffer)), queue_(*this), core_(core)
-	{
-	}
-
-	template <class Derived>
-	void HTTPSession<Derived>::doRead()
-	{
-		parser_.emplace();
-		// disable parser body_limit
-		// this is not the best practice, but works
-		parser_->body_limit(boost::none);
-
-		// Set the timeout.
-		beast::get_lowest_layer(
-			derived().stream())
-			.expires_after(std::chrono::seconds(30));
-
-		http::async_read(
-			derived().stream(),
-			buffer_,
-			*parser_,
-			beast::bind_front_handler(
-				&HTTPSession::onRead,
-				derived().shared_from_this()));
-	}
-
-	template <class Derived>
-	void HTTPSession<Derived>::onRead(beast::error_code ec, std::size_t bytes_transferred)
-	{
-		boost::ignore_unused(bytes_transferred);
-
-		// This means they closed the connection
-		if (ec == http::error::end_of_stream)
-		{
-			return derived().doEof();
-		}
-
-		if (ec)
-		{
-			return fail(ec, "read (HTTP)");
-		}
-
-		{
-			std::stringstream ss;
-			ss << "Request received: \"" << parser_->get().target().to_string() << "\"";
-			Util::log(ss.str(), "SYSTEM", core_.lock()->config);
-		}
-
-		std::string roomUUID = parseRoomUUID(parser_->get());
-		if (roomUUID == "favicon.ico")
-		{
-			// do nothing
-			// TODO: prepare favion.ico
-		}
-		else if (roomUUID.size() <= 0 || core_.lock()->rooms_.find(roomUUID) == core_.lock()->rooms_.end())
-		{
-			// create new room
-			if (roomUUID.size() <= 0)
-			{
-				roomUUID = Util::uuid("room-");
-			}
-			else
-			{
-				// add prefix
-				if (roomUUID.substr(0, 5) != "room-")
-				{
-					roomUUID = "room-" + roomUUID;
-				}
-			}
-			const std::shared_ptr<Room> room = std::make_shared<Room>();
-			room->setup(roomUUID, core_.lock()->config);
-			core_.lock()->rooms_[roomUUID] = room;
-			handleRequest(core_, room, parser_->release(), queue_);
-		}
-		else
-		{
-			const std::shared_ptr<Room> &room = core_.lock()->rooms_.at(roomUUID);
-			// See if it is a WebSocket Upgrade
-			if (boost::beast::websocket::is_upgrade(parser_->get()))
-			{
-				// Disable the timeout.
-				// The websocket::stream uses its own timeout settings.
-				beast::get_lowest_layer(derived().stream()).expires_never();
-
-				// Create a websocket session, transferring ownership
-				// of both the socket and the HTTP request.
-				const std::string sessionUUID = Util::uuid("session-");
-				makeWebsocketSession(derived().release_stream(), room, sessionUUID, parser_->release());
-				return;
-			}
-			else
-			{
-				// Send the response
-				handleRequest(core_, room, parser_->release(), queue_);
-				return;
-			}
-		}
-
-		if (!queue_.isFull())
-		{
-			doRead();
-		}
-	}
-
-	template <class Derived>
-	void HTTPSession<Derived>::onWrite(bool close, beast::error_code ec, std::size_t bytes_transferred)
-	{
-		boost::ignore_unused(bytes_transferred);
-
-		if (ec)
-		{
-			return fail(ec, "write (HTTP)");
-		}
-
-		if (close)
-		{
-			// This means we should close the connection, usually because
-			// the response indicated the "Connection: close" semantic.
-			return derived().doEof();
-		}
-
-		if (queue_.onWrite())
-		{
-			doRead();
-		}
-	}
-
-	// HTTPSession::queue
-	template <class Derived>
-	HTTPSession<Derived>::queue::queue(HTTPSession<Derived> &self)
-		: self_(self)
-	{
-		static_assert(limit > 0, "queue limit must be positive");
-		items_.reserve(limit);
-	}
-
-	template <class Derived>
-	bool HTTPSession<Derived>::queue::isFull() const
-	{
-		return (items_.size() >= limit);
-	}
-
-	template <class Derived>
-	bool HTTPSession<Derived>::queue::onWrite()
-	{
-		BOOST_ASSERT(!items_.empty());
-		auto const wasFull = isFull();
-		items_.erase(items_.begin());
-		if (!items_.empty())
-		{
-			(*items_.front())();
-		}
-		return wasFull;
-	}
-
-	template PlainHTTPSession &HTTPSession<PlainHTTPSession>::derived();
-	template void HTTPSession<PlainHTTPSession>::fail(boost::system::error_code, char const *);
-	template HTTPSession<PlainHTTPSession>::HTTPSession(const std::weak_ptr<Core> &, beast::flat_buffer);
-	template void HTTPSession<PlainHTTPSession>::doRead();
-	template void HTTPSession<PlainHTTPSession>::onRead(boost::beast::error_code, std::size_t);
-	template void HTTPSession<PlainHTTPSession>::onWrite(bool, boost::beast::error_code, std::size_t);
-	template HTTPSession<PlainHTTPSession>::queue::queue(HTTPSession<PlainHTTPSession> &self);
-	template bool HTTPSession<PlainHTTPSession>::queue::isFull() const;
-	template bool HTTPSession<PlainHTTPSession>::queue::onWrite();
-
-	template Doppelganger::SSLHTTPSession &Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::derived();
-	template void Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::fail(boost::system::error_code, char const *);
-	template HTTPSession<SSLHTTPSession>::HTTPSession(const std::weak_ptr<Core> &, beast::flat_buffer);
-	template void Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::doRead();
-	template void Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::onRead(beast::error_code, std::size_t);
-	template void Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::onWrite(bool, beast::error_code, std::size_t);
-	template Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::queue::queue(Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession> &self);
-	template bool Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::queue::isFull() const;
-	template bool Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::queue::onWrite();
-};
-
 namespace
 {
 	namespace beast = boost::beast;	  // from <boost/beast.hpp>
@@ -506,7 +298,7 @@ namespace
 							{
 								nlohmann::json serverBusyBroadcast = nlohmann::json::object();
 								serverBusyBroadcast["isBusy"] = true;
-								room.lock()->broadcastWS("isServerBusy", std::string(""), serverBusyBroadcast, nlohmann::json::basic_json());
+								room.lock()->broadcastWS("isServerBusy", std::string(""), serverBusyBroadcast, nlohmann::basic_json(nullptr));
 							}
 
 							const std::string &APIName = reqPathVec.at(2);
@@ -543,7 +335,7 @@ namespace
 							{
 								nlohmann::json serverBusyBroadcast = nlohmann::json::object();
 								serverBusyBroadcast["isBusy"] = false;
-								room.lock()->broadcastWS("isServerBusy", std::string(""), serverBusyBroadcast, nlohmann::json::basic_json());
+								room.lock()->broadcastWS("isServerBusy", std::string(""), serverBusyBroadcast, nlohmann::basic_json(nullptr));
 							}
 
 							// broadcast
@@ -630,5 +422,213 @@ namespace
 		}
 	}
 }
+
+namespace Doppelganger
+{
+	namespace beast = boost::beast;	  // from <boost/beast.hpp>
+	namespace http = beast::http;	  // from <boost/beast/http.hpp>
+	namespace net = boost::asio;	  // from <boost/asio.hpp>
+	using tcp = boost::asio::ip::tcp; // from <boost/asio/ip/tcp.hpp>
+
+	template <class Derived>
+	Derived &HTTPSession<Derived>::derived()
+	{
+		return static_cast<Derived &>(*this);
+	}
+
+	template <class Derived>
+	void HTTPSession<Derived>::fail(boost::system::error_code ec, char const *what)
+	{
+		if (ec == net::ssl::error::stream_truncated)
+		{
+			return;
+		}
+
+		{
+			std::stringstream ss;
+			ss << what << ": " << ec.message();
+			Util::log(ss.str(), "ERROR", core_.lock()->config);
+		}
+	}
+
+	template <class Derived>
+	HTTPSession<Derived>::HTTPSession(
+		const std::weak_ptr<Core> &core,
+		beast::flat_buffer buffer)
+		: buffer_(std::move(buffer)), queue_(*this), core_(core)
+	{
+	}
+
+	template <class Derived>
+	void HTTPSession<Derived>::doRead()
+	{
+		parser_.emplace();
+		// disable parser body_limit
+		// this is not the best practice, but works
+		parser_->body_limit(boost::none);
+
+		// Set the timeout.
+		beast::get_lowest_layer(
+			derived().stream())
+			.expires_after(std::chrono::seconds(30));
+
+		http::async_read(
+			derived().stream(),
+			buffer_,
+			*parser_,
+			beast::bind_front_handler(
+				&HTTPSession::onRead,
+				derived().shared_from_this()));
+	}
+
+	template <class Derived>
+	void HTTPSession<Derived>::onRead(beast::error_code ec, std::size_t bytes_transferred)
+	{
+		boost::ignore_unused(bytes_transferred);
+
+		// This means they closed the connection
+		if (ec == http::error::end_of_stream)
+		{
+			return derived().doEof();
+		}
+
+		if (ec)
+		{
+			return fail(ec, "read (HTTP)");
+		}
+
+		{
+			std::stringstream ss;
+			ss << "Request received: \"" << parser_->get().target().to_string() << "\"";
+			Util::log(ss.str(), "SYSTEM", core_.lock()->config);
+		}
+
+		std::string roomUUID = parseRoomUUID(parser_->get());
+		if (roomUUID == "favicon.ico")
+		{
+			// do nothing
+			// TODO: prepare favion.ico
+		}
+		else if (roomUUID.size() <= 0 || core_.lock()->rooms_.find(roomUUID) == core_.lock()->rooms_.end())
+		{
+			// create new room
+			if (roomUUID.size() <= 0)
+			{
+				roomUUID = Util::uuid("room-");
+			}
+			else
+			{
+				// add prefix
+				if (roomUUID.substr(0, 5) != "room-")
+				{
+					roomUUID = "room-" + roomUUID;
+				}
+			}
+			const std::shared_ptr<Room> room = std::make_shared<Room>();
+			room->setup(roomUUID, core_.lock()->config);
+			core_.lock()->rooms_[roomUUID] = room;
+			handleRequest(core_, room, parser_->release(), queue_);
+		}
+		else
+		{
+			const std::shared_ptr<Room> &room = core_.lock()->rooms_.at(roomUUID);
+			// See if it is a WebSocket Upgrade
+			if (boost::beast::websocket::is_upgrade(parser_->get()))
+			{
+				// Disable the timeout.
+				// The websocket::stream uses its own timeout settings.
+				beast::get_lowest_layer(derived().stream()).expires_never();
+
+				// Create a websocket session, transferring ownership
+				// of both the socket and the HTTP request.
+				const std::string sessionUUID = Util::uuid("session-");
+				makeWebsocketSession(derived().release_stream(), room, sessionUUID, parser_->release());
+				return;
+			}
+			else
+			{
+				// Send the response
+				handleRequest(core_, room, parser_->release(), queue_);
+				return;
+			}
+		}
+
+		if (!queue_.isFull())
+		{
+			doRead();
+		}
+	}
+
+	template <class Derived>
+	void HTTPSession<Derived>::onWrite(bool close, beast::error_code ec, std::size_t bytes_transferred)
+	{
+		boost::ignore_unused(bytes_transferred);
+
+		if (ec)
+		{
+			return fail(ec, "write (HTTP)");
+		}
+
+		if (close)
+		{
+			// This means we should close the connection, usually because
+			// the response indicated the "Connection: close" semantic.
+			return derived().doEof();
+		}
+
+		if (queue_.onWrite())
+		{
+			doRead();
+		}
+	}
+
+	// HTTPSession::queue
+	template <class Derived>
+	HTTPSession<Derived>::queue::queue(HTTPSession<Derived> &self)
+		: self_(self)
+	{
+		static_assert(limit > 0, "queue limit must be positive");
+		items_.reserve(limit);
+	}
+
+	template <class Derived>
+	bool HTTPSession<Derived>::queue::isFull() const
+	{
+		return (items_.size() >= limit);
+	}
+
+	template <class Derived>
+	bool HTTPSession<Derived>::queue::onWrite()
+	{
+		BOOST_ASSERT(!items_.empty());
+		auto const wasFull = isFull();
+		items_.erase(items_.begin());
+		if (!items_.empty())
+		{
+			(*items_.front())();
+		}
+		return wasFull;
+	}
+
+	template PlainHTTPSession &HTTPSession<PlainHTTPSession>::derived();
+	template void HTTPSession<PlainHTTPSession>::fail(boost::system::error_code, char const *);
+	template HTTPSession<PlainHTTPSession>::HTTPSession(const std::weak_ptr<Core> &, beast::flat_buffer);
+	template void HTTPSession<PlainHTTPSession>::doRead();
+	template void HTTPSession<PlainHTTPSession>::onRead(boost::beast::error_code, std::size_t);
+	template void HTTPSession<PlainHTTPSession>::onWrite(bool, boost::beast::error_code, std::size_t);
+	template HTTPSession<PlainHTTPSession>::queue::queue(HTTPSession<PlainHTTPSession> &self);
+	template bool HTTPSession<PlainHTTPSession>::queue::isFull() const;
+	template bool HTTPSession<PlainHTTPSession>::queue::onWrite();
+
+	template Doppelganger::SSLHTTPSession &Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::derived();
+	template void Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::fail(boost::system::error_code, char const *);
+	template HTTPSession<SSLHTTPSession>::HTTPSession(const std::weak_ptr<Core> &, beast::flat_buffer);
+	template void Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::doRead();
+	template void Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::onRead(beast::error_code, std::size_t);
+	template void Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::onWrite(bool, beast::error_code, std::size_t);
+	template Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::queue::queue(Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession> &self);
+	template bool Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::queue::isFull() const;
+	template bool Doppelganger::HTTPSession<Doppelganger::SSLHTTPSession>::queue::onWrite();
+};
 
 #endif

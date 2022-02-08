@@ -163,7 +163,7 @@ namespace Doppelganger
 		if (config.contains("forceReload") && config.at("forceReload").get<bool>())
 		{
 			config.at("forceReload") = false;
-			broadcastWS(std::string("forceReload"), std::string(""), nlohmann::json::object(), nlohmann::json::basic_json());
+			broadcastWS(std::string("forceReload"), std::string(""), nlohmann::json::object(), nlohmann::basic_json(nullptr));
 		}
 	}
 

@@ -34,7 +34,7 @@ namespace Doppelganger
 		}
 
 		room_.lock()->joinWS(derived().shared_from_this());
-		nlohmann::json broadcast = nlohmann::json::basic_json();
+		nlohmann::json broadcast = nlohmann::basic_json(nullptr);
 		nlohmann::json response = nlohmann::json::object();
 		response["sessionUUID"] = UUID_;
 		room_.lock()->broadcastWS("initializeSession", UUID_, broadcast, response);
