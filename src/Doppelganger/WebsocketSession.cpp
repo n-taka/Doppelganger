@@ -58,6 +58,9 @@ namespace Doppelganger
 		beast::error_code ec,
 		std::size_t bytes_transferred)
 	{
+		// API
+		std::lock_guard<std::mutex> lock(room_.lock()->mutexRoom_);
+
 		boost::ignore_unused(bytes_transferred);
 
 		if (ec == websocket::error::closed)
@@ -76,9 +79,6 @@ namespace Doppelganger
 			const nlohmann::json parameters = nlohmann::json::parse(payload);
 			const std::string APIName = parameters.at("API").get<std::string>();
 			const std::string sourceUUID = parameters.at("sessionUUID").get<std::string>();
-
-			// WS APIs are called so many times (e.g. syncCursor).
-			// So, I simply don't log them
 
 			nlohmann::json response, broadcast;
 			room_.lock()->plugin_.at(APIName).pluginProcess(
