@@ -174,6 +174,40 @@ namespace Doppelganger
 		}
 	}
 
+	void Plugin::pluginProcess(
+		const std::weak_ptr<Room> &room,
+		const nlohmann::json &parameters,
+		nlohmann::json &response,
+		nlohmann::json &broadcast)
+	{
+		fs::path dllPath(dir_);
+		std::string dllName(name_);
+#if defined(_WIN64)
+		dllPath.append("Windows");
+		dllName += ".dll";
+#elif defined(__APPLE__)
+		dllPath.append("Darwin");
+		dllName = "lib" + dllName + ".so";
+#elif defined(__linux__)
+		dllPath.append("Linux");
+		dllName = "lib" + dllName + ".so";
+#endif
+		dllPath.append(dllName);
+		// c++ functions (.dll/.so) (if exists)
+		if (fs::exists(dllPath))
+		{
+			nlohmann::json configCorePatch, configRoomPatch;
+			// for WS API, core == nullptr
+			const nlohmann::json emptyConfig = nlohmann::json::object();
+			functionCall(dllPath, "pluginProcess", emptyConfig, room.lock()->config, parameters, configCorePatch, configRoomPatch, response, broadcast);
+			if (!configRoomPatch.is_null())
+			{
+				room.lock()->config.merge_patch(configRoomPatch);
+				room.lock()->applyCurrentConfig();
+			}
+		}
+	}
+
 	////
 	// nlohmann::json conversion
 	////
@@ -394,14 +428,11 @@ namespace
 				{
 					configRoomPatch = nlohmann::json::parse(configRoomPatchChar);
 				}
-				// we respond something (for example, empty json object)
+				// response could be null
+				// if you want to ensure that somethins is returned, pass non-null value as argument
 				if (responseChar != nullptr)
 				{
 					response = nlohmann::json::parse(responseChar);
-				}
-				else
-				{
-					response = nlohmann::json::object();
 				}
 				// broadcast could be null
 				if (broadcastChar != nullptr)

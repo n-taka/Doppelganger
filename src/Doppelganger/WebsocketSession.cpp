@@ -74,16 +74,24 @@ namespace Doppelganger
 		{
 			const std::string payload = boost::beast::buffers_to_string(buffer_.data());
 			const nlohmann::json parameters = nlohmann::json::parse(payload);
-			const std::string &APIName = parameters.at("API").get<std::string>();
-			const std::string &sourceUUID = parameters.at("sessionUUID").get<std::string>();
+			const std::string APIName = parameters.at("API").get<std::string>();
+			const std::string sourceUUID = parameters.at("sessionUUID").get<std::string>();
 
 			// WS APIs are called so many times (e.g. syncCursor).
 			// So, I simply don't log them
 
 			nlohmann::json response, broadcast;
-			// TODO!!
-			// room_.lock()->plugin.at(APIName)->pluginProcess(room_, parameters.at("parameters"), response, broadcast);
-			// room_.lock()->broadcastWS(APIName, sourceUUID, broadcast, response);
+			room_.lock()->plugin_.at(APIName).pluginProcess(
+				room_,
+				parameters.at("parameters"),
+				response,
+				broadcast);
+
+			// broadcast
+			if (!broadcast.is_null() || !response.is_null())
+			{
+				room_.lock()->broadcastWS(APIName, sourceUUID, broadcast, response);
+			}
 		}
 		catch (...)
 		{

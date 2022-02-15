@@ -324,6 +324,8 @@ namespace
 							}
 
 							nlohmann::json response, broadcast;
+							// for HTTP, we return response by default
+							response = nlohmann::json::object();
 
 							room.lock()->plugin_.at(APIName).pluginProcess(
 								core,

@@ -41,6 +41,11 @@ namespace Doppelganger
 			const nlohmann::json &parameters,
 			nlohmann::json &response,
 			nlohmann::json &broadcast);
+		void pluginProcess(
+			const std::weak_ptr<Room> &room,
+			const nlohmann::json &parameters,
+			nlohmann::json &response,
+			nlohmann::json &broadcast);
 
 		struct InstalledVersionInfo
 		{
