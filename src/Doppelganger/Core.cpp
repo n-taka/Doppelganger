@@ -146,9 +146,8 @@ namespace Doppelganger
 			config.at("plugin")["reInstall"] = true;
 			config.at("plugin")["installed"] = nlohmann::json::array();
 			config.at("plugin")["listURL"] = nlohmann::json::array();
-			config.at("plugin").at("listURL").push_back(std::string("https://n-taka.info/nextcloud/s/XqGGYPo8J2rwc9S/download/pluginList_Essential.json"));
-			config.at("plugin").at("listURL").push_back(std::string("https://n-taka.info/nextcloud/s/PgccNTmPECPXSgQ/download/pluginList_Basic.json"));
-			config.at("plugin").at("listURL").push_back(std::string("https://n-taka.info/nextcloud/s/PWPR7YDXKoMeP66/download/pluginList_TORIDE.json"));
+			config.at("plugin").at("listURL").push_back(std::string("https://github.com/n-taka/Doppelganger_Plugin/releases/download/pluginList/pluginList_Essential.json"));
+			config.at("plugin").at("listURL").push_back(std::string("https://github.com/n-taka/Doppelganger_Plugin/releases/download/pluginList/pluginList_Basic.json"));
 			// server
 			config["server"] = nlohmann::json::object();
 			config.at("server")["certificate"] = nlohmann::json::object();
