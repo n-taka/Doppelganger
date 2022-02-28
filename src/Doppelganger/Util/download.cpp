@@ -123,18 +123,43 @@ namespace Doppelganger
 				boost::certify::enable_native_https_server_verification(ssl_ctx);
 				// end::ctx_setup_source[]
 				auto stream_ptr = connect(ctx, ssl_ctx, host);
+				// we need to care too many redirects...
 				auto response = get(*stream_ptr, host, target);
+				if (response.result() == boost::beast::http::status::ok)
+				{
+					// write to file
+					std::ofstream destFile(destPath.string(), std::ios::binary);
+					destFile << response.body();
+					destFile.close();
 
-				// write to file
-				std::ofstream destFile(destPath.string(), std::ios::binary);
-				destFile << response.body();
-				destFile.close();
+					boost::system::error_code ec;
+					stream_ptr->shutdown(ec);
+					stream_ptr->next_layer().close(ec);
 
-				boost::system::error_code ec;
-				stream_ptr->shutdown(ec);
-				stream_ptr->next_layer().close(ec);
+					return true;
+				}
+				else if (boost::beast::http::to_status_class(response.result()) == boost::beast::http::status_class::redirection)
+				{
+					std::string redirectedUrl("");
+					if (response.find("location") != response.end())
+					{
+						redirectedUrl = response.at("location").to_string();
+					}
+					else if (response.find("Location") != response.end())
+					{
+						redirectedUrl = response.at("Location").to_string();
+					}
 
-				return true;
+					if (!redirectedUrl.empty())
+					{
+						return download(redirectedUrl, destPath);
+					}
+				}
+
+				// neither
+				//   - 200
+				//   - 3XX (redirection)
+				return false;
 			}
 			catch (std::exception const &e)
 			{
