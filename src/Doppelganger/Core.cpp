@@ -172,6 +172,9 @@ namespace Doppelganger
 
 		// apply
 		applyCurrentConfig();
+
+		// export to file.
+		storeCurrentConfig();
 	}
 
 	void Core::run()
