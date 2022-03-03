@@ -17,7 +17,6 @@ namespace fs = std::filesystem;
 #include <vector>
 #include <unordered_map>
 #include <fstream>
-#include <variant>
 #include <nlohmann/json.hpp>
 
 #include "Doppelganger/Util/download.h"

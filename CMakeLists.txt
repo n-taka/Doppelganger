@@ -159,6 +159,24 @@ endif ()
 
 
 ##############################################
+### app bundle for macOS (need to check on macOS...)
+##############################################
+if(APPLE)
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        MACOSX_BUNDLE TRUE
+        MACOSX_FRAMEWORK_IDENTIFIER info.n-taka
+        MACOSX_BUNDLE_EXECUTABLE "Doppelganger"
+        MACOSX_BUNDLE_INFO_STRING "Doppelganger"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "info.n-taka"
+        MACOSX_BUNDLE_LONG_VERSION_STRING "Doppelganger Version ${CMAKE_PROJECT_VERSION}"
+        MACOSX_BUNDLE_BUNDLE_NAME "Doppelganger"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "${CMAKE_PROJECT_VERSION}"
+        MACOSX_BUNDLE_BUNDLE_VERSION ${CMAKE_PROJECT_VERSION}
+    )
+endif()
+
+
+##############################################
 ### compile options
 ##############################################
 if (WIN32)

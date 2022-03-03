@@ -3,13 +3,22 @@
 
 #if defined(_WIN64)
 #include <filesystem>
+#include <variant>
 namespace fs = std::filesystem;
+template <class... Types>
+using variant = std::variant<Types...>;
 #elif defined(__APPLE__)
 #include "boost/filesystem.hpp"
+#include "boost/variant.hpp"
 namespace fs = boost::filesystem;
+template <class... Types>
+using variant = boost::variant<Types...>;
 #elif defined(__linux__)
 #include <filesystem>
+#include <variant>
 namespace fs = std::filesystem;
+template <class... Types>
+using variant = std::variant<Types...>;
 #endif
 
 #include <string>
@@ -17,9 +26,6 @@ namespace fs = std::filesystem;
 #include <mutex>
 #include <unordered_map>
 #include <unordered_set>
-// todo variant requires C++17
-// we need to use boost::variant for macOS
-#include <variant>
 
 #include <nlohmann/json.hpp>
 #include "Doppelganger/TriangleMesh.h"
@@ -33,7 +39,7 @@ namespace Doppelganger
 
 	class Room : public std::enable_shared_from_this<Room>
 	{
-		using WSSession = std::variant<std::shared_ptr<PlainWebsocketSession>, std::shared_ptr<SSLWebsocketSession>>;
+		using WSSession = variant<std::shared_ptr<PlainWebsocketSession>, std::shared_ptr<SSLWebsocketSession> >;
 
 	public:
 		Room();
@@ -67,26 +73,5 @@ namespace Doppelganger
 		std::mutex mutexWS_;
 	};
 }
-
-// ////
-// // parameter for user interface
-// struct cursorInfo
-// {
-// 	double x;
-// 	double y;
-// 	int idx;
-// };
-// struct interfaceParameters
-// {
-// 	Eigen::Matrix<double, 3, 1> cameraTarget, cameraPosition, cameraUp;
-// 	double cameraZoom;
-// 	std::int64_t cameraTargetTimestamp, cameraPositionTimestamp, cameraUpTimestamp, cameraZoomTimestamp;
-// 	// mouse cursors
-// 	std::unordered_map<std::string, cursorInfo> cursors;
-// 	// loading state
-// 	std::unordered_set<std::string> taskUUIDInProgress;
-// 	std::mutex mutex;
-// };
-// interfaceParameters interfaceParams;
 
 #endif

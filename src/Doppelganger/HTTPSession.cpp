@@ -298,7 +298,7 @@ namespace
 							{
 								nlohmann::json serverBusyBroadcast = nlohmann::json::object();
 								serverBusyBroadcast["isBusy"] = true;
-								room.lock()->broadcastWS("isServerBusy", std::string(""), serverBusyBroadcast, nlohmann::basic_json(nullptr));
+								room.lock()->broadcastWS("isServerBusy", std::string(""), serverBusyBroadcast, nlohmann::json(nullptr));
 							}
 
 							const std::string &APIName = reqPathVec.at(2);
@@ -337,7 +337,7 @@ namespace
 							{
 								nlohmann::json serverBusyBroadcast = nlohmann::json::object();
 								serverBusyBroadcast["isBusy"] = false;
-								room.lock()->broadcastWS("isServerBusy", std::string(""), serverBusyBroadcast, nlohmann::basic_json(nullptr));
+								room.lock()->broadcastWS("isServerBusy", std::string(""), serverBusyBroadcast, nlohmann::json(nullptr));
 							}
 
 							// broadcast

@@ -117,7 +117,13 @@ namespace Doppelganger
 
 								if (plugin_.find(name) != plugin_.end() && version.length() > 0)
 								{
+#if defined(_WIN64)
 									plugin_.at(name).install(weak_from_this(), version);
+#elif defined(__APPLE__)
+									plugin_.at(name).install(std::weak_ptr<Room>(shared_from_this()), version);
+#elif defined(__linux__)
+									plugin_.at(name).install(weak_from_this(), version);
+#endif
 								}
 								else
 								{
@@ -136,7 +142,13 @@ namespace Doppelganger
 							Plugin &plugin = name_plugin.second;
 							if (!plugin.optional_ && (plugin.installedVersion_.size() == 0))
 							{
+#if defined(_WIN64)
 								plugin.install(weak_from_this(), std::string("latest"));
+#elif defined(__APPLE__)
+								plugin.install(std::weak_ptr<Room>(shared_from_this()), std::string("latest"));
+#elif defined(__linux__)
+								plugin.install(weak_from_this(), std::string("latest"));
+#endif
 								nlohmann::json installedPluginJson = nlohmann::json::object();
 								installedPluginJson["name"] = name;
 								installedPluginJson["version"] = std::string("latest");
@@ -163,16 +175,23 @@ namespace Doppelganger
 		if (config.contains("forceReload") && config.at("forceReload").get<bool>())
 		{
 			config.at("forceReload") = false;
-			broadcastWS(std::string("forceReload"), std::string(""), nlohmann::json::object(), nlohmann::basic_json(nullptr));
+			broadcastWS(std::string("forceReload"), std::string(""), nlohmann::json::object(), nlohmann::json(nullptr));
 		}
 	}
 
 	void Room::joinWS(const WSSession &session)
 	{
 		std::lock_guard<std::mutex> lock(mutexWS_);
-		std::visit([this](const auto &session_)
-				   { websocketSessions_[session_->UUID_] = session_; },
-				   session);
+#if defined(_WIN64)
+		std::visit(
+#elif defined(__APPLE__)
+		boost::apply_visitor(
+#elif defined(__linux__)
+		std::visit(
+#endif
+			[this](const auto &session_)
+			{ websocketSessions_[session_->UUID_] = session_; },
+			session);
 	}
 
 	void Room::leaveWS(const std::string &sessionUUID)
@@ -209,18 +228,32 @@ namespace Doppelganger
 			{
 				if (!broadcast.is_null())
 				{
-					std::visit([&broadcastMessage](const auto &session_)
-							   { session_->send(broadcastMessage); },
-							   session);
+#if defined(_WIN64)
+					std::visit(
+#elif defined(__APPLE__)
+					boost::apply_visitor(
+#elif defined(__linux__)
+					std::visit(
+#endif
+						[&broadcastMessage](const auto &session_)
+						{ session_->send(broadcastMessage); },
+						session);
 				}
 			}
 			else
 			{
 				if (!response.is_null())
 				{
-					std::visit([&responseMessage](const auto &session_)
-							   { session_->send(responseMessage); },
-							   session);
+#if defined(_WIN64)
+					std::visit(
+#elif defined(__APPLE__)
+					boost::apply_visitor(
+#elif defined(__linux__)
+					std::visit(
+#endif
+						[&responseMessage](const auto &session_)
+						{ session_->send(responseMessage); },
+						session);
 				}
 			}
 		}

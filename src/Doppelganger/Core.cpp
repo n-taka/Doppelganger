@@ -88,6 +88,7 @@ namespace Doppelganger
 			CoTaskMemFree(localAppData);
 #elif defined(__APPLE__)
 			// For macOS, we use "~/Library/Application Support/Doppelganger"
+			char path[PATH_MAX];
 			sysdir_search_path_enumeration_state state = sysdir_start_search_path_enumeration(SYSDIR_DIRECTORY_APPLICATION_SUPPORT, SYSDIR_DOMAIN_MASK_USER);
 			sysdir_get_next_search_path_enumeration(state, path);
 			const std::string fullPathStr = expand_user(std::string(path));
@@ -557,7 +558,13 @@ namespace Doppelganger
 			}
 
 			// listener
+#if defined(_WIN64)
 			listener_ = std::make_shared<Listener>(weak_from_this(), ioc_, ctx_, endpoint);
+#elif defined(__APPLE__)
+			listener_ = std::make_shared<Listener>(std::weak_ptr<Core>(shared_from_this()), ioc_, ctx_, endpoint);
+#elif defined(__linux__)
+			listener_ = std::make_shared<Listener>(weak_from_this(), ioc_, ctx_, endpoint);
+#endif
 			config.at("server")["portUsed"] = listener_->acceptor_.local_endpoint().port();
 		}
 
@@ -578,7 +585,7 @@ namespace Doppelganger
 			{
 				const std::shared_ptr<Room> room = uuid_room.second;
 				// reload
-				room->broadcastWS(std::string("forceReload"), std::string(""), nlohmann::json::object(), nlohmann::basic_json(nullptr));
+				room->broadcastWS(std::string("forceReload"), std::string(""), nlohmann::json::object(), nlohmann::json(nullptr));
 			}
 		}
 	}
