@@ -19,7 +19,7 @@ endif ()
 ##############################################
 ### we use vcpkg for dependencies
 ##############################################
-set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/submodule/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "Vcpkg toolchain file")
+set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/submodule/Doppelganger_Util/submodule/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "Vcpkg toolchain file")
 
 
 ##############################################
@@ -72,6 +72,7 @@ add_executable(${PROJECT_NAME})
 ### source
 ##############################################
 target_sources(${PROJECT_NAME} PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Core.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/HTTPSession.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/PlainHTTPSession.cpp
@@ -81,15 +82,15 @@ target_sources(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/WebsocketSession.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/PlainWebsocketSession.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/SSLWebsocketSession.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Util/download.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Util/encodeBinDataToBase64.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Util/getCurrentTimestampAsString.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Util/getPluginCatalogue.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Util/unzip.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Util/uuid.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Util/writeBase64ToFile.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Util/log.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/Doppelganger_Util/src/Doppelganger/Util/download.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/Doppelganger_Util/src/Doppelganger/Util/encodeBinDataToBase64.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/Doppelganger_Util/src/Doppelganger/Util/getCurrentTimestampAsString.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/Doppelganger_Util/src/Doppelganger/Util/getPluginCatalogue.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/Doppelganger_Util/src/Doppelganger/Util/log.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/Doppelganger_Util/src/Doppelganger/Util/storeHistory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/Doppelganger_Util/src/Doppelganger/Util/unzip.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/Doppelganger_Util/src/Doppelganger/Util/uuid.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/Doppelganger_Util/src/Doppelganger/Util/writeBase64ToFile.cpp
 )
 
 
@@ -100,8 +101,9 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     ${EIGEN3_INCLUDE_DIR}
     ${Boost_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/libigl/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/certify/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/Doppelganger_Util/include/
+    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/Doppelganger_Util/submodule/libigl/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/Doppelganger_Util/submodule/certify/include
 )
 
 

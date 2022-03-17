@@ -1,25 +1,8 @@
 #ifndef ROOM_H
 #define ROOM_H
 
-#if defined(_WIN64)
-#include <filesystem>
-#include <variant>
-namespace fs = std::filesystem;
-template <class... Types>
-using variant = std::variant<Types...>;
-#elif defined(__APPLE__)
-#include "boost/filesystem.hpp"
-#include "boost/variant.hpp"
-namespace fs = boost::filesystem;
-template <class... Types>
-using variant = boost::variant<Types...>;
-#elif defined(__linux__)
-#include <filesystem>
-#include <variant>
-namespace fs = std::filesystem;
-template <class... Types>
-using variant = std::variant<Types...>;
-#endif
+#include "Doppelganger/Util/filesystem.h"
+#include "Doppelganger/Util/variant.h"
 
 #include <string>
 #include <memory>
