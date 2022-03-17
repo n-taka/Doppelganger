@@ -78,7 +78,6 @@ target_sources(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/SSLHTTPSession.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Plugin.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/Room.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/TriangleMesh.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/WebsocketSession.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/PlainWebsocketSession.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Doppelganger/SSLWebsocketSession.cpp

@@ -28,7 +28,6 @@ using variant = std::variant<Types...>;
 #include <unordered_set>
 
 #include <nlohmann/json.hpp>
-#include "Doppelganger/TriangleMesh.h"
 #include "Doppelganger/Plugin.h"
 #include "Doppelganger/Util/log.h"
 
