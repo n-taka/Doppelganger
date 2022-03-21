@@ -1,6 +1,6 @@
 {
     "name": "doppelganger",
-    "version-string": "2.0",
+    "version-string": "2022.03",
     "description": "HTML5 GUI for geometry processing with C++ backend",
     "homepage": "https://github.com/n-taka/Doppelganger",
     "dependencies": [
