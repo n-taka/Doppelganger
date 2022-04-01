@@ -38,6 +38,7 @@ namespace Doppelganger
 
 		void setup();
 		void run();
+		void shutdown();
 
 		////
 		// nlohmann::json conversion

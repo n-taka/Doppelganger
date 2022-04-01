@@ -86,6 +86,11 @@ namespace Doppelganger
 
 		void send(const std::shared_ptr<const std::string> &ss);
 
+		void close(const websocket::close_code &code)
+		{
+			derived().ws().async_close(code, [](const beast::error_code &ec) {});
+		}
+
 	public:
 		const std::string UUID_;
 	};

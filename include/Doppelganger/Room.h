@@ -31,6 +31,8 @@ namespace Doppelganger
 			const std::string &UUID,
 			const nlohmann::json &configCore);
 
+		void shutdown();
+
 		////
 		// nlohmann::json conversion (we do NOT use implicit conversions)
 		////

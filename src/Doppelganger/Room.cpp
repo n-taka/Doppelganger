@@ -47,6 +47,66 @@ namespace Doppelganger
 		}
 	}
 
+	void Room::shutdown()
+	{
+		for (auto &uuid_ws : websocketSessions_)
+		{
+			const std::string &uuid = uuid_ws.first;
+			WSSession &ws = uuid_ws.second;
+#if defined(_WIN64)
+			std::visit(
+#elif defined(__APPLE__)
+			boost::apply_visitor(
+#elif defined(__linux__)
+			std::visit(
+#endif
+				[](const auto &ws_)
+				{
+					ws_->close(websocket::close_code::going_away);
+				},
+				ws);
+		}
+
+		// erase directories when we perform graceful shutdonw
+		// log: Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/log
+		{
+			fs::path logDir(config.at("dataDir").get<std::string>());
+			logDir.append("log");
+			fs::remove_all(logDir);
+		}
+
+		// output: Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/output
+		{
+			fs::path outputDir(config.at("dataDir").get<std::string>());
+			outputDir.append("output");
+			// we remove output only when the directory is empty
+			if (fs::is_empty(outputDir))
+			{
+				fs::remove_all(outputDir);
+			}
+		}
+
+		// we can't remove plugin because windows doesn't release dll resource even after FreeLibrary...
+		// plugin: Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/plugin
+		// {
+		// 	fs::path pluginDir(config.at("dataDir").get<std::string>());
+		// 	pluginDir.append("plugin");
+		// 	std::error_code ec;
+		// 	fs::remove_all(pluginDir, ec);
+		// 	std::cout << ec.message() << std::endl;
+		// }
+
+		// dataDir: Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+		{
+			fs::path dataDir(config.at("dataDir").get<std::string>());
+			// we remove dataDir only when the directory is empty
+			if (fs::is_empty(dataDir))
+			{
+				fs::remove_all(dataDir);
+			}
+		}
+	}
+
 	void Room::applyCurrentConfig()
 	{
 		// dataDir: Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/
@@ -167,8 +227,7 @@ namespace Doppelganger
 		// "active" and "forceReload" are very critical and we take care of them in the last
 		if (config.contains("active") && !config.at("active").get<bool>())
 		{
-			// shutdown...
-			// TODO: close websocket sessions, etc...
+			shutdown();
 			return;
 		}
 
@@ -258,49 +317,6 @@ namespace Doppelganger
 			}
 		}
 	}
-
-	// void Room::storeHistory(const nlohmann::json &diff, const nlohmann::json &diffInv)
-	// {
-	// 	// erase future elements in the edit history
-	// 	if (editHistory.index + 0 < editHistory.diffFromNext.size())
-	// 	{
-	// 		editHistory.diffFromNext.erase(editHistory.diffFromNext.begin() + (editHistory.index + 0), editHistory.diffFromNext.end());
-	// 	}
-	// 	if (editHistory.index + 1 < editHistory.diffFromPrev.size())
-	// 	{
-	// 		editHistory.diffFromPrev.erase(editHistory.diffFromPrev.begin() + (editHistory.index + 1), editHistory.diffFromPrev.end());
-	// 	}
-	// 	// store diff/diffInv
-	// 	editHistory.diffFromNext.emplace_back(diffInv);
-	// 	editHistory.diffFromPrev.emplace_back(diff);
-	// 	editHistory.index = editHistory.diffFromNext.size();
-	// }
-
-	// add Room specific parameters
-	// to plugin...?
-	// interface
-	// camera
-	// {
-	// 	config_["camera"] = nlohmann::json::object();
-	// 	config_["camera"]["target"] = nlohmann::json::object();
-	// 	config_["camera"]["target"]["x"] = 0.0;
-	// 	config_["camera"]["target"]["y"] = 0.0;
-	// 	config_["camera"]["target"]["z"] = 0.0;
-	// 	config_["camera"]["target"]["timestamp"] = 0;
-	// 	config_["camera"]["position"] = nlohmann::json::object();
-	// 	config_["camera"]["position"]["x"] = -30.0;
-	// 	config_["camera"]["position"]["y"] = 40.0;
-	// 	config_["camera"]["position"]["z"] = 30.0;
-	// 	config_["camera"]["position"]["timestamp"] = 0;
-	// 	config_["camera"]["up"] = nlohmann::json::object();
-	// 	config_["camera"]["up"]["x"] = 0.0;
-	// 	config_["camera"]["up"]["y"] = 1.0;
-	// 	config_["camera"]["up"]["z"] = 0.0;
-	// 	config_["camera"]["up"]["timestamp"] = 0;
-	// 	config_["camera"]["zoom"] = nlohmann::json::object();
-	// 	config_["camera"]["zoom"]["value"] = 1.0;
-	// 	config_["camera"]["zoom"]["timestamp"] = 0;
-	// }
 }
 
 #endif

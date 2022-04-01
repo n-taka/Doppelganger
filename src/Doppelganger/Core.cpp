@@ -393,6 +393,55 @@ namespace Doppelganger
 		}
 	}
 
+	void Core::shutdown()
+	{
+		for (auto &uuid_room : rooms_)
+		{
+			const std::string &uuid = uuid_room.first;
+			std::shared_ptr<Doppelganger::Room> &room = uuid_room.second;
+			room->shutdown();
+		}
+
+		// erase directories when we perform graceful shutdonw
+		// log: Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/log
+		{
+			fs::path logDir(config.at("dataDir").get<std::string>());
+			logDir.append("log");
+			fs::remove_all(logDir);
+		}
+
+		// output: Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/output
+		{
+			fs::path outputDir(config.at("dataDir").get<std::string>());
+			outputDir.append("output");
+			// we remove output only when the directory is empty
+			if (fs::is_empty(outputDir))
+			{
+				fs::remove_all(outputDir);
+			}
+		}
+
+		// plugin: Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/plugin
+		{
+			fs::path pluginDir(config.at("dataDir").get<std::string>());
+			pluginDir.append("plugin");
+			fs::remove_all(pluginDir);
+		}
+
+		// dataDir: Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+		{
+			fs::path dataDir(config.at("dataDir").get<std::string>());
+			// we remove dataDir only when the directory is empty
+			if (fs::is_empty(dataDir))
+			{
+				fs::remove_all(dataDir);
+			}
+		}
+
+		storeCurrentConfig();
+		ioc_.stop();
+	}
+
 	void Core::applyCurrentConfig()
 	{
 		// DoppelgangerRootDir is ignored
@@ -571,10 +620,7 @@ namespace Doppelganger
 		// "active" and "forceReload" are very critical and we take care of them in the last
 		if (config.contains("active") && !config.at("active").get<bool>())
 		{
-			// shutdown
-			storeCurrentConfig();
-			ioc_.stop();
-			// todo: close rooms, etc.
+			shutdown();
 			return;
 		}
 
