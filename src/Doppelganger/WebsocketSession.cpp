@@ -146,23 +146,6 @@ namespace Doppelganger
 		// remove mouse cursor
 		//   - update parameter on this server
 		//   - broadcast message for remove
-		{
-			// TODO!!
-			// room_.lock()->interfaceParams.cursors.erase(UUID_);
-			// parameters = {
-			//  "sessionUUID": sessionUUID string,
-			//  "cursor": {
-			//   "remove": boolean value for removing cursor for no longer connected session
-			//  }
-			// }
-			// nlohmann::json response, broadcast;
-			// response = nlohmann::json::object();
-			// broadcast = nlohmann::json::object();
-			// broadcast["sessionUUID"] = UUID_;
-			// broadcast["cursor"] = nlohmann::json::object();
-			// broadcast["cursor"]["remove"] = true;
-			// room_.lock()->broadcastWS("syncCursor", UUID_, broadcast, response);
-		}
 		room_.lock()->leaveWS(UUID_);
 
 		// Don't report these
