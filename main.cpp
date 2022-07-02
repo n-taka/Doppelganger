@@ -5,7 +5,7 @@
 
 int main(int argv, char *argc[])
 {
-	const int threads = 1;
+	const int threads = std::max<int>(1, std::thread::hardware_concurrency());
 
 	boost::asio::io_context ioc{threads};
 	boost::asio::ssl::context ctx{boost::asio::ssl::context::tlsv12};
