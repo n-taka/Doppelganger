@@ -40,105 +40,108 @@ namespace
 namespace Doppelganger
 {
 	void Plugin::install(
-		const std::weak_ptr<Room> &room,
+		const std::weak_ptr<Room> &room_,
 		const std::string &version)
 	{
-
-		const std::string actualVersion((version == "latest") ? versions_.at(0).version : version);
-
-		std::string dirName("");
-		dirName += name_;
-		dirName += "_";
-		dirName += actualVersion;
-
-		fs::path cachedDir(room.lock()->config.at("DoppelgangerRootDir").get<std::string>());
-		cachedDir.append("plugin");
-		cachedDir.append(dirName);
-
-		dir_ = fs::path(room.lock()->config.at("dataDir").get<std::string>());
-		dir_.append("plugin");
-		dir_.append(dirName);
-
-		if (!fs::exists(cachedDir))
+		const std::shared_ptr<Room> room = room_.lock();
+		if (room)
 		{
-			bool versionFound = false;
-			for (const auto &versionEntry : versions_)
+			const std::string actualVersion((version == "latest") ? versions_.at(0).version : version);
+
+			std::string dirName("");
+			dirName += name_;
+			dirName += "_";
+			dirName += actualVersion;
+
+			fs::path cachedDir(room->config.at("DoppelgangerRootDir").get<std::string>());
+			cachedDir.append("plugin");
+			cachedDir.append(dirName);
+
+			dir_ = fs::path(room->config.at("dataDir").get<std::string>());
+			dir_.append("plugin");
+			dir_.append(dirName);
+
+			if (!fs::exists(cachedDir))
 			{
-				const std::string &pluginVersion = versionEntry.version;
-				if (pluginVersion == actualVersion)
+				bool versionFound = false;
+				for (const auto &versionEntry : versions_)
 				{
-					const std::string &pluginURL = versionEntry.URL;
-					fs::path zipPath(room.lock()->config.at("DoppelgangerRootDir").get<std::string>());
-					zipPath.append("plugin");
-					zipPath.append("tmp.zip");
-					if (Util::download(pluginURL, zipPath))
+					const std::string &pluginVersion = versionEntry.version;
+					if (pluginVersion == actualVersion)
 					{
-						Util::unzip(zipPath, cachedDir);
-						// erase temporary file
-						fs::remove_all(zipPath);
-						versionFound = true;
-						break;
-					}
-					else
-					{
-						// failure
-						std::stringstream ss;
-						ss << "Plugin \"" << name_ << "\" (";
-						if (version == "latest")
+						const std::string &pluginURL = versionEntry.URL;
+						fs::path zipPath(room->config.at("DoppelgangerRootDir").get<std::string>());
+						zipPath.append("plugin");
+						zipPath.append("tmp.zip");
+						if (Util::download(pluginURL, zipPath))
 						{
-							ss << "latest, ";
+							Util::unzip(zipPath, cachedDir);
+							// erase temporary file
+							fs::remove_all(zipPath);
+							versionFound = true;
+							break;
 						}
-						ss << actualVersion << ")"
-						   << " is NOT downloaded correctly. (Download)";
-						Util::log(ss.str(), "ERROR", room.lock()->config);
-						// remove invalid dir_
-						dir_ = fs::path();
-						return;
+						else
+						{
+							// failure
+							std::stringstream ss;
+							ss << "Plugin \"" << name_ << "\" (";
+							if (version == "latest")
+							{
+								ss << "latest, ";
+							}
+							ss << actualVersion << ")"
+							   << " is NOT downloaded correctly. (Download)";
+							Util::log(ss.str(), "ERROR", room->config);
+							// remove invalid dir_
+							dir_ = fs::path();
+							return;
+						}
 					}
 				}
-			}
 
-			if (!versionFound)
-			{
-				// failure
-				std::stringstream ss;
-				ss << "Plugin \"" << name_ << "\" (";
-				if (version == "latest")
+				if (!versionFound)
 				{
-					ss << "latest, ";
+					// failure
+					std::stringstream ss;
+					ss << "Plugin \"" << name_ << "\" (";
+					if (version == "latest")
+					{
+						ss << "latest, ";
+					}
+					ss << actualVersion << ")"
+					   << " is NOT loaded correctly. (No such version)";
+					Util::log(ss.str(), "ERROR", room->config);
+					// remove invalid dir_
+					dir_ = fs::path();
+					return;
 				}
-				ss << actualVersion << ")"
-				   << " is NOT loaded correctly. (No such version)";
-				Util::log(ss.str(), "ERROR", room.lock()->config);
-				// remove invalid dir_
-				dir_ = fs::path();
-				return;
 			}
-		}
 
-		if (!fs::exists(dir_))
-		{
-			// copy cached plugin into room
-			fs::copy(cachedDir, dir_, fs::copy_options::recursive);
+			if (!fs::exists(dir_))
 			{
-				std::stringstream ss;
-				ss << "Plugin \"" << name_ << "\" (";
-				if (version == "latest")
+				// copy cached plugin into room
+				fs::copy(cachedDir, dir_, fs::copy_options::recursive);
 				{
-					ss << "latest, ";
+					std::stringstream ss;
+					ss << "Plugin \"" << name_ << "\" (";
+					if (version == "latest")
+					{
+						ss << "latest, ";
+					}
+					ss << actualVersion << ")"
+					   << " is loaded.";
+					Util::log(ss.str(), "SYSTEM", room->config);
 				}
-				ss << actualVersion << ")"
-				   << " is loaded.";
-				Util::log(ss.str(), "SYSTEM", room.lock()->config);
 			}
-		}
 
-		installedVersion_ = version;
+			installedVersion_ = version;
+		}
 	}
 
 	void Plugin::pluginProcess(
-		const std::weak_ptr<Core> &core,
-		const std::weak_ptr<Room> &room,
+		const std::shared_ptr<Core> &core,
+		const std::shared_ptr<Room> &room,
 		const nlohmann::json &parameters,
 		nlohmann::json &response,
 		nlohmann::json &broadcast)
@@ -160,22 +163,22 @@ namespace Doppelganger
 		if (fs::exists(dllPath))
 		{
 			nlohmann::json configCorePatch, configRoomPatch;
-			functionCall(dllPath, "pluginProcess", core.lock()->config, room.lock()->config, parameters, configCorePatch, configRoomPatch, response, broadcast);
+			functionCall(dllPath, "pluginProcess", core->config, room->config, parameters, configCorePatch, configRoomPatch, response, broadcast);
 			if (!configRoomPatch.is_null())
 			{
-				room.lock()->config.merge_patch(configRoomPatch);
-				room.lock()->applyCurrentConfig();
+				room->config.merge_patch(configRoomPatch);
+				room->applyCurrentConfig();
 			}
 			if (!configCorePatch.is_null())
 			{
-				core.lock()->config.merge_patch(configCorePatch);
-				core.lock()->applyCurrentConfig();
+				core->config.merge_patch(configCorePatch);
+				core->applyCurrentConfig();
 			}
 		}
 	}
 
 	void Plugin::pluginProcess(
-		const std::weak_ptr<Room> &room,
+		const std::shared_ptr<Room> &room,
 		const nlohmann::json &parameters,
 		nlohmann::json &response,
 		nlohmann::json &broadcast)
@@ -199,11 +202,11 @@ namespace Doppelganger
 			nlohmann::json configCorePatch, configRoomPatch;
 			// for WS API, core == nullptr
 			const nlohmann::json emptyConfig = nlohmann::json::object();
-			functionCall(dllPath, "pluginProcess", emptyConfig, room.lock()->config, parameters, configCorePatch, configRoomPatch, response, broadcast);
+			functionCall(dllPath, "pluginProcess", emptyConfig, room->config, parameters, configCorePatch, configRoomPatch, response, broadcast);
 			if (!configRoomPatch.is_null())
 			{
-				room.lock()->config.merge_patch(configRoomPatch);
-				room.lock()->applyCurrentConfig();
+				room->config.merge_patch(configRoomPatch);
+				room->applyCurrentConfig();
 			}
 		}
 	}

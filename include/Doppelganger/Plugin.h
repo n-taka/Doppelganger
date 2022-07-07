@@ -26,13 +26,13 @@ namespace Doppelganger
 			const std::weak_ptr<Room> &room,
 			const std::string &version);
 		void pluginProcess(
-			const std::weak_ptr<Core> &core,
-			const std::weak_ptr<Room> &room,
+			const std::shared_ptr<Core> &core,
+			const std::shared_ptr<Room> &room,
 			const nlohmann::json &parameters,
 			nlohmann::json &response,
 			nlohmann::json &broadcast);
 		void pluginProcess(
-			const std::weak_ptr<Room> &room,
+			const std::shared_ptr<Room> &room,
 			const nlohmann::json &parameters,
 			nlohmann::json &response,
 			nlohmann::json &broadcast);

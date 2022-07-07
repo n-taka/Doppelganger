@@ -80,28 +80,6 @@ namespace
 	}
 
 	template <class Body, class Allocator>
-	std::string parseRoomUUID(const http::request<Body, http::basic_fields<Allocator>> &req)
-	{
-		fs::path reqPath(req.target().to_string());
-		reqPath.make_preferred();
-
-		std::vector<std::string> reqPathVec;
-		for (const auto &p : reqPath)
-		{
-			reqPathVec.push_back(p.string());
-		}
-
-		if (reqPathVec.size() >= 2)
-		{
-			return reqPathVec.at(1);
-		}
-		else
-		{
-			return std::string("");
-		}
-	}
-
-	template <class Body, class Allocator>
 	http::response<http::string_body> badRequest(
 		http::request<Body, http::basic_fields<Allocator>> &&req,
 		beast::string_view why)
@@ -215,8 +193,8 @@ namespace
 	}
 
 	template <class Body, class Allocator, class Send>
-	void handleRequest(const std::weak_ptr<Doppelganger::Core> &core,
-					   const std::weak_ptr<Doppelganger::Room> &room,
+	void handleRequest(const std::shared_ptr<Doppelganger::Core> &core,
+					   const std::shared_ptr<Doppelganger::Room> &room,
 					   http::request<Body, http::basic_fields<Allocator>> &&req,
 					   Send &&send)
 	{
@@ -261,7 +239,7 @@ namespace
 					if (reqPathVec.at(2) == "css" || reqPathVec.at(2) == "html" || reqPathVec.at(2) == "icon" || reqPathVec.at(2) == "js")
 					{
 						// resource
-						fs::path completePath(room.lock()->plugin_.at("assets").dir_);
+						fs::path completePath(room->plugin_.at("assets").dir_);
 						for (int pIdx = 2; pIdx < reqPathVec.size(); ++pIdx)
 						{
 							completePath.append(reqPathVec.at(pIdx));
@@ -272,7 +250,7 @@ namespace
 					else if (reqPathVec.at(2) == "plugin")
 					{
 						// resource
-						fs::path completePath(core.lock()->config.at("DoppelgangerRootDir").get<std::string>());
+						fs::path completePath(core->config.at("DoppelgangerRootDir").get<std::string>());
 						for (int pIdx = 2; pIdx < reqPathVec.size(); ++pIdx)
 						{
 							completePath.append(reqPathVec.at(pIdx));
@@ -283,13 +261,13 @@ namespace
 					else
 					{
 						// API
-						std::lock_guard<std::mutex> lock(room.lock()->mutexRoom_);
+						std::lock_guard<std::mutex> lock(room->mutexRoom_);
 						try
 						{
 							{
 								nlohmann::json serverBusyBroadcast = nlohmann::json::object();
 								serverBusyBroadcast["isBusy"] = true;
-								room.lock()->broadcastWS("isServerBusy", std::string(""), serverBusyBroadcast, nlohmann::json(nullptr));
+								room->broadcastWS("isServerBusy", std::string(""), serverBusyBroadcast, nlohmann::json(nullptr));
 							}
 
 							const std::string &APIName = reqPathVec.at(2);
@@ -311,14 +289,14 @@ namespace
 								// logContent << parameters.at("sessionUUID").get<std::string>();
 								logContent << parameters.at("sessionUUID");
 								logContent << ")";
-								Doppelganger::Util::log(logContent.str(), "APICALL", room.lock()->config);
+								Doppelganger::Util::log(logContent.str(), "APICALL", room->config);
 							}
 
 							nlohmann::json response, broadcast;
 							// for HTTP, we return response by default
 							response = nlohmann::json::object();
 
-							room.lock()->plugin_.at(APIName).pluginProcess(
+							room->plugin_.at(APIName).pluginProcess(
 								core,
 								room,
 								parameters.at("parameters"),
@@ -328,13 +306,13 @@ namespace
 							{
 								nlohmann::json serverBusyBroadcast = nlohmann::json::object();
 								serverBusyBroadcast["isBusy"] = false;
-								room.lock()->broadcastWS("isServerBusy", std::string(""), serverBusyBroadcast, nlohmann::json(nullptr));
+								room->broadcastWS("isServerBusy", std::string(""), serverBusyBroadcast, nlohmann::json(nullptr));
 							}
 
 							// broadcast
 							if (!broadcast.is_null())
 							{
-								room.lock()->broadcastWS(APIName, std::string(""), broadcast, response);
+								room->broadcastWS(APIName, std::string(""), broadcast, response);
 							}
 
 							// response
@@ -362,16 +340,16 @@ namespace
 					// return 301 (moved permanently)
 					std::string completeURL("");
 					{
-						completeURL += core.lock()->config.at("server").at("protocol").get<std::string>();
+						completeURL += core->config.at("server").at("protocol").get<std::string>();
 						completeURL += "://";
-						completeURL += core.lock()->config.at("server").at("host").get<std::string>();
+						completeURL += core->config.at("server").at("host").get<std::string>();
 						completeURL += ":";
-						completeURL += std::to_string(core.lock()->config.at("server").at("portUsed").get<int>());
+						completeURL += std::to_string(core->config.at("server").at("portUsed").get<int>());
 					}
 
 					std::string location = completeURL;
 					location += "/";
-					location += room.lock()->config.at("UUID").get<std::string>();
+					location += room->config.at("UUID").get<std::string>();
 					location += "/html/index.html";
 					return send(movedPermanently(std::move(req), location));
 				}
@@ -381,16 +359,16 @@ namespace
 				// return 301 (moved permanently)
 				std::string completeURL("");
 				{
-					completeURL += core.lock()->config.at("server").at("protocol").get<std::string>();
+					completeURL += core->config.at("server").at("protocol").get<std::string>();
 					completeURL += "://";
-					completeURL += core.lock()->config.at("server").at("host").get<std::string>();
+					completeURL += core->config.at("server").at("host").get<std::string>();
 					completeURL += ":";
-					completeURL += std::to_string(core.lock()->config.at("server").at("portUsed").get<int>());
+					completeURL += std::to_string(core->config.at("server").at("portUsed").get<int>());
 				}
 
 				std::string location = completeURL;
 				location += "/";
-				location += room.lock()->config.at("UUID").get<std::string>();
+				location += room->config.at("UUID").get<std::string>();
 				location += "/html/index.html";
 				return send(movedPermanently(std::move(req), location));
 			}
@@ -400,16 +378,16 @@ namespace
 			// return 301 (moved permanently)
 			std::string completeURL("");
 			{
-				completeURL += core.lock()->config.at("server").at("protocol").get<std::string>();
+				completeURL += core->config.at("server").at("protocol").get<std::string>();
 				completeURL += "://";
-				completeURL += core.lock()->config.at("server").at("host").get<std::string>();
+				completeURL += core->config.at("server").at("host").get<std::string>();
 				completeURL += ":";
-				completeURL += std::to_string(core.lock()->config.at("server").at("portUsed").get<int>());
+				completeURL += std::to_string(core->config.at("server").at("portUsed").get<int>());
 			}
 
 			std::string location = completeURL;
 			location += "/";
-			location += room.lock()->config.at("UUID").get<std::string>();
+			location += room->config.at("UUID").get<std::string>();
 			location += "/html/index.html";
 			return send(movedPermanently(std::move(req), location));
 		}
@@ -477,78 +455,100 @@ namespace Doppelganger
 	template <class Derived>
 	void HTTPSession<Derived>::onRead(beast::error_code ec, std::size_t bytes_transferred)
 	{
-		boost::ignore_unused(bytes_transferred);
+		const std::shared_ptr<Core> core = core_.lock();
 
-		// This means they closed the connection
-		if (ec == http::error::end_of_stream)
+		if (core)
 		{
-			return derived().doEof();
-		}
+			boost::ignore_unused(bytes_transferred);
 
-		if (ec)
-		{
-			return fail(ec, "read (HTTP)");
-		}
-
-		{
-			std::stringstream ss;
-			ss << "Request received: \"" << parser_->get().target().to_string() << "\"";
-			Util::log(ss.str(), "SYSTEM", core_.lock()->config);
-		}
-
-		std::string roomUUID = parseRoomUUID(parser_->get());
-		if (roomUUID == "favicon.ico")
-		{
-			// do nothing
-			// TODO: prepare favion.ico
-		}
-		else if (roomUUID.size() <= 0 || core_.lock()->rooms_.find(roomUUID) == core_.lock()->rooms_.end())
-		{
-			// create new room
-			if (roomUUID.size() <= 0)
+			// This means they closed the connection
+			if (ec == http::error::end_of_stream)
 			{
-				roomUUID = Util::uuid("room-");
+				return derived().doEof();
 			}
-			else
+
+			if (ec)
 			{
-				// add prefix
-				if (roomUUID.substr(0, 5) != "room-")
+				return fail(ec, "read (HTTP)");
+			}
+
+			{
+				std::stringstream ss;
+				ss << "Request received: \"" << parser_->get().target().to_string() << "\"";
+				Util::log(ss.str(), "SYSTEM", core->config);
+			}
+
+			std::vector<std::string> reqPathVec;
+			{
+				fs::path reqPath(parser_->get().target().to_string());
+				reqPath.make_preferred();
+				for (const auto &p : reqPath)
 				{
-					roomUUID = "room-" + roomUUID;
+					reqPathVec.push_back(p.string());
 				}
 			}
-			const std::shared_ptr<Room> room = std::make_shared<Room>();
-			room->setup(roomUUID, core_.lock()->config);
-			core_.lock()->rooms_[roomUUID] = room;
-			handleRequest(core_, room, parser_->release(), queue_);
-		}
-		else
-		{
-			const std::shared_ptr<Room> &room = core_.lock()->rooms_.at(roomUUID);
-			// See if it is a WebSocket Upgrade
-			if (boost::beast::websocket::is_upgrade(parser_->get()))
-			{
-				// Disable the timeout.
-				// The websocket::stream uses its own timeout settings.
-				beast::get_lowest_layer(derived().stream()).expires_never();
 
-				// Create a websocket session, transferring ownership
-				// of both the socket and the HTTP request.
-				const std::string sessionUUID = Util::uuid("session-");
-				makeWebsocketSession(derived().release_stream(), room, sessionUUID, parser_->release());
-				return;
+			std::string roomUUID = (reqPathVec.size() >= 2) ? reqPathVec.at(1) : std::string("");
+			if (roomUUID == "favicon.ico")
+			{
+				// do nothing
+				// TODO: prepare favion.ico
+			}
+			else if (core->rooms_.find(roomUUID) == core->rooms_.end() && reqPathVec.size() > 2 && reqPathVec.at(2) != "")
+			{
+				// do nothing
+				//   e.g. API call without creating rooms
+			}
+			else if (roomUUID.size() <= 0 || core->rooms_.find(roomUUID) == core->rooms_.end())
+			{
+				// create new room
+				if (roomUUID.size() <= 0)
+				{
+					// e.g. http://127.0.0.1:34568/
+					roomUUID = Util::uuid("room-");
+				}
+				else
+				{
+					// e.g. http://127.0.0.1:34568/<UUID>
+					// add prefix
+					if (roomUUID.substr(0, 5) != "room-")
+					{
+						roomUUID = "room-" + roomUUID;
+					}
+				}
+				const std::shared_ptr<Room> room = std::make_shared<Room>();
+				room->setup(roomUUID, core->config);
+				core->rooms_[roomUUID] = room;
+				handleRequest(core, room, parser_->release(), queue_);
 			}
 			else
 			{
-				// Send the response
-				handleRequest(core_, room, parser_->release(), queue_);
-				return;
-			}
-		}
+				const std::shared_ptr<Room> &room = core->rooms_.at(roomUUID);
+				// See if it is a WebSocket Upgrade
+				if (boost::beast::websocket::is_upgrade(parser_->get()))
+				{
+					// Disable the timeout.
+					// The websocket::stream uses its own timeout settings.
+					beast::get_lowest_layer(derived().stream()).expires_never();
 
-		if (!queue_.isFull())
-		{
-			doRead();
+					// Create a websocket session, transferring ownership
+					// of both the socket and the HTTP request.
+					const std::string sessionUUID = Util::uuid("session-");
+					makeWebsocketSession(derived().release_stream(), room, sessionUUID, parser_->release());
+					return;
+				}
+				else
+				{
+					// Send the response
+					handleRequest(core, room, parser_->release(), queue_);
+					return;
+				}
+			}
+
+			if (!queue_.isFull())
+			{
+				doRead();
+			}
 		}
 	}
 

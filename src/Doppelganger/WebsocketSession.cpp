@@ -28,19 +28,24 @@ namespace Doppelganger
 	template <class Derived>
 	void WebsocketSession<Derived>::onAccept(beast::error_code ec)
 	{
-		if (ec)
+		const std::shared_ptr<Room> room = room_.lock();
+
+		if (room)
 		{
-			return fail(ec, "accept (websocket)");
+			if (ec)
+			{
+				return fail(ec, "accept (websocket)");
+			}
+
+			room->joinWS(derived().shared_from_this());
+			nlohmann::json broadcast = nlohmann::json(nullptr);
+			nlohmann::json response = nlohmann::json::object();
+			response["sessionUUID"] = UUID_;
+			room->broadcastWS("initializeSession", UUID_, broadcast, response);
+
+			// Read a message
+			doRead();
 		}
-
-		room_.lock()->joinWS(derived().shared_from_this());
-		nlohmann::json broadcast = nlohmann::json(nullptr);
-		nlohmann::json response = nlohmann::json::object();
-		response["sessionUUID"] = UUID_;
-		room_.lock()->broadcastWS("initializeSession", UUID_, broadcast, response);
-
-		// Read a message
-		doRead();
 	}
 
 	template <class Derived>
@@ -58,51 +63,56 @@ namespace Doppelganger
 		beast::error_code ec,
 		std::size_t bytes_transferred)
 	{
-		// API
-		std::lock_guard<std::mutex> lock(room_.lock()->mutexRoom_);
+		const std::shared_ptr<Room> room = room_.lock();
 
-		boost::ignore_unused(bytes_transferred);
-
-		if (ec == websocket::error::closed)
+		if (room)
 		{
-			return;
-		}
+			// API
+			std::lock_guard<std::mutex> lock(room->mutexRoom_);
 
-		if (ec)
-		{
-			return fail(ec, "read (websocket)");
-		}
+			boost::ignore_unused(bytes_transferred);
 
-		try
-		{
-			const std::string payload = boost::beast::buffers_to_string(buffer_.data());
-			const nlohmann::json parameters = nlohmann::json::parse(payload);
-			const std::string APIName = parameters.at("API").get<std::string>();
-			const std::string sourceUUID = parameters.at("sessionUUID").get<std::string>();
-
-			nlohmann::json response, broadcast;
-			room_.lock()->plugin_.at(APIName).pluginProcess(
-				room_,
-				parameters.at("parameters"),
-				response,
-				broadcast);
-
-			// broadcast
-			if (!broadcast.is_null() || !response.is_null())
+			if (ec == websocket::error::closed)
 			{
-				room_.lock()->broadcastWS(APIName, sourceUUID, broadcast, response);
+				return;
 			}
-		}
-		catch (...)
-		{
-			std::stringstream logContent;
-			logContent << "Invalid WS API Call...";
-			Util::log(logContent.str(), "ERROR", room_.lock()->config);
-		}
 
-		buffer_.consume(buffer_.size());
+			if (ec)
+			{
+				return fail(ec, "read (websocket)");
+			}
 
-		doRead();
+			try
+			{
+				const std::string payload = boost::beast::buffers_to_string(buffer_.data());
+				const nlohmann::json parameters = nlohmann::json::parse(payload);
+				const std::string APIName = parameters.at("API").get<std::string>();
+				const std::string sourceUUID = parameters.at("sessionUUID").get<std::string>();
+
+				nlohmann::json response, broadcast;
+				room->plugin_.at(APIName).pluginProcess(
+					room,
+					parameters.at("parameters"),
+					response,
+					broadcast);
+
+				// broadcast
+				if (!broadcast.is_null() || !response.is_null())
+				{
+					room->broadcastWS(APIName, sourceUUID, broadcast, response);
+				}
+			}
+			catch (...)
+			{
+				std::stringstream logContent;
+				logContent << "Invalid WS API Call...";
+				Util::log(logContent.str(), "ERROR", room->config);
+			}
+
+			buffer_.consume(buffer_.size());
+
+			doRead();
+		}
 	}
 
 	template <class Derived>
@@ -138,26 +148,31 @@ namespace Doppelganger
 	template <class Derived>
 	void WebsocketSession<Derived>::fail(boost::system::error_code ec, char const *what)
 	{
+		const std::shared_ptr<Room> room = room_.lock();
+
+		if (room)
 		{
+			{
+				std::stringstream ss;
+				ss << "WS session \"" << UUID_ << "\" is closed.";
+				Util::log(ss.str(), "SYSTEM", room->config);
+			}
+			// remove mouse cursor
+			//   - update parameter on this server
+			//   - broadcast message for remove
+			room->leaveWS(UUID_);
+
+			// Don't report these
+			if (ec == boost::asio::error::operation_aborted ||
+				ec == boost::beast::websocket::error::closed)
+			{
+				return;
+			}
+
 			std::stringstream ss;
-			ss << "WS session \"" << UUID_ << "\" is closed.";
-			Util::log(ss.str(), "SYSTEM", room_.lock()->config);
+			ss << what << ": " << ec.message();
+			Util::log(ss.str(), "ERROR", room->config);
 		}
-		// remove mouse cursor
-		//   - update parameter on this server
-		//   - broadcast message for remove
-		room_.lock()->leaveWS(UUID_);
-
-		// Don't report these
-		if (ec == boost::asio::error::operation_aborted ||
-			ec == boost::beast::websocket::error::closed)
-		{
-			return;
-		}
-
-		std::stringstream ss;
-		ss << what << ": " << ec.message();
-		Util::log(ss.str(), "ERROR", room_.lock()->config);
 	}
 
 	template <class Derived>

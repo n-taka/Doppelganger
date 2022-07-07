@@ -49,6 +49,9 @@ namespace Doppelganger
 
 	void Room::shutdown()
 	{
+		// for shutdown, we broadcast here.
+		broadcastWS(std::string("shutdown"), std::string(""), nlohmann::json::object(), nlohmann::json(nullptr));
+
 		for (auto &uuid_ws : websocketSessions_)
 		{
 			const std::string &uuid = uuid_ws.first;

@@ -172,7 +172,7 @@ namespace Doppelganger
 		}
 
 		// apply
-		applyCurrentConfig();
+		applyCurrentConfig(true);
 
 		// export to file.
 		storeCurrentConfig();
@@ -395,13 +395,6 @@ namespace Doppelganger
 
 	void Core::shutdown()
 	{
-		for (auto &uuid_room : rooms_)
-		{
-			const std::string &uuid = uuid_room.first;
-			std::shared_ptr<Doppelganger::Room> &room = uuid_room.second;
-			room->shutdown();
-		}
-
 		// erase directories when we perform graceful shutdonw
 		// log: Doppelganger/data/YYYYMMDDTHHMMSS-room-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/log
 		{
@@ -442,7 +435,7 @@ namespace Doppelganger
 		ioc_.stop();
 	}
 
-	void Core::applyCurrentConfig()
+	void Core::applyCurrentConfig(const bool firstTime)
 	{
 		// DoppelgangerRootDir is ignored
 		//   note: DoppelgangerRootDir is automatically specified depending on the type of OS
@@ -617,8 +610,24 @@ namespace Doppelganger
 			config.at("server")["portUsed"] = listener_->acceptor_.local_endpoint().port();
 		}
 
-		// "active" and "forceReload" are very critical and we take care of them in the last
-		if (config.contains("active") && !config.at("active").get<bool>())
+		// filter inactive rooms
+		std::unordered_set<std::string> uuidToBeRemoved;
+		for (const auto &uuid_room : rooms_)
+		{
+			const std::string &uuid = uuid_room.first;
+			const std::shared_ptr<Doppelganger::Room> &room = uuid_room.second;
+			if (!room->config.at("active").get<bool>())
+			{
+				uuidToBeRemoved.insert(uuid);
+			}
+		}
+		for (const auto &uuid : uuidToBeRemoved)
+		{
+			std::shared_ptr<Doppelganger::Room> room = rooms_.at(uuid);
+			// room->shutdown();
+			rooms_.erase(uuid);
+		}
+		if (rooms_.size() == 0 && !firstTime)
 		{
 			shutdown();
 			return;
