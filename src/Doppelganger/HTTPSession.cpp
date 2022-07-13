@@ -494,10 +494,11 @@ namespace Doppelganger
 				// do nothing
 				// TODO: prepare favion.ico
 			}
-			else if (core->rooms_.find(roomUUID) == core->rooms_.end() && reqPathVec.size() > 2 && reqPathVec.at(2) != "")
+			else if (core->rooms_.find(roomUUID) == core->rooms_.end() && reqPathVec.size() > 2 && reqPathVec.at(2) != "" && reqPathVec.at(2) != "html")
 			{
 				// do nothing
 				//   e.g. API call without creating rooms
+				//   but, we accept "/room-ABC/html/index.html" because chrome somehow append previously visited URL...
 			}
 			else if (roomUUID.size() <= 0 || core->rooms_.find(roomUUID) == core->rooms_.end())
 			{
