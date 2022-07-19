@@ -250,7 +250,7 @@ namespace
 					else if (reqPathVec.at(2) == "plugin")
 					{
 						// resource
-						fs::path completePath(core->config.at("DoppelgangerRootDir").get<std::string>());
+						fs::path completePath(room->config.at("dataDir").get<std::string>());
 						for (int pIdx = 2; pIdx < reqPathVec.size(); ++pIdx)
 						{
 							completePath.append(reqPathVec.at(pIdx));
