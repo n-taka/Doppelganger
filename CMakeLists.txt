@@ -32,7 +32,7 @@ option(DOPPELGANGER_BUILD_EXAMPLE  "Build example server" ON)
 ### project
 ##############################################
 project(Doppelganger
-    VERSION 2022.7.0
+    VERSION 2022.7.1
     DESCRIPTION "HTML based interface with C++ backend"
     HOMEPAGE_URL "https://github.com/n-taka/Doppelganger"
     LANGUAGES CXX)
