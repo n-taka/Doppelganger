@@ -38,8 +38,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: Doppelganger_Linux
-          path: |
-            ${{github.workspace}}/build/Doppelganger
+          path: ${{github.workspace}}/build/Doppelganger
 
   build_Windows:
     # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
@@ -69,8 +68,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: Doppelganger_windows
-          path: |
-            ${{github.workspace}}/build/${{env.BUILD_TYPE}}/Doppelganger
+          path: ${{github.workspace}}/build/${{env.BUILD_TYPE}}/Doppelganger
 
 #    - name: Test
 #      working-directory: ${{github.workspace}}/build
