@@ -124,13 +124,28 @@ namespace
 		return res;
 	}
 
+	// template <class Body, class Allocator>
+	// http::response<http::string_body> movedPermanently(
+	// 	http::request<Body, http::basic_fields<Allocator>> &&req,
+	// 	beast::string_view location)
+	// {
+	// 	// Returns a 308
+	// 	http::response<http::string_body> res{http::status::permanent_redirect, req.version()};
+	// 	res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+	// 	res.set(http::field::content_type, "text/html");
+	// 	res.set(http::field::location, location);
+	// 	res.keep_alive(req.keep_alive());
+	// 	res.prepare_payload();
+	// 	return res;
+	// }
+
 	template <class Body, class Allocator>
-	http::response<http::string_body> movedPermanently(
+	http::response<http::string_body> movedTemporary(
 		http::request<Body, http::basic_fields<Allocator>> &&req,
 		beast::string_view location)
 	{
-		// Returns a moved permanently
-		http::response<http::string_body> res{http::status::moved_permanently, req.version()};
+		// Returns a 307
+		http::response<http::string_body> res{http::status::temporary_redirect, req.version()};
 		res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
 		res.set(http::field::content_type, "text/html");
 		res.set(http::field::location, location);
@@ -337,7 +352,7 @@ namespace
 				}
 				else
 				{
-					// return 301 (moved permanently)
+					// return 307
 					std::string completeURL("");
 					{
 						completeURL += core->config.at("server").at("protocol").get<std::string>();
@@ -351,12 +366,12 @@ namespace
 					location += "/";
 					location += room->config.at("UUID").get<std::string>();
 					location += "/html/index.html";
-					return send(movedPermanently(std::move(req), location));
+					return send(movedTemporary(std::move(req), location));
 				}
 			}
 			else
 			{
-				// return 301 (moved permanently)
+				// return 307
 				std::string completeURL("");
 				{
 					completeURL += core->config.at("server").at("protocol").get<std::string>();
@@ -370,12 +385,12 @@ namespace
 				location += "/";
 				location += room->config.at("UUID").get<std::string>();
 				location += "/html/index.html";
-				return send(movedPermanently(std::move(req), location));
+				return send(movedTemporary(std::move(req), location));
 			}
 		}
 		else
 		{
-			// return 301 (moved permanently)
+			// return 307
 			std::string completeURL("");
 			{
 				completeURL += core->config.at("server").at("protocol").get<std::string>();
@@ -389,7 +404,7 @@ namespace
 			location += "/";
 			location += room->config.at("UUID").get<std::string>();
 			location += "/html/index.html";
-			return send(movedPermanently(std::move(req), location));
+			return send(movedTemporary(std::move(req), location));
 		}
 	}
 }
