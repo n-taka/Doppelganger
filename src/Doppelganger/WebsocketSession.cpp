@@ -37,6 +37,36 @@ namespace Doppelganger
 				return fail(ec, "accept (websocket)");
 			}
 
+			derived().ws().control_callback(
+				[this] (websocket::frame_type kind, beast::string_view payload)
+				{
+					std::stringstream logContent;
+					logContent << "control_callback (";
+
+					if(kind == websocket::frame_type::close)
+					{
+						logContent << "close";
+					}
+					else if(kind == websocket::frame_type::ping)
+					{
+						logContent << "ping";
+					}
+					else
+					{
+						logContent << "pong";
+					}
+					const std::shared_ptr<Room> r = room_.lock();
+					if(r)
+					{
+						logContent  << ", " << r->config.at("UUID").get<std::string>();
+						logContent  << ", " << UUID_ << ")";
+						Util::log(logContent.str(), "MISC", r->config);
+					}
+
+					boost::ignore_unused(kind, payload);
+				}
+			);
+
 			room->joinWS(derived().shared_from_this());
 			nlohmann::json broadcast = nlohmann::json(nullptr);
 			nlohmann::json response = nlohmann::json::object();
