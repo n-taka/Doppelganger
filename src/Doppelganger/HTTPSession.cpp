@@ -509,55 +509,55 @@ namespace Doppelganger
 				// do nothing
 				// TODO: prepare favion.ico
 			}
-			else if (core->rooms_.find(roomUUID) == core->rooms_.end() && reqPathVec.size() > 2 && reqPathVec.at(2) != "" && reqPathVec.at(2) != "html")
-			{
-				// do nothing
-				//   e.g. API call without creating rooms
-				//   but, we accept "/room-ABC/html/index.html" because chrome somehow append previously visited URL...
-			}
-			else if (roomUUID.size() <= 0 || core->rooms_.find(roomUUID) == core->rooms_.end())
-			{
-				// create new room
-				if (roomUUID.size() <= 0)
-				{
-					// e.g. http://127.0.0.1:34568/
-					roomUUID = Util::uuid("room-");
-				}
-				else
-				{
-					// e.g. http://127.0.0.1:34568/<UUID>
-					// add prefix
-					if (roomUUID.substr(0, 5) != "room-")
-					{
-						roomUUID = "room-" + roomUUID;
-					}
-				}
-				const std::shared_ptr<Room> room = std::make_shared<Room>();
-				room->setup(roomUUID, core->config);
-				core->rooms_[roomUUID] = room;
-				handleRequest(core, room, parser_->release(), queue_);
-			}
 			else
 			{
-				const std::shared_ptr<Room> &room = core->rooms_.at(roomUUID);
-				// See if it is a WebSocket Upgrade
-				if (boost::beast::websocket::is_upgrade(parser_->get()))
+				// add prefix if UUID is not empty
+				if (roomUUID.size() > 0 && roomUUID.substr(0, 5) != "room-")
 				{
-					// Disable the timeout.
-					// The websocket::stream uses its own timeout settings.
-					beast::get_lowest_layer(derived().stream()).expires_never();
+					roomUUID = "room-" + roomUUID;
+				}
 
-					// Create a websocket session, transferring ownership
-					// of both the socket and the HTTP request.
-					const std::string sessionUUID = Util::uuid("session-");
-					makeWebsocketSession(derived().release_stream(), room, sessionUUID, parser_->release());
-					return;
+				if (core->rooms_.find(roomUUID) == core->rooms_.end() && reqPathVec.size() > 2 && reqPathVec.at(2) != "" && reqPathVec.at(2) != "html")
+				{
+					// do nothing
+					//   e.g. API call without creating rooms
+					//   but, we accept "/room-ABC/html/index.html" because chrome somehow append previously visited URL...
+				}
+				else if (roomUUID.size() <= 0 || core->rooms_.find(roomUUID) == core->rooms_.end())
+				{
+					// create new room
+					if (roomUUID.size() <= 0)
+					{
+						// e.g. http://127.0.0.1:34568/
+						roomUUID = Util::uuid("room-");
+					}
+					const std::shared_ptr<Room> room = std::make_shared<Room>();
+					room->setup(roomUUID, core->config);
+					core->rooms_[roomUUID] = room;
+					handleRequest(core, room, parser_->release(), queue_);
 				}
 				else
 				{
-					// Send the response
-					handleRequest(core, room, parser_->release(), queue_);
-					return;
+					const std::shared_ptr<Room> &room = core->rooms_.at(roomUUID);
+					// See if it is a WebSocket Upgrade
+					if (boost::beast::websocket::is_upgrade(parser_->get()))
+					{
+						// Disable the timeout.
+						// The websocket::stream uses its own timeout settings.
+						beast::get_lowest_layer(derived().stream()).expires_never();
+
+						// Create a websocket session, transferring ownership
+						// of both the socket and the HTTP request.
+						const std::string sessionUUID = Util::uuid("session-");
+						makeWebsocketSession(derived().release_stream(), room, sessionUUID, parser_->release());
+						return;
+					}
+					else
+					{
+						// Send the response
+						handleRequest(core, room, parser_->release(), queue_);
+						return;
+					}
 				}
 			}
 
