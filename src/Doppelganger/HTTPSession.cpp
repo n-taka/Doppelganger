@@ -242,7 +242,12 @@ namespace
 		std::vector<std::string> reqPathVec;
 		for (const auto &p : reqPath)
 		{
-			reqPathVec.push_back(p.string());
+			if (!p.string().empty())
+			{
+				// we explicitly strip empty string
+				//   for dealing with tailing slash
+				reqPathVec.push_back(p.string());
+			}
 		}
 
 		if (reqPathVec.size() >= 2)
@@ -499,7 +504,12 @@ namespace Doppelganger
 				reqPath.make_preferred();
 				for (const auto &p : reqPath)
 				{
-					reqPathVec.push_back(p.string());
+					if (!p.string().empty())
+					{
+						// we explicitly strip empty string
+						//   for dealing with tailing slash
+						reqPathVec.push_back(p.string());
+					}
 				}
 			}
 
