@@ -127,7 +127,6 @@ elseif (APPLE)
     target_link_libraries(
         ${PROJECT_NAME} PRIVATE
         Boost::random
-        Boost::filesystem
         nlohmann_json
         nlohmann_json::nlohmann_json
         Eigen3::Eigen
