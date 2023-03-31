@@ -235,7 +235,7 @@ namespace
 		// http://example.com/<roomUUID>/<APIName>
 		// API (module.js)
 		// http://example.com/<roomUUID>/plugin/APIName_version/module.js
-		fs::path reqPath(req.target());
+		fs::path reqPath(std::string(req.target()));
 		reqPath.make_preferred();
 		// reqPathVec
 		// {"/", "<roomUUID>", "<APIName>", ... }
