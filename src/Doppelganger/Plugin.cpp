@@ -21,7 +21,13 @@
 namespace
 {
 	void getPtrStrArrayForPartialConfig(
-		const fs::path &dllPath,
+#if defined(_WIN64)
+		HINSTANCE handle,
+#elif defined(__APPLE__)
+		void *handle,
+#elif defined(__linux__)
+		void *handle,
+#endif
 		const char *parameterChar,
 		nlohmann::json &ptrStrArrayCore,
 		nlohmann::json &ptrStrArrayRoom);

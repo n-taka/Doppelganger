@@ -8,7 +8,6 @@
         "boost-beast",
         "boost-random",
         "boost-uuid",
-        "boost-filesystem",
         "nlohmann-json",
         "eigen3",
         "minizip",

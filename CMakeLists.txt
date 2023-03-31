@@ -12,7 +12,7 @@ endif ()
 ### at least we support macOS that is still maintained
 ##############################################
 if (APPLE)
-    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING "" FORCE)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "11.7" CACHE STRING "" FORCE)
 endif ()
 
 
@@ -174,19 +174,15 @@ endif()
 ### compile options
 ##############################################
 if (WIN32)
-    # because we want to use std::filesystem, we require C++17 for windows
-    target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
     # our target is windows 10 or newer
     target_compile_definitions(${PROJECT_NAME} PUBLIC _WIN32_WINNT=0x0A00)
     # our codes heavily depend on template...
     add_definitions(/bigobj)
-elseif (APPLE)
-    # we use boost::filesystem for macOS
-    target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
-elseif (UNIX)
-    # because we want to use std::filesystem, we require C++17 for Linux
-    target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 endif ()
+
+# because we want to use std::filesystem, we require C++17
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
+
 target_compile_definitions(${PROJECT_NAME} PUBLIC _USE_MATH_DEFINES)
 
 # we prefer std::string_view
