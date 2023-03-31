@@ -500,7 +500,7 @@ namespace Doppelganger
 
 			std::vector<std::string> reqPathVec;
 			{
-				fs::path reqPath(parser_->get().target());
+				fs::path reqPath(std::string(parser_->get().target()));
 				reqPath.make_preferred();
 				for (const auto &p : reqPath)
 				{

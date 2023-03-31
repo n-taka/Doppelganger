@@ -12,7 +12,7 @@ endif ()
 ### at least we support macOS that is still maintained
 ##############################################
 if (APPLE)
-    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING "" FORCE)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING "" FORCE)
 endif ()
 
 
