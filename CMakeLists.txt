@@ -42,13 +42,7 @@ project(Doppelganger
 ### dependencies
 ##############################################
 # Boost
-if (WIN32)
-    find_package(Boost REQUIRED COMPONENTS random)
-elseif (APPLE)
-    find_package(Boost REQUIRED COMPONENTS random filesystem)
-elseif (UNIX)
-    find_package(Boost REQUIRED COMPONENTS random)
-endif ()
+find_package(Boost REQUIRED COMPONENTS random)
 # json
 find_package(nlohmann_json CONFIG REQUIRED)
 # eigen3
