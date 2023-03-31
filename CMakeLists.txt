@@ -188,11 +188,13 @@ if (WIN32)
     # our codes heavily depend on template...
     add_definitions(/bigobj)
 elseif (APPLE)
-    # because we support macOS Mojave, we only require C++14 for macOS
     # we use boost::filesystem for macOS
-    target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_14)
+    target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 elseif (UNIX)
     # because we want to use std::filesystem, we require C++17 for Linux
     target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 endif ()
 target_compile_definitions(${PROJECT_NAME} PUBLIC _USE_MATH_DEFINES)
+
+# we prefer std::string_view
+target_compile_definitions(${PROJECT_NAME} PUBLIC BOOST_NO_CXX17_HDR_STRING_VIEW)

@@ -89,7 +89,7 @@ namespace
 		res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
 		res.set(http::field::content_type, "text/html");
 		res.keep_alive(req.keep_alive());
-		res.body() = why.to_string();
+		res.body() = why;
 		res.prepare_payload();
 		return res;
 	}
@@ -104,7 +104,7 @@ namespace
 		res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
 		res.set(http::field::content_type, "text/html");
 		res.keep_alive(req.keep_alive());
-		res.body() = "The resource '" + target.to_string() + "' was not found.";
+		res.body() = "The resource '" + std::string(target) + "' was not found.";
 		res.prepare_payload();
 		return res;
 	}
@@ -119,7 +119,7 @@ namespace
 		res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
 		res.set(http::field::content_type, "text/html");
 		res.keep_alive(req.keep_alive());
-		res.body() = "An error occurred: '" + what.to_string() + "'";
+		res.body() = "An error occurred: '" + std::string(what) + "'";
 		res.prepare_payload();
 		return res;
 	}
@@ -235,7 +235,7 @@ namespace
 		// http://example.com/<roomUUID>/<APIName>
 		// API (module.js)
 		// http://example.com/<roomUUID>/plugin/APIName_version/module.js
-		fs::path reqPath(req.target().to_string());
+		fs::path reqPath(req.target());
 		reqPath.make_preferred();
 		// reqPathVec
 		// {"/", "<roomUUID>", "<APIName>", ... }
@@ -302,7 +302,7 @@ namespace
 								std::stringstream logContent;
 								logContent << req.method_string();
 								logContent << " ";
-								logContent << req.target().to_string();
+								logContent << req.target();
 								logContent << " ";
 								logContent << "(";
 								// In some cases, sessionUUID could be NULL (we need to handle the order of initialization...)
@@ -494,13 +494,13 @@ namespace Doppelganger
 
 			{
 				std::stringstream ss;
-				ss << "Request received: \"" << parser_->get().target().to_string() << "\"";
+				ss << "Request received: \"" << parser_->get().target() << "\"";
 				Util::log(ss.str(), "SYSTEM", core->config);
 			}
 
 			std::vector<std::string> reqPathVec;
 			{
-				fs::path reqPath(parser_->get().target().to_string());
+				fs::path reqPath(parser_->get().target());
 				reqPath.make_preferred();
 				for (const auto &p : reqPath)
 				{
