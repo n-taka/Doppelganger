@@ -14,6 +14,7 @@ jobs:
     # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
     # You can convert this to a matrix build if you need cross-platform coverage.
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+    # we use older LTS
     runs-on: [ windows-latest ]
 
     steps:
@@ -42,7 +43,8 @@ jobs:
         retention-days: 7
 
   build_Linux:
-    runs-on: [ ubuntu-latest ]
+    # we use older LTS
+    runs-on: [ ubuntu-20.04 ]
 
     steps:
     - uses: actions/checkout@v3
@@ -67,7 +69,8 @@ jobs:
         retention-days: 7
 
   build_macOS:
-    runs-on: [ macos-latest ]
+    # we use older supported macOS
+    runs-on: [ macos-11 ]
 
     steps:
     - uses: actions/checkout@v3
